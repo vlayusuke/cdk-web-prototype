@@ -1,14 +1,13 @@
-# Welcome to your CDK TypeScript project
+# cdk-web-prototype
 
-This is a blank project for CDK development with TypeScript.
+このプロトタイプは、Amazon Web ServicesとAWS CDKをフレームワークとして用いたTypeScriptを使用した、Web3レイヤー構成による、Webアプリケーション向けのリソースを構築するために使用するものです。AWS Fargateを用いたコンテナを用いてWebアプリケーションを構築することを想定しています。
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+また、標準的な3ステージ構成としており、原則として1つのAWSアカウントに対して、1つの環境を構築することを前提としています。ただし、1つのAWSアカウントに対して3つの環境を構築することもできるように柔軟性を持たせています。
 
-## Useful commands
+## リリース履歴
 
-* `npm run build`   type-check the project
-* `npm run watch`   watch for changes and type-check
-* `npm run test`    perform the jest unit tests
-* `npx cdk deploy`  deploy this stack to your default AWS account/region
-* `npx cdk diff`    compare deployed stack with current state
-* `npx cdk synth`   emits the synthesized CloudFormation template
+このテンプレートのリリース履歴は、[Releases](https://github.com/vlayusuke/terraform-web-template/releases)を参照してください。
+
+## ライセンス
+
+このテンプレートは、MIT LICENSEのもとでライセンスされています。詳細は、[LICENSE](./LICENSE)を参照してください。
