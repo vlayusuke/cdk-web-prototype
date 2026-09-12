@@ -18,7 +18,7 @@ export interface defaultGatewayCidrProps {
 
 
 // ------------------------------------------------------------
-// 02 Network Configuration Stack
+// [02] - Network Configuration Stack
 // ------------------------------------------------------------
 export class cfNetworkStack extends Construct {
     public readonly Vpc: ec2.IVpc;
