@@ -4,7 +4,7 @@ import { Construct } from 'constructs';
 
 
 // ------------------------------------------------------------
-// 01 Security Configuration Stack
+// [01] - Security Configuration Stack
 // ------------------------------------------------------------
 export class cfSecurityConfigStack extends Construct {
     public readonly applicationKey: kms.IKey;
