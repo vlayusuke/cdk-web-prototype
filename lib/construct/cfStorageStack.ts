@@ -10,13 +10,13 @@ export interface networkingProps {
 }
 
 export interface sgProps {
-        vpcEndPointS3SecurityGroup: string;
-        vpcEndPointECRSecurityGroup: string;
-        vpcEndPointSSMSecurityGroup: string;
-        vpcEndPointSSMEC2SecurityGroup: string;
-        vpcEndPointSSMEC2MessagesSecurityGroup: string;
-        vpcEndPointKMSSecurityGroup: string;
-        vpcEndPointCloudWatchLogsSecurityGroup: string;
+        vpcEndPointS3SecurityGroup: ec2.SecurityGroup;
+        vpcEndPointECRSecurityGroup: ec2.SecurityGroup;
+        vpcEndPointSSMSecurityGroup: ec2.SecurityGroup;
+        vpcEndPointSSMEC2SecurityGroup: ec2.SecurityGroup;
+        vpcEndPointSSMEC2MessagesSecurityGroup: ec2.SecurityGroup;
+        vpcEndPointKMSSecurityGroup: ec2.SecurityGroup;
+        vpcEndPointCloudWatchLogsSecurityGroup: ec2.SecurityGroup;
 }
 
 export interface kmsProps {
@@ -30,7 +30,7 @@ export interface CfStorageStackProps extends networkingProps, kmsProps {}
 // ------------------------------------------------------------
 // [06] - Storage Stack
 // ------------------------------------------------------------
-export class CfStorageStack extends Construct {
+export class cfStorageStack extends Construct {
     public readonly vpcEndpointECRDocker: ec2.CfnVPCEndpoint;
     public readonly vpcEndpointECRAPI: ec2.CfnVPCEndpoint;
     public readonly vpcEndpointKMS: ec2.CfnVPCEndpoint;
@@ -57,7 +57,7 @@ export class CfStorageStack extends Construct {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.ecr.dkr`,
             vpcEndpointType: 'Interface',
-            securityGroupIds: [sgProps.vpcEndPointECRSecurityGroup],
+            securityGroupIds: [sgProps.vpcEndPointECRSecurityGroup.securityGroupId],
             subnetIds: [props.privateSubnetA, props.privateSubnetC],
             ipAddressType: 'ipv4',
             privateDnsEnabled: true,
@@ -77,7 +77,7 @@ export class CfStorageStack extends Construct {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.ecr.api`,
             vpcEndpointType: 'Interface',
-            securityGroupIds: [sgProps.vpcEndPointECRSecurityGroup],
+            securityGroupIds: [sgProps.vpcEndPointECRSecurityGroup.securityGroupId],
             subnetIds: [props.privateSubnetA, props.privateSubnetC],
             ipAddressType: 'ipv4',
             privateDnsEnabled: true,
@@ -97,7 +97,7 @@ export class CfStorageStack extends Construct {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.kms`,
             vpcEndpointType: 'Interface',
-            securityGroupIds: [sgProps.vpcEndPointKMSSecurityGroup],
+            securityGroupIds: [sgProps.vpcEndPointKMSSecurityGroup.securityGroupId],
             subnetIds: [props.privateSubnetA, props.privateSubnetC],
             ipAddressType: 'ipv4',
             privateDnsEnabled: true,
@@ -117,7 +117,7 @@ export class CfStorageStack extends Construct {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.ssm`,
             vpcEndpointType: 'Interface',
-            securityGroupIds: [sgProps.vpcEndPointKMSSecurityGroup],
+            securityGroupIds: [sgProps.vpcEndPointKMSSecurityGroup.securityGroupId],
             subnetIds: [props.privateSubnetA, props.privateSubnetC],
             ipAddressType: 'ipv4',
             privateDnsEnabled: true,
@@ -137,7 +137,7 @@ export class CfStorageStack extends Construct {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.ssm.ec2`,
             vpcEndpointType: 'Interface',
-            securityGroupIds: [sgProps.vpcEndPointSSMEC2SecurityGroup],
+            securityGroupIds: [sgProps.vpcEndPointSSMEC2SecurityGroup.securityGroupId],
             subnetIds: [props.privateSubnetA, props.privateSubnetC],
             ipAddressType: 'ipv4',
             privateDnsEnabled: true,
@@ -157,7 +157,7 @@ export class CfStorageStack extends Construct {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.ec2messages`,
             vpcEndpointType: 'Interface',
-            securityGroupIds: [sgProps.vpcEndPointSSMEC2MessagesSecurityGroup],
+            securityGroupIds: [sgProps.vpcEndPointSSMEC2MessagesSecurityGroup.securityGroupId],
             subnetIds: [props.privateSubnetA, props.privateSubnetC],
             ipAddressType: 'ipv4',
             privateDnsEnabled: true,
@@ -177,7 +177,7 @@ export class CfStorageStack extends Construct {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.logs`,
             vpcEndpointType: 'Interface',
-            securityGroupIds: [sgProps.vpcEndPointCloudWatchLogsSecurityGroup],
+            securityGroupIds: [sgProps.vpcEndPointCloudWatchLogsSecurityGroup.securityGroupId],
             subnetIds: [props.privateSubnetA, props.privateSubnetC],
             ipAddressType: 'ipv4',
             privateDnsEnabled: true,
