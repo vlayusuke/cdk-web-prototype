@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import * as cdk from 'aws-cdk-lib';
-import { aws_ec2 as ec2, aws_ecr as ecr, type aws_kms as kms } from 'aws-cdk-lib';
+import { aws_ec2 as ec2, aws_ecr as ecr, type aws_kms as kms, aws_s3 as s3 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
 export interface networkingProps {
@@ -21,13 +21,14 @@ export interface sgProps {
 
 export interface kmsProps {
     ecrKey: kms.IKey;
+    s3Key: kms.IKey;
 }
 
 export interface CfStorageStackProps extends networkingProps, kmsProps {}
 
 
 // ------------------------------------------------------------
-// 06 Storage Stack
+// [06] - Storage Stack
 // ------------------------------------------------------------
 export class CfStorageStack extends Construct {
     public readonly vpcEndpointECRDocker: ec2.CfnVPCEndpoint;
@@ -42,6 +43,9 @@ export class CfStorageStack extends Construct {
     public readonly ecrRepositoryAppBaseImage: ecr.Repository;
     public readonly ecrRepositoryWeb: ecr.Repository;
     public readonly ecrRepositoryApp: ecr.Repository;
+    public readonly s3BucketAlbLogs: s3.Bucket;
+    public readonly s3BucketNginxLogs: s3.Bucket;
+    public readonly s3BucketAppLogs: s3.Bucket;
 
     constructor(scope: Construct, id: string, props: CfStorageStackProps, sgProps: sgProps) {
         super(scope, id);
@@ -187,19 +191,12 @@ export class CfStorageStack extends Construct {
 
 
         // ------------------------------------------------------------
-        // VPC Endpoint for Amazon S3 Interface Configuration
+        // VPC Endpoint for Amazon S3 Gateway Configuration
         // ------------------------------------------------------------
         this.vpcEndpointS3 = new ec2.CfnVPCEndpoint(this, 'VpcEndpointS3', {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.s3`,
-            vpcEndpointType: 'Interface',
-            securityGroupIds: [sgProps.vpcEndPointS3SecurityGroup],
-            subnetIds: [props.privateSubnetA, props.privateSubnetC],
-            ipAddressType: 'ipv4',
-            privateDnsEnabled: true,
-            dnsOptions: {
-                dnsRecordIpType: 'IPv4'
-            }
+            vpcEndpointType: 'Gateway',
         });
 
         cdk.Tags.of(this.vpcEndpointS3).add('Name', 'VpcEndpointS3');
@@ -288,5 +285,58 @@ export class CfStorageStack extends Construct {
         cfnRepositoryApp.lifecyclePolicy = {
             lifecyclePolicyText: lifecyclePolicyTextAppConfig
         };
+
+
+        // ------------------------------------------------------------
+        // Amazon S3 Bucket for ALB Logs Configuration
+        // ------------------------------------------------------------
+        this.s3BucketAlbLogs = new s3.Bucket(this, 'S3BucketAlbLogs', {
+            bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-alb-logs`,
+            versioned: true,
+            accessControl: s3.BucketAccessControl.PRIVATE,
+            encryptionKey: props.s3Key,
+            encryption: s3.BucketEncryption.KMS,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+            removalPolicy: cdk.RemovalPolicy.RETAIN,
+            enforceSSL: true,
+        });
+
+        cdk.Tags.of(this.s3BucketAlbLogs).add('Name', 'S3BucketAlbLogs');
+        cdk.Tags.of(this.s3BucketAlbLogs).add('ProvisionedBy', 'AWS');
+
+
+        // ------------------------------------------------------------
+        // Amazon S3 Bucket for NginX Logs Configuration
+        // ------------------------------------------------------------
+        this.s3BucketNginxLogs = new s3.Bucket(this, 'S3BucketNginxLogs', {
+            bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-nginx-logs`,
+            versioned: true,
+            accessControl: s3.BucketAccessControl.PRIVATE,
+            encryptionKey: props.s3Key,
+            encryption: s3.BucketEncryption.KMS,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+            removalPolicy: cdk.RemovalPolicy.RETAIN,
+            enforceSSL: true,
+        });
+
+        cdk.Tags.of(this.s3BucketNginxLogs).add('Name', 'S3BucketNginxLogs');
+        cdk.Tags.of(this.s3BucketNginxLogs).add('ProvisionedBy', 'AWS');
+
+        // ------------------------------------------------------------
+        // Amazon S3 Bucket for Application Logs Configuration
+        // ------------------------------------------------------------
+        this.s3BucketAppLogs = new s3.Bucket(this, 'S3BucketAppLogs', {
+            bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-app-logs`,
+            versioned: true,
+            accessControl: s3.BucketAccessControl.PRIVATE,
+            encryptionKey: props.s3Key,
+            encryption: s3.BucketEncryption.KMS,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+            removalPolicy: cdk.RemovalPolicy.RETAIN,
+            enforceSSL: true,
+        });
+
+        cdk.Tags.of(this.s3BucketAppLogs).add('Name', 'S3BucketAppLogs');
+        cdk.Tags.of(this.s3BucketAppLogs).add('ProvisionedBy', 'AWS');
     }
 }
