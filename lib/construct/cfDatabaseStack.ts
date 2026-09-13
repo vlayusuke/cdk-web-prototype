@@ -16,7 +16,7 @@ export interface sgProps {
 
 
 // ------------------------------------------------------------
-// 04 Database Configuration Stack
+// [04] - Database Configuration Stack
 // ------------------------------------------------------------
 export class cfDatabaseStack extends Construct {
 
