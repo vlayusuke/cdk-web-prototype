@@ -33,6 +33,13 @@ export class CfComputeBatchStack extends Construct {
             assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
         });
 
+        ec2IamRoleForBatch.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
+        ec2IamRoleForBatch.addToPolicy(new iam.PolicyStatement({
+            sid: 'SSMAccess',
+            actions: ['ssm:StartSession', 'ssm:SendCommand'],
+            resources: [ `arn:aws:ssm:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:document/AWS-StartSession` ],
+        }));
+
         cdk.Tags.of(ec2IamRoleForBatch).add('Name', 'ec2IamRoleForBatch');
         cdk.Tags.of(ec2IamRoleForBatch).add('ProvisionedBy', 'AWS');
 
