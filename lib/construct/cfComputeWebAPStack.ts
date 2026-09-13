@@ -13,14 +13,14 @@ export interface networkingProps {
 }
 
 export interface sgProps {
-    bastionSecurityGroup: string;
+    bastionSecurityGroup: ec2.SecurityGroup;
 }
 
 
 // ------------------------------------------------------------
 // [07] - Compute WebAP Stack
 // ------------------------------------------------------------
-export class CfComputeWebAPStack extends Construct {
+export class cfComputeWebAPStack extends Construct {
 
     constructor(scope: Construct, id: string, kmsProps: kmsProps, networkingProps: networkingProps, sgProps: sgProps) {
         super(scope, id);
@@ -110,7 +110,7 @@ export class CfComputeWebAPStack extends Construct {
                 availabilityZones: ['ap-northeast-1a'],
                 publicSubnetIds: [networkingProps.subnetIds[0]],
             }),
-            securityGroup: ec2.SecurityGroup.fromSecurityGroupId(this, 'bastionSecurityGroup', sgProps.bastionSecurityGroup),
+            securityGroup: sgProps.bastionSecurityGroup,
             instanceProfile: ec2IamInstanceProfileForBastion,
             keyName: kmsProps.bastionKey,
             disableApiTermination: true,
