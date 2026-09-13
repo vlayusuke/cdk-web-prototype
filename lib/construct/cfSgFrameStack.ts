@@ -6,7 +6,7 @@ import { Construct } from 'constructs';
 // ------------------------------------------------------------
 // [03] - Security group Frame Stack
 // ------------------------------------------------------------
-export class CfSgFrameStack extends Construct {
+export class cfSgFrameStack extends Construct {
         public readonly vpc: ec2.IVpc;
         public readonly albSecurityGroupFrame: ec2.SecurityGroup;
         public readonly batchSecurityGroupFrame: ec2.SecurityGroup;
