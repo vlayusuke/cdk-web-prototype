@@ -8,7 +8,7 @@ export interface kmsProps {
 
 
 // ------------------------------------------------------------
-// 05 Security Service Stack
+// [05] - Security Service Stack
 // ------------------------------------------------------------
 export class CfSecurityServiceStack extends Construct {
 
@@ -19,8 +19,9 @@ export class CfSecurityServiceStack extends Construct {
         // Amazon S3 for AWS WAFv2 Logs Configuration
         // ------------------------------------------------------------
         // WAF requires the S3 logging destination bucket name to start with 'aws-waf-logs-'.
-        const s3WAFv2LogsBucket = new cdk.aws_s3.Bucket(this, 's3WAFv2LogsBucket', {
+        const s3WAFv2LogsBucket = new s3.Bucket(this, 's3WAFv2LogsBucket', {
             bucketName: `aws-waf-logs-${cdk.Stack.of(this).account}-${cdk.Stack.of(this).region}`,
+            versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
             encryptionKey: props.s3Key,
             encryption: s3.BucketEncryption.KMS,
