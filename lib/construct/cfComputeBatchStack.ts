@@ -1,6 +1,6 @@
-import * as cdk from "aws-cdk-lib";
-import { aws_ec2 as ec2, aws_iam as iam } from "aws-cdk-lib";
-import { Construct } from "constructs";
+import * as cdk from 'aws-cdk-lib';
+import { aws_ec2 as ec2, aws_iam as iam } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
 
 export interface kmsProps {
     applicationKey: string;
@@ -21,6 +21,7 @@ export interface sgProps {
 // [08] - Compute Batch Stack
 // ------------------------------------------------------------
 export class CfComputeBatchStack extends Construct {
+
     constructor(scope: Construct, id: string, kmsProps: kmsProps, networkingProps: networkingProps, sgProps: sgProps) {
         super(scope, id);
 
