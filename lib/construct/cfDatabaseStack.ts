@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { aws_iam as iam, aws_rds as rds } from 'aws-cdk-lib';
+import type * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 
 export interface kmsProps {
@@ -11,7 +12,7 @@ export interface networkingProps {
 }
 
 export interface sgProps {
-    auroraSecurityGroup: string;
+    auroraSecurityGroup: ec2.SecurityGroup;
 }
 
 
