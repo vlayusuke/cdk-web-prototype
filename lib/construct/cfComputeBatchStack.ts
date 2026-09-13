@@ -13,14 +13,14 @@ export interface networkingProps {
 }
 
 export interface sgProps {
-    batchSecurityGroup: string;
+    batchSecurityGroup: ec2.SecurityGroup;
 }
 
 
 // ------------------------------------------------------------
 // [08] - Compute Batch Stack
 // ------------------------------------------------------------
-export class CfComputeBatchStack extends Construct {
+export class cfComputeBatchStack extends Construct {
 
     constructor(scope: Construct, id: string, kmsProps: kmsProps, networkingProps: networkingProps, sgProps: sgProps) {
         super(scope, id);
@@ -91,7 +91,7 @@ export class CfComputeBatchStack extends Construct {
                 availabilityZones: ['ap-northeast-1a'],
                 publicSubnetIds: [networkingProps.subnetIds[0]],
             }),
-            securityGroup: ec2.SecurityGroup.fromSecurityGroupId(this, 'batchSecurityGroup', sgProps.batchSecurityGroup),
+            securityGroup: sgProps.batchSecurityGroup,
             instanceProfile: ec2IamInstanceProfileForBatch,
             keyName: kmsProps.bastionKey,
             disableApiTermination: true,
@@ -134,7 +134,7 @@ export class CfComputeBatchStack extends Construct {
                 availabilityZones: ['ap-northeast-1c'],
                 publicSubnetIds: [networkingProps.subnetIds[1]],
             }),
-            securityGroup: ec2.SecurityGroup.fromSecurityGroupId(this, 'batchSecurityGroup', sgProps.batchSecurityGroup),
+            securityGroup: sgProps.batchSecurityGroup,
             instanceProfile: ec2IamInstanceProfileForBatch,
             keyName: kmsProps.bastionKey,
             disableApiTermination: true,
