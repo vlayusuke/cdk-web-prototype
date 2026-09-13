@@ -18,7 +18,7 @@ export interface sgProps {
 
 
 // ------------------------------------------------------------
-// 07 Compute WebAP Stack
+// [07] - Compute WebAP Stack
 // ------------------------------------------------------------
 export class CfComputeWebAPStack extends Construct {
     public readonly ec2IamInstanceProfile: iam.InstanceProfile;
