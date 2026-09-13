@@ -4,7 +4,7 @@ import { Construct } from 'constructs';
 
 
 // ------------------------------------------------------------
-// 03 Security group Frame Stack
+// [03] - Security group Frame Stack
 // ------------------------------------------------------------
 export class CfSgFrameStack extends Construct {
         public readonly vpc: ec2.IVpc;
