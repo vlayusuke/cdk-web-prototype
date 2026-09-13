@@ -34,6 +34,13 @@ export class CfComputeWebAPStack extends Construct {
             assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
         });
 
+        ec2IamRoleForBastion.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
+        ec2IamRoleForBastion.addToPolicy(new iam.PolicyStatement({
+            sid: 'SSMAccess',
+            actions: ['ssm:StartSession', 'ssm:SendCommand'],
+            resources: [ `arn:aws:ssm:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:document/AWS-StartSession` ],
+        }));
+
         cdk.Tags.of(ec2IamRoleForBastion).add('Name', 'ec2IamRoleForBastion');
         cdk.Tags.of(ec2IamRoleForBastion).add('ProvisionedBy', 'AWS');
 
