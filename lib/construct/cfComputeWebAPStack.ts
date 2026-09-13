@@ -21,24 +21,23 @@ export interface sgProps {
 // [07] - Compute WebAP Stack
 // ------------------------------------------------------------
 export class CfComputeWebAPStack extends Construct {
-    public readonly ec2IamInstanceProfile: iam.InstanceProfile;
 
     constructor(scope: Construct, id: string, kmsProps: kmsProps, networkingProps: networkingProps, sgProps: sgProps) {
         super(scope, id);
 
         // ------------------------------------------------------------
-        // AWS IAM for EC2 Instance Profile Configuration
+        // AWS IAM EC2 Instance Profile for Bastion Configuration
         // ------------------------------------------------------------
-        const ec2IamRole = new iam.Role(this, 'ec2IamRole', {
-            roleName: 'ec2IamRole',
-            description: 'EC2 IAM Role for instance profile',
+        const ec2IamRoleForBastion = new iam.Role(this, 'ec2IamRoleForBastion', {
+            roleName: 'ec2IamRoleForBastion',
+            description: 'IAM EC2 instance profile for Bastion',
             assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
         });
 
-        cdk.Tags.of(ec2IamRole).add('Name', 'ec2IamRole');
-        cdk.Tags.of(ec2IamRole).add('ProvisionedBy', 'AWS');
+        cdk.Tags.of(ec2IamRoleForBastion).add('Name', 'ec2IamRoleForBastion');
+        cdk.Tags.of(ec2IamRoleForBastion).add('ProvisionedBy', 'AWS');
 
-        const ec2IamPolicy = new iam.Policy(this, 'ec2IamPolicy', {
+        const ec2IamPolicyForBastion = new iam.Policy(this, 'ec2IamPolicyForBastion', {
             statements: [
                 new iam.PolicyStatement({
                     sid: 'S3Access',
@@ -48,18 +47,18 @@ export class CfComputeWebAPStack extends Construct {
             ],
         });
 
-        cdk.Tags.of(ec2IamPolicy).add('Name', 'ec2IamPolicy');
-        cdk.Tags.of(ec2IamPolicy).add('ProvisionedBy', 'AWS');
+        cdk.Tags.of(ec2IamPolicyForBastion).add('Name', 'ec2IamPolicyForBastion');
+        cdk.Tags.of(ec2IamPolicyForBastion).add('ProvisionedBy', 'AWS');
 
-        ec2IamPolicy.attachToRole(ec2IamRole);
+        ec2IamPolicyForBastion.attachToRole(ec2IamRoleForBastion);
 
-        this.ec2IamInstanceProfile = new iam.InstanceProfile(this, 'ec2IamInstanceProfile', {
-            instanceProfileName: 'ec2IamInstanceProfile',
-            role: ec2IamRole,
+        const ec2IamInstanceProfileForBastion = new iam.InstanceProfile(this, 'ec2IamInstanceProfileForBastion', {
+            instanceProfileName: 'ec2IamInstanceProfileForBastion',
+            role: ec2IamRoleForBastion,
         });
 
-        cdk.Tags.of(this.ec2IamInstanceProfile).add('Name', 'ec2IamInstanceProfile');
-        cdk.Tags.of(this.ec2IamInstanceProfile).add('ProvisionedBy', 'AWS');
+        cdk.Tags.of(ec2IamInstanceProfileForBastion).add('Name', 'ec2IamInstanceProfileForBastion');
+        cdk.Tags.of(ec2IamInstanceProfileForBastion).add('ProvisionedBy', 'AWS');
 
 
         // ------------------------------------------------------------
@@ -74,6 +73,7 @@ export class CfComputeWebAPStack extends Construct {
 
         ecsCluster.addDefaultCapacityProviderStrategy([
             { capacityProvider: 'FARGATE', base: 1, weight: 1 },
+            { capacityProvider: 'FARGATE_SPOT', base: 0, weight: 1 },
         ]);
 
         cdk.Tags.of(ecsCluster).add('Name', 'EcsCluster');
@@ -104,7 +104,7 @@ export class CfComputeWebAPStack extends Construct {
                 publicSubnetIds: [networkingProps.subnetIds[0]],
             }),
             securityGroup: ec2.SecurityGroup.fromSecurityGroupId(this, 'bastionSecurityGroup', sgProps.bastionSecurityGroup),
-            instanceProfile: this.ec2IamInstanceProfile,
+            instanceProfile: ec2IamInstanceProfileForBastion,
             keyName: kmsProps.bastionKey,
             disableApiTermination: true,
             detailedMonitoring: true,
