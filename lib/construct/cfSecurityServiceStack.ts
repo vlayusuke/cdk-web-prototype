@@ -10,7 +10,7 @@ export interface kmsProps {
 // ------------------------------------------------------------
 // [05] - Security Service Stack
 // ------------------------------------------------------------
-export class CfSecurityServiceStack extends Construct {
+export class cfSecurityServiceStack extends Construct {
 
     constructor(scope: Construct, id: string, props: kmsProps) {
         super(scope, id);
