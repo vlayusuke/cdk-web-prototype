@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import * as cdk from 'aws-cdk-lib';
-import { aws_ec2 as ec2, aws_ecr as ecr, type aws_kms as kms, aws_s3 as s3 } from 'aws-cdk-lib';
+import { aws_ec2 as ec2, aws_ecr as ecr, aws_s3 as s3 } from 'aws-cdk-lib';
+import type * as kms from 'aws-cdk-lib/aws-kms';
 import { Construct } from 'constructs';
 
 export interface networkingProps {
@@ -20,8 +21,8 @@ export interface sgProps {
 }
 
 export interface kmsProps {
-    ecrKey: kms.IKey;
-    s3Key: kms.IKey;
+    ecrKey: kms.Key;
+    s3Key: kms.Key;
 }
 
 export interface CfStorageStackProps extends networkingProps, kmsProps {}
