@@ -42,8 +42,13 @@ export class cfDatabaseStack extends Construct {
             statements: [
                 new iam.PolicyStatement({
                     sid: 'AuroraRDSAccess',
-                    actions: ['rds-db:connect', 'rds-data:ExecuteStatement'],
-                    resources: [`arn:aws:rds-db:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:dbuser:*/*`],
+                    actions: [
+                        'rds-db:connect',
+                        'rds-data:ExecuteStatement',
+                    ],
+                    resources: [
+                        `arn:aws:rds-db:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:dbuser:*/*`,
+                    ],
                 }),
             ],
         });
