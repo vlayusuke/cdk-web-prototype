@@ -1,10 +1,12 @@
 import * as cdk from 'aws-cdk-lib';
 import { aws_iam as iam, aws_rds as rds } from 'aws-cdk-lib';
 import type * as ec2 from 'aws-cdk-lib/aws-ec2';
+import type * as kms from 'aws-cdk-lib/aws-kms';
+
 import { Construct } from 'constructs';
 
 export interface kmsProps {
-    auroraKey: string;
+    auroraKey: kms.Key;
 }
 
 export interface networkingProps {
@@ -80,7 +82,7 @@ export class cfDatabaseStack extends Construct {
         // ------------------------------------------------------------
         const auroraSubnetGroup = new rds.CfnDBSubnetGroup(this, 'AuroraSubnetGroup', {
             dbSubnetGroupDescription: 'Subnet group for Amazon Aurora',
-            subnetIds: networkingProps.subnetIds,
+            subnetIds: [networkingProps.subnetIds[2]],
         });
 
         cdk.Tags.of(auroraSubnetGroup).add('Name', 'AuroraSubnetGroup');
@@ -123,7 +125,7 @@ export class cfDatabaseStack extends Construct {
             engine: 'aurora-postgresql',
             engineMode: 'provisioned',
             engineVersion: '15.10',
-            kmsKeyId: kmsProps.auroraKey,
+            kmsKeyId: kmsProps.auroraKey.keyId,
             manageMasterUserPassword: true,
             masterUsername: auroraIamRole.roleName,
             port: 5432,
@@ -154,7 +156,7 @@ export class cfDatabaseStack extends Construct {
             publiclyAccessible: false,
             enablePerformanceInsights: true,
             performanceInsightsRetentionPeriod: 7,
-            kmsKeyId: kmsProps.auroraKey,
+            kmsKeyId: kmsProps.auroraKey.keyId,
             caCertificateIdentifier: 'rds-ca-rsa2048-g1',
             promotionTier: 0,
         });
@@ -170,7 +172,7 @@ export class cfDatabaseStack extends Construct {
             publiclyAccessible: false,
             enablePerformanceInsights: true,
             performanceInsightsRetentionPeriod: 7,
-            kmsKeyId: kmsProps.auroraKey,
+            kmsKeyId: kmsProps.auroraKey.keyId,
             caCertificateIdentifier: 'rds-ca-rsa2048-g1',
             promotionTier: 1,
         });
