@@ -1,0 +1,45 @@
+[
+  {
+    "name": "cron",
+    "image": "php:8.5.7-fpm-bookworm",
+    "repositoryCredentials": {
+      "credentialsParameter": "${credentials_parameters_arn}"
+    },
+    "cpu": 256,
+    "memoryReservation": 512,
+    "readonlyRootFilesystem": true,
+    "entryPoint": [
+      "/bin/sh"
+    ],
+    "command": [
+      "-c",
+      "echo '* * * * * php /app/artisan schedule:run' > /var/spool/cron/crontabs/root && crond -l 2 -f"
+    ],
+    "essential": true,
+    "environment": [
+      {
+        "name": "PROJECT",
+        "value": "${project}"
+      },
+      {
+        "name": "ENV",
+        "value": "${env}"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-region": "${region}",
+        "awslogs-group": "${log_group_prefix}-cw-cron-cwlog",
+        "awslogs-stream-prefix": "cron"
+      }
+    },
+    "ulimits": [
+      {
+        "softLimit": 1024000,
+        "hardLimit": 1024000,
+        "name": "nofile"
+      }
+    ]
+  }
+]
