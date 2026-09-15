@@ -1,9 +1,10 @@
 import * as cdk from 'aws-cdk-lib';
-import { aws_iam as iam, type aws_kms as kms, aws_s3 as s3 } from 'aws-cdk-lib';
+import { aws_iam as iam, aws_s3 as s3 } from 'aws-cdk-lib';
+import type * as kms from 'aws-cdk-lib/aws-kms';
 import { Construct } from 'constructs';
 
 export interface kmsProps {
-    s3Key: kms.IKey;
+    s3Key: kms.Key;
 }
 
 
