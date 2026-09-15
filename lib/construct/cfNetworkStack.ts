@@ -9,7 +9,7 @@ export interface networkingProps {
 }
 
 export interface kmsProps {
-  s3Key: kms.IKey;
+  s3Key: kms.Key;
 }
 
 export interface defaultGatewayCidrProps {
