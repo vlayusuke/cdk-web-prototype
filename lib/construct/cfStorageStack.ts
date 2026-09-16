@@ -47,6 +47,7 @@ export class cfStorageStack extends Construct {
     public readonly s3BucketAlbLogs: s3.Bucket;
     public readonly s3BucketNginxLogs: s3.Bucket;
     public readonly s3BucketAppLogs: s3.Bucket;
+    public readonly s3BucketDeploymentCode: s3.Bucket;
 
     constructor(scope: Construct, id: string, props: CfStorageStackProps, sgProps: sgProps) {
         super(scope, id);
@@ -54,7 +55,7 @@ export class cfStorageStack extends Construct {
         // ------------------------------------------------------------
         // VPC Endpoint for Amazon ECR Docker Interface Configuration
         // ------------------------------------------------------------
-        this.vpcEndpointECRDocker = new ec2.CfnVPCEndpoint(this, 'VpcEndpointECRDocker', {
+        this.vpcEndpointECRDocker = new ec2.CfnVPCEndpoint(this, 'vpcEndpointECRDocker', {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.ecr.dkr`,
             vpcEndpointType: 'Interface',
@@ -74,7 +75,7 @@ export class cfStorageStack extends Construct {
         // ------------------------------------------------------------
         // VPC Endpoint for Amazon ECR API Interface Configuration
         // ------------------------------------------------------------
-        this.vpcEndpointECRAPI = new ec2.CfnVPCEndpoint(this, 'VpcEndpointECRAPI', {
+        this.vpcEndpointECRAPI = new ec2.CfnVPCEndpoint(this, 'vpcEndpointECRAPI', {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.ecr.api`,
             vpcEndpointType: 'Interface',
@@ -87,14 +88,14 @@ export class cfStorageStack extends Construct {
             }
         });
 
-        cdk.Tags.of(this.vpcEndpointECRAPI).add('Name', 'VpcEndpointECRAPI');
+        cdk.Tags.of(this.vpcEndpointECRAPI).add('Name', 'vpcEndpointECRAPI');
         cdk.Tags.of(this.vpcEndpointECRAPI).add('ProvisionedBy', 'AWS');
 
 
         // ------------------------------------------------------------
         // VPC Endpoint for AWS KMS Interface Configuration
         // ------------------------------------------------------------
-        this.vpcEndpointKMS = new ec2.CfnVPCEndpoint(this, 'VpcEndpointKMS', {
+        this.vpcEndpointKMS = new ec2.CfnVPCEndpoint(this, 'vpcEndpointKMS', {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.kms`,
             vpcEndpointType: 'Interface',
@@ -107,14 +108,14 @@ export class cfStorageStack extends Construct {
             }
         });
 
-        cdk.Tags.of(this.vpcEndpointKMS).add('Name', 'VpcEndpointKMS');
+        cdk.Tags.of(this.vpcEndpointKMS).add('Name', 'vpcEndpointKMS');
         cdk.Tags.of(this.vpcEndpointKMS).add('ProvisionedBy', 'AWS');
 
 
         // ------------------------------------------------------------
         // VPC Endpoint for AWS Systems Manager Interface Configuration
         // ------------------------------------------------------------
-        this.vpcEndpointSSM = new ec2.CfnVPCEndpoint(this, 'VpcEndpointSSM', {
+        this.vpcEndpointSSM = new ec2.CfnVPCEndpoint(this, 'vpcEndpointSSM', {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.ssm`,
             vpcEndpointType: 'Interface',
@@ -127,14 +128,14 @@ export class cfStorageStack extends Construct {
             }
         });
 
-        cdk.Tags.of(this.vpcEndpointSSM).add('Name', 'VpcEndpointSSM');
+        cdk.Tags.of(this.vpcEndpointSSM).add('Name', 'vpcEndpointSSM');
         cdk.Tags.of(this.vpcEndpointSSM).add('ProvisionedBy', 'AWS');
 
 
         // ------------------------------------------------------------
         // VPC Endpoint for AWS Systems Manager EC2 Interface Configuration
         // ------------------------------------------------------------
-        this.vpcEndpointSSMEC2 = new ec2.CfnVPCEndpoint(this, 'VpcEndpointSSMEC2', {
+        this.vpcEndpointSSMEC2 = new ec2.CfnVPCEndpoint(this, 'vpcEndpointSSMEC2', {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.ssm.ec2`,
             vpcEndpointType: 'Interface',
@@ -147,14 +148,14 @@ export class cfStorageStack extends Construct {
             }
         });
 
-        cdk.Tags.of(this.vpcEndpointSSMEC2).add('Name', 'VpcEndpointSSMEC2');
+        cdk.Tags.of(this.vpcEndpointSSMEC2).add('Name', 'vpcEndpointSSMEC2');
         cdk.Tags.of(this.vpcEndpointSSMEC2).add('ProvisionedBy', 'AWS');
 
 
         // ------------------------------------------------------------
         // VPC Endpoint for AWS Systems Manager EC2 Messages Interface Configuration
         // ------------------------------------------------------------
-        this.vpcEndpointSSMEC2Messages = new ec2.CfnVPCEndpoint(this, 'VpcEndpointSSMEC2Messages', {
+        this.vpcEndpointSSMEC2Messages = new ec2.CfnVPCEndpoint(this, 'vpcEndpointSSMEC2Messages', {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.ec2messages`,
             vpcEndpointType: 'Interface',
@@ -167,14 +168,14 @@ export class cfStorageStack extends Construct {
             }
         });
 
-        cdk.Tags.of(this.vpcEndpointSSMEC2Messages).add('Name', 'VpcEndpointEC2Messages');
+        cdk.Tags.of(this.vpcEndpointSSMEC2Messages).add('Name', 'vpcEndpointSSMEC2Messages');
         cdk.Tags.of(this.vpcEndpointSSMEC2Messages).add('ProvisionedBy', 'AWS');
 
 
         // ------------------------------------------------------------
         // VPC Endpoint for Amazon CloudWatch Logs Interface Configuration
         // ------------------------------------------------------------
-        this.vpcEndpointCloudWatchLogs = new ec2.CfnVPCEndpoint(this, 'VpcEndpointCloudWatchLogs', {
+        this.vpcEndpointCloudWatchLogs = new ec2.CfnVPCEndpoint(this, 'vpcEndpointCloudWatchLogs', {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.logs`,
             vpcEndpointType: 'Interface',
@@ -187,27 +188,27 @@ export class cfStorageStack extends Construct {
             }
         });
 
-        cdk.Tags.of(this.vpcEndpointCloudWatchLogs).add('Name', 'VpcEndpointCloudWatchLogs');
+        cdk.Tags.of(this.vpcEndpointCloudWatchLogs).add('Name', 'vpcEndpointCloudWatchLogs');
         cdk.Tags.of(this.vpcEndpointCloudWatchLogs).add('ProvisionedBy', 'AWS');
 
 
         // ------------------------------------------------------------
         // VPC Endpoint for Amazon S3 Gateway Configuration
         // ------------------------------------------------------------
-        this.vpcEndpointS3 = new ec2.CfnVPCEndpoint(this, 'VpcEndpointS3', {
+        this.vpcEndpointS3 = new ec2.CfnVPCEndpoint(this, 'vpcEndpointS3', {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.s3`,
             vpcEndpointType: 'Gateway',
         });
 
-        cdk.Tags.of(this.vpcEndpointS3).add('Name', 'VpcEndpointS3');
+        cdk.Tags.of(this.vpcEndpointS3).add('Name', 'vpcEndpointS3');
         cdk.Tags.of(this.vpcEndpointS3).add('ProvisionedBy', 'AWS');
 
 
         // ------------------------------------------------------------
         // Amazon ECR Repository for Web BaseImage Configuration
         // ------------------------------------------------------------
-        this.ecrRepositoryWebBaseImage = new ecr.Repository(this, 'EcrRepositoryWebBaseImage', {
+        this.ecrRepositoryWebBaseImage = new ecr.Repository(this, 'ecrRepositoryWebBaseImage', {
             repositoryName: 'web-baseimage',
             imageTagMutability: ecr.TagMutability.IMMUTABLE,
             imageScanOnPush: true,
@@ -215,7 +216,7 @@ export class cfStorageStack extends Construct {
             encryptionKey: props.ecrKey
         });
 
-        cdk.Tags.of(this.ecrRepositoryWebBaseImage).add('Name', 'EcrRepositoryWebBaseImage');
+        cdk.Tags.of(this.ecrRepositoryWebBaseImage).add('Name', 'ecrRepositoryWebBaseImage');
         cdk.Tags.of(this.ecrRepositoryWebBaseImage).add('ProvisionedBy', 'AWS');
 
         const lifecyclePolicyText = readFileSync('json/amazon-ecr-lifecycle-policy.json', 'utf8');
@@ -228,7 +229,7 @@ export class cfStorageStack extends Construct {
         // ------------------------------------------------------------
         // Amazon ECR Repository for Application BaseImage Configuration
         // ------------------------------------------------------------
-        this.ecrRepositoryAppBaseImage = new ecr.Repository(this, 'EcrRepositoryAppBaseImage', {
+        this.ecrRepositoryAppBaseImage = new ecr.Repository(this, 'ecrRepositoryAppBaseImage', {
             repositoryName: 'app-baseimage',
             imageTagMutability: ecr.TagMutability.IMMUTABLE,
             imageScanOnPush: true,
@@ -236,7 +237,7 @@ export class cfStorageStack extends Construct {
             encryptionKey: props.ecrKey
         });
 
-        cdk.Tags.of(this.ecrRepositoryAppBaseImage).add('Name', 'EcrRepositoryAppBaseImage');
+        cdk.Tags.of(this.ecrRepositoryAppBaseImage).add('Name', 'ecrRepositoryAppBaseImage');
         cdk.Tags.of(this.ecrRepositoryAppBaseImage).add('ProvisionedBy', 'AWS');
 
         const lifecyclePolicyTextApp = readFileSync('json/amazon-ecr-lifecycle-policy.json', 'utf8');
@@ -249,7 +250,7 @@ export class cfStorageStack extends Construct {
         // ------------------------------------------------------------
         // Amazon ECR Repository for Web Configuration
         // ------------------------------------------------------------
-        this.ecrRepositoryWeb = new ecr.Repository(this, 'EcrRepositoryWeb', {
+        this.ecrRepositoryWeb = new ecr.Repository(this, 'ecrRepositoryWeb', {
             repositoryName: 'web',
             imageTagMutability: ecr.TagMutability.IMMUTABLE,
             imageScanOnPush: true,
@@ -257,7 +258,7 @@ export class cfStorageStack extends Construct {
             encryptionKey: props.ecrKey
         });
 
-        cdk.Tags.of(this.ecrRepositoryWeb).add('Name', 'EcrRepositoryWeb');
+        cdk.Tags.of(this.ecrRepositoryWeb).add('Name', 'ecrRepositoryWeb');
         cdk.Tags.of(this.ecrRepositoryWeb).add('ProvisionedBy', 'AWS');
 
         const lifecyclePolicyTextWeb = readFileSync('json/amazon-ecr-lifecycle-policy.json', 'utf8');
@@ -270,7 +271,7 @@ export class cfStorageStack extends Construct {
         // ------------------------------------------------------------
         // Amazon ECR Repository for Application Configuration
         // ------------------------------------------------------------
-        this.ecrRepositoryApp = new ecr.Repository(this, 'EcrRepositoryApp', {
+        this.ecrRepositoryApp = new ecr.Repository(this, 'ecrRepositoryApp', {
             repositoryName: 'app',
             imageTagMutability: ecr.TagMutability.IMMUTABLE,
             imageScanOnPush: true,
@@ -278,7 +279,7 @@ export class cfStorageStack extends Construct {
             encryptionKey: props.ecrKey
         });
 
-        cdk.Tags.of(this.ecrRepositoryApp).add('Name', 'EcrRepositoryApp');
+        cdk.Tags.of(this.ecrRepositoryApp).add('Name', 'ecrRepositoryApp');
         cdk.Tags.of(this.ecrRepositoryApp).add('ProvisionedBy', 'AWS');
 
         const lifecyclePolicyTextAppConfig = readFileSync('json/amazon-ecr-lifecycle-policy.json', 'utf8');
@@ -291,7 +292,7 @@ export class cfStorageStack extends Construct {
         // ------------------------------------------------------------
         // Amazon S3 Bucket for ALB Logs Configuration
         // ------------------------------------------------------------
-        this.s3BucketAlbLogs = new s3.Bucket(this, 'S3BucketAlbLogs', {
+        this.s3BucketAlbLogs = new s3.Bucket(this, 's3BucketAlbLogs', {
             bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-alb-logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
@@ -302,14 +303,14 @@ export class cfStorageStack extends Construct {
             enforceSSL: true,
         });
 
-        cdk.Tags.of(this.s3BucketAlbLogs).add('Name', 'S3BucketAlbLogs');
+        cdk.Tags.of(this.s3BucketAlbLogs).add('Name', 's3BucketAlbLogs');
         cdk.Tags.of(this.s3BucketAlbLogs).add('ProvisionedBy', 'AWS');
 
 
         // ------------------------------------------------------------
         // Amazon S3 Bucket for NginX Logs Configuration
         // ------------------------------------------------------------
-        this.s3BucketNginxLogs = new s3.Bucket(this, 'S3BucketNginxLogs', {
+        this.s3BucketNginxLogs = new s3.Bucket(this, 's3BucketNginxLogs', {
             bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-nginx-logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
@@ -320,13 +321,14 @@ export class cfStorageStack extends Construct {
             enforceSSL: true,
         });
 
-        cdk.Tags.of(this.s3BucketNginxLogs).add('Name', 'S3BucketNginxLogs');
+        cdk.Tags.of(this.s3BucketNginxLogs).add('Name', 's3BucketNginxLogs');
         cdk.Tags.of(this.s3BucketNginxLogs).add('ProvisionedBy', 'AWS');
+
 
         // ------------------------------------------------------------
         // Amazon S3 Bucket for Application Logs Configuration
         // ------------------------------------------------------------
-        this.s3BucketAppLogs = new s3.Bucket(this, 'S3BucketAppLogs', {
+        this.s3BucketAppLogs = new s3.Bucket(this, 's3BucketAppLogs', {
             bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-app-logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
@@ -337,7 +339,25 @@ export class cfStorageStack extends Construct {
             enforceSSL: true,
         });
 
-        cdk.Tags.of(this.s3BucketAppLogs).add('Name', 'S3BucketAppLogs');
+        cdk.Tags.of(this.s3BucketAppLogs).add('Name', 's3BucketAppLogs');
         cdk.Tags.of(this.s3BucketAppLogs).add('ProvisionedBy', 'AWS');
+
+
+        // ------------------------------------------------------------
+        // Amazon S3 Bucket for Deployment Code Configuration
+        // ------------------------------------------------------------
+        this.s3BucketDeploymentCode = new s3.Bucket(this, 's3BucketDeploymentCode', {
+            bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-deployment-code`,
+            versioned: true,
+            accessControl: s3.BucketAccessControl.PRIVATE,
+            encryptionKey: props.s3Key,
+            encryption: s3.BucketEncryption.KMS,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+            removalPolicy: cdk.RemovalPolicy.RETAIN,
+            enforceSSL: true,
+        });
+
+        cdk.Tags.of(this.s3BucketDeploymentCode).add('Name', 's3BucketDeploymentCode');
+        cdk.Tags.of(this.s3BucketDeploymentCode).add('ProvisionedBy', 'AWS');
     }
 }
