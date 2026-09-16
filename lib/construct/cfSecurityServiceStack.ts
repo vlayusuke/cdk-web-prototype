@@ -3,6 +3,16 @@ import { aws_iam as iam, aws_s3 as s3 } from 'aws-cdk-lib';
 import type * as kms from 'aws-cdk-lib/aws-kms';
 import { Construct } from 'constructs';
 
+export interface commonProps {
+    projectName: string;
+    envName: string;
+}
+
+export interface pocProps {
+  vpcCidr: string;
+  defaultGatewayCidr: string;
+}
+
 export interface kmsProps {
     s3Key: kms.Key;
 }
@@ -13,7 +23,7 @@ export interface kmsProps {
 // ------------------------------------------------------------
 export class cfSecurityServiceStack extends Construct {
 
-    constructor(scope: Construct, id: string, props: kmsProps) {
+    constructor(scope: Construct, id: string, props: kmsProps, commonProps: commonProps) {
         super(scope, id);
 
         // ------------------------------------------------------------
@@ -21,7 +31,7 @@ export class cfSecurityServiceStack extends Construct {
         // ------------------------------------------------------------
         // WAF requires the S3 logging destination bucket name to start with 'aws-waf-logs-'.
         const s3WAFv2LogsBucket = new s3.Bucket(this, 's3WAFv2LogsBucket', {
-            bucketName: `aws-waf-logs-${cdk.Stack.of(this).account}-${cdk.Stack.of(this).region}`,
+            bucketName: `aws-waf-logs-${commonProps.projectName}-${commonProps.envName}-s3-wafv2logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
             encryptionKey: props.s3Key,
@@ -31,7 +41,7 @@ export class cfSecurityServiceStack extends Construct {
             enforceSSL: true,
         });
 
-        cdk.Tags.of(s3WAFv2LogsBucket).add('Name', 's3WAFv2LogsBucket');
+        cdk.Tags.of(s3WAFv2LogsBucket).add('Name', `aws-waf-logs-${commonProps.projectName}-${commonProps.envName}-s3-wafv2logs`);
         cdk.Tags.of(s3WAFv2LogsBucket).add('ProvisionedBy', 'AWS');
 
         // Allow WAF log delivery to use the customer-managed KMS key encrypting the bucket.
@@ -165,7 +175,7 @@ export class cfSecurityServiceStack extends Construct {
             ],
         });
 
-        cdk.Tags.of(this).add('Name', 'wafv2WebACL');
+        cdk.Tags.of(this).add('Name', `aws-waf-logs-${commonProps.projectName}-${commonProps.envName}-wafv2-webacl`);
         cdk.Tags.of(this).add('ProvisionedBy', 'AWS');
 
 
