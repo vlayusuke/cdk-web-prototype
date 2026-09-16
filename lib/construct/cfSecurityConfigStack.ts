@@ -2,6 +2,16 @@ import * as cdk from 'aws-cdk-lib';
 import { aws_iam as iam, aws_kms as kms, aws_secretsmanager as secretsmanager } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
+export interface commonProps {
+    projectName: string;
+    envName: string;
+}
+
+export interface pocProps {
+  vpcCidr: string;
+  defaultGatewayCidr: string;
+}
+
 
 // ------------------------------------------------------------
 // [01] - Security Configuration Stack
@@ -16,7 +26,7 @@ export class cfSecurityConfigStack extends Construct {
     public readonly eventBridgeKey: kms.IKey;
     public readonly postgresqlSecret: secretsmanager.ISecret;
 
-    constructor(scope: Construct, id: string) {
+    constructor(scope: Construct, id: string, props: commonProps) {
         super(scope, id);
 
         // ------------------------------------------------------------
@@ -29,7 +39,7 @@ export class cfSecurityConfigStack extends Construct {
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.applicationKey).add('Name', 'applicationKey');
+        cdk.Tags.of(this.applicationKey).add('Name', `${props.projectName}-${props.envName}-kms-application-key`);
         cdk.Tags.of(this.applicationKey).add('ProvisionedBy', 'AWS');
 
         // AWS KMS Key policy for application encryption
@@ -63,7 +73,7 @@ export class cfSecurityConfigStack extends Construct {
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.ecrKey).add('Name', 'ecrKey');
+        cdk.Tags.of(this.ecrKey).add('Name', `${props.projectName}-${props.envName}-kms-ecr-key`);
         cdk.Tags.of(this.ecrKey).add('ProvisionedBy', 'AWS');
 
         // AWS KMS Key policy for Amazon ECR encryption
@@ -97,7 +107,7 @@ export class cfSecurityConfigStack extends Construct {
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.auroraKey).add('Name', 'auroraKey');
+        cdk.Tags.of(this.auroraKey).add('Name', `${props.projectName}-${props.envName}-kms-aurora-key`);
         cdk.Tags.of(this.auroraKey).add('ProvisionedBy', 'AWS');
 
         // AWS KMS Key policy for Amazon Aurora encryption
@@ -131,7 +141,7 @@ export class cfSecurityConfigStack extends Construct {
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.s3Key).add('Name', 's3Key');
+        cdk.Tags.of(this.s3Key).add('Name', `${props.projectName}-${props.envName}-kms-s3-key`);
         cdk.Tags.of(this.s3Key).add('ProvisionedBy', 'AWS');
 
         // AWS KMS Key policy for Amazon S3 encryption
@@ -165,7 +175,7 @@ export class cfSecurityConfigStack extends Construct {
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.ebsKey).add('Name', 'ebsKey');
+        cdk.Tags.of(this.ebsKey).add('Name', `${props.projectName}-${props.envName}-kms-ebs-key`);
         cdk.Tags.of(this.ebsKey).add('ProvisionedBy', 'AWS');
 
         // AWS KMS Key policy for Amazon EBS encryption
@@ -199,7 +209,7 @@ export class cfSecurityConfigStack extends Construct {
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.lambdaKey).add('Name', 'lambdaKey');
+        cdk.Tags.of(this.lambdaKey).add('Name', `${props.projectName}-${props.envName}-kms-lambda-key`);
         cdk.Tags.of(this.lambdaKey).add('ProvisionedBy', 'AWS');
 
         // AWS KMS Key policy for AWS Lambda encryption
@@ -233,7 +243,7 @@ export class cfSecurityConfigStack extends Construct {
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.eventBridgeKey).add('Name', 'eventBridgeKey');
+        cdk.Tags.of(this.eventBridgeKey).add('Name', `${props.projectName}-${props.envName}-kms-event-bridge-key`);
         cdk.Tags.of(this.eventBridgeKey).add('ProvisionedBy', 'AWS');
 
         // AWS KMS Key policy for Amazon EventBridge encryption
@@ -279,7 +289,7 @@ export class cfSecurityConfigStack extends Construct {
             },
         });
 
-        cdk.Tags.of(this.postgresqlSecret).add('Name', 'postgresqlSecret');
+        cdk.Tags.of(this.postgresqlSecret).add('Name', `${props.projectName}-${props.envName}-smg-postgresql-secret`);
         cdk.Tags.of(this.postgresqlSecret).add('ProvisionedBy', 'AWS');
     }
 }
