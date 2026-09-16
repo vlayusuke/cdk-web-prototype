@@ -2,8 +2,17 @@ import * as cdk from 'aws-cdk-lib';
 import { aws_iam as iam, aws_rds as rds } from 'aws-cdk-lib';
 import type * as ec2 from 'aws-cdk-lib/aws-ec2';
 import type * as kms from 'aws-cdk-lib/aws-kms';
-
 import { Construct } from 'constructs';
+
+export interface commonProps {
+    projectName: string;
+    envName: string;
+}
+
+export interface pocProps {
+  vpcCidr: string;
+  defaultGatewayCidr: string;
+}
 
 export interface kmsProps {
     auroraKey: kms.Key;
@@ -23,7 +32,7 @@ export interface sgProps {
 // ------------------------------------------------------------
 export class cfDatabaseStack extends Construct {
 
-    constructor(scope: Construct, id: string, sgProps: sgProps, networkingProps: networkingProps, kmsProps: kmsProps) {
+    constructor(scope: Construct, id: string, props: commonProps, sgProps: sgProps, networkingProps: networkingProps, kmsProps: kmsProps) {
         super(scope, id);
 
         // ------------------------------------------------------------
@@ -35,7 +44,7 @@ export class cfDatabaseStack extends Construct {
             assumedBy: new iam.ServicePrincipal('rds.amazonaws.com'),
         });
 
-        cdk.Tags.of(auroraIamRole).add('Name', 'AuroraIamRole');
+        cdk.Tags.of(auroraIamRole).add('Name', `${props.projectName}-${props.envName}-iam-aurora-role`);
         cdk.Tags.of(auroraIamRole).add('ProvisionedBy', 'AWS');
 
         const auroraIamPolicy = new iam.Policy(this, 'AuroraIamPolicy', {
@@ -53,7 +62,7 @@ export class cfDatabaseStack extends Construct {
             ],
         });
 
-        cdk.Tags.of(auroraIamPolicy).add('Name', 'AuroraIamPolicy');
+        cdk.Tags.of(auroraIamPolicy).add('Name', `${props.projectName}-${props.envName}-iam-aurora-policy`);
         cdk.Tags.of(auroraIamPolicy).add('ProvisionedBy', 'AWS');
 
         const auroraIamPeformanceInsightRole = new iam.Role(this, 'AuroraIamPeformanceInsightRole', {
@@ -62,7 +71,7 @@ export class cfDatabaseStack extends Construct {
             assumedBy: new iam.ServicePrincipal('rds.amazonaws.com'),
         });
 
-        cdk.Tags.of(auroraIamPeformanceInsightRole).add('Name', 'AuroraIamPeformanceInsightRole');
+        cdk.Tags.of(auroraIamPeformanceInsightRole).add('Name', `${props.projectName}-${props.envName}-iam-aurora-performance-insight-role`);
         cdk.Tags.of(auroraIamPeformanceInsightRole).add('ProvisionedBy', 'AWS');
 
         const auroraIamPeformanceInsightPolicy = new iam.Policy(this, 'AuroraIamPeformanceInsightPolicy', {
@@ -75,7 +84,7 @@ export class cfDatabaseStack extends Construct {
             ],
         });
 
-        cdk.Tags.of(auroraIamPeformanceInsightPolicy).add('Name', 'AuroraIamPeformanceInsightPolicy');
+        cdk.Tags.of(auroraIamPeformanceInsightPolicy).add('Name', `${props.projectName}-${props.envName}-iam-aurora-performance-insight-policy`);
         cdk.Tags.of(auroraIamPeformanceInsightPolicy).add('ProvisionedBy', 'AWS');
 
         auroraIamRole.attachInlinePolicy(auroraIamPolicy);
@@ -90,7 +99,7 @@ export class cfDatabaseStack extends Construct {
             subnetIds: [networkingProps.subnetIds[2]],
         });
 
-        cdk.Tags.of(auroraSubnetGroup).add('Name', 'AuroraSubnetGroup');
+        cdk.Tags.of(auroraSubnetGroup).add('Name', `${props.projectName}-${props.envName}-aurora-subnet-group`);
         cdk.Tags.of(auroraSubnetGroup).add('ProvisionedBy', 'AWS');
 
 
@@ -105,7 +114,7 @@ export class cfDatabaseStack extends Construct {
             },
         });
 
-        cdk.Tags.of(auroraDbParameterGroup).add('Name', 'AuroraDbParameterGroup');
+        cdk.Tags.of(auroraDbParameterGroup).add('Name', `${props.projectName}-${props.envName}-aurora-db-parameter-group`);
         cdk.Tags.of(auroraDbParameterGroup).add('ProvisionedBy', 'AWS');
 
 
@@ -113,7 +122,7 @@ export class cfDatabaseStack extends Construct {
         // Amazon Aurora Cluster Configuration
         // ------------------------------------------------------------
         const auroraCluster = new rds.CfnDBCluster(this, 'AuroraCluster', {
-            dbClusterIdentifier: `AmazonAuroraCluster`,
+            dbClusterIdentifier: `${props.projectName}-${props.envName}-aurora-cluster`,
             associatedRoles: [
                 { roleArn: auroraIamRole.roleArn },
                 { roleArn: auroraIamPeformanceInsightRole.roleArn },
@@ -141,7 +150,7 @@ export class cfDatabaseStack extends Construct {
         });
 
         auroraCluster.applyRemovalPolicy(cdk.RemovalPolicy.SNAPSHOT);
-        cdk.Tags.of(auroraCluster).add('Name', `AuroraCluster`);
+        cdk.Tags.of(auroraCluster).add('Name', `${props.projectName}-${props.envName}-aurora-cluster`);
         cdk.Tags.of(auroraCluster).add('AutoStop', 'true');
         cdk.Tags.of(auroraCluster).add('ProvisionedBy', 'AWS');
 
@@ -152,7 +161,7 @@ export class cfDatabaseStack extends Construct {
 
         // Writer Instance Configuration
         const auroraWriterInstance = new rds.CfnDBInstance(this, 'AuroraWriterInstance', {
-            dbInstanceIdentifier: `AmazonAuroraWriterInstance`,
+            dbInstanceIdentifier: `${props.projectName}-${props.envName}-aurora-writer-instance`,
             dbInstanceClass: 'db.t4g.medium',
             engine: 'aurora-postgresql',
             dbClusterIdentifier: auroraCluster.ref,
@@ -168,7 +177,7 @@ export class cfDatabaseStack extends Construct {
 
         // Reader Instance Configuration
         const auroraReaderInstance = new rds.CfnDBInstance(this, 'AuroraReaderInstance', {
-            dbInstanceIdentifier: `AmazonAuroraReaderInstance`,
+            dbInstanceIdentifier: `${props.projectName}-${props.envName}-aurora-reader-instance`,
             dbInstanceClass: 'db.t4g.medium',
             engine: 'aurora-postgresql',
             dbClusterIdentifier: auroraCluster.ref,
@@ -190,7 +199,7 @@ export class cfDatabaseStack extends Construct {
             cdk.Tags.of(instance).add('ProvisionedBy', 'AWS');
         }
 
-        cdk.Tags.of(auroraReaderInstance).add('Name', `AuroraReaderInstance`);
-        cdk.Tags.of(auroraWriterInstance).add('Name', `AuroraWriterInstance`);
+        cdk.Tags.of(auroraReaderInstance).add('Name', `${props.projectName}-${props.envName}-aurora-reader-instance`);
+        cdk.Tags.of(auroraWriterInstance).add('Name', `${props.projectName}-${props.envName}-aurora-writer-instance`);
     }
 }
