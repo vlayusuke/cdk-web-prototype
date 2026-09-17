@@ -4,6 +4,16 @@ import { aws_ec2 as ec2, aws_ecr as ecr, aws_s3 as s3 } from 'aws-cdk-lib';
 import type * as kms from 'aws-cdk-lib/aws-kms';
 import { Construct } from 'constructs';
 
+export interface commonProps {
+    projectName: string;
+    envName: string;
+}
+
+export interface pocProps {
+  vpcCidr: string;
+  defaultGatewayCidr: string;
+}
+
 export interface networkingProps {
     vpcId: string;
     privateSubnetA: string;
@@ -49,7 +59,7 @@ export class cfStorageStack extends Construct {
     public readonly s3BucketAppLogs: s3.Bucket;
     public readonly s3BucketDeploymentCode: s3.Bucket;
 
-    constructor(scope: Construct, id: string, props: CfStorageStackProps, sgProps: sgProps) {
+    constructor(scope: Construct, id: string, props: CfStorageStackProps, sgProps: sgProps, commonProps: commonProps) {
         super(scope, id);
 
         // ------------------------------------------------------------
@@ -68,7 +78,7 @@ export class cfStorageStack extends Construct {
             }
         });
 
-        cdk.Tags.of(this.vpcEndpointECRDocker).add('Name', 'VpcEndpointECRDocker');
+        cdk.Tags.of(this.vpcEndpointECRDocker).add('Name', `${commonProps.projectName}-${commonProps.envName}-vpcendpoint-ecr-docker`);
         cdk.Tags.of(this.vpcEndpointECRDocker).add('ProvisionedBy', 'AWS');
 
 
@@ -88,7 +98,7 @@ export class cfStorageStack extends Construct {
             }
         });
 
-        cdk.Tags.of(this.vpcEndpointECRAPI).add('Name', 'vpcEndpointECRAPI');
+        cdk.Tags.of(this.vpcEndpointECRAPI).add('Name', `${commonProps.projectName}-${commonProps.envName}-vpcendpoint-ecr-api`);
         cdk.Tags.of(this.vpcEndpointECRAPI).add('ProvisionedBy', 'AWS');
 
 
@@ -108,7 +118,7 @@ export class cfStorageStack extends Construct {
             }
         });
 
-        cdk.Tags.of(this.vpcEndpointKMS).add('Name', 'vpcEndpointKMS');
+        cdk.Tags.of(this.vpcEndpointKMS).add('Name', `${commonProps.projectName}-${commonProps.envName}-vpcendpoint-kms`);
         cdk.Tags.of(this.vpcEndpointKMS).add('ProvisionedBy', 'AWS');
 
 
@@ -128,7 +138,7 @@ export class cfStorageStack extends Construct {
             }
         });
 
-        cdk.Tags.of(this.vpcEndpointSSM).add('Name', 'vpcEndpointSSM');
+        cdk.Tags.of(this.vpcEndpointSSM).add('Name', `${commonProps.projectName}-${commonProps.envName}-vpcendpoint-ssm`);
         cdk.Tags.of(this.vpcEndpointSSM).add('ProvisionedBy', 'AWS');
 
 
@@ -148,7 +158,7 @@ export class cfStorageStack extends Construct {
             }
         });
 
-        cdk.Tags.of(this.vpcEndpointSSMEC2).add('Name', 'vpcEndpointSSMEC2');
+        cdk.Tags.of(this.vpcEndpointSSMEC2).add('Name', `${commonProps.projectName}-${commonProps.envName}-vpcendpoint-ssm-ec2`);
         cdk.Tags.of(this.vpcEndpointSSMEC2).add('ProvisionedBy', 'AWS');
 
 
@@ -168,7 +178,7 @@ export class cfStorageStack extends Construct {
             }
         });
 
-        cdk.Tags.of(this.vpcEndpointSSMEC2Messages).add('Name', 'vpcEndpointSSMEC2Messages');
+        cdk.Tags.of(this.vpcEndpointSSMEC2Messages).add('Name', `${commonProps.projectName}-${commonProps.envName}-vpcendpoint-ssm-ec2-messages`);
         cdk.Tags.of(this.vpcEndpointSSMEC2Messages).add('ProvisionedBy', 'AWS');
 
 
@@ -188,7 +198,7 @@ export class cfStorageStack extends Construct {
             }
         });
 
-        cdk.Tags.of(this.vpcEndpointCloudWatchLogs).add('Name', 'vpcEndpointCloudWatchLogs');
+        cdk.Tags.of(this.vpcEndpointCloudWatchLogs).add('Name', `${commonProps.projectName}-${commonProps.envName}-vpcendpoint-cloudwatch-logs`);
         cdk.Tags.of(this.vpcEndpointCloudWatchLogs).add('ProvisionedBy', 'AWS');
 
 
@@ -201,7 +211,7 @@ export class cfStorageStack extends Construct {
             vpcEndpointType: 'Gateway',
         });
 
-        cdk.Tags.of(this.vpcEndpointS3).add('Name', 'vpcEndpointS3');
+        cdk.Tags.of(this.vpcEndpointS3).add('Name', `${commonProps.projectName}-${commonProps.envName}-vpcendpoint-s3`);
         cdk.Tags.of(this.vpcEndpointS3).add('ProvisionedBy', 'AWS');
 
 
@@ -216,7 +226,7 @@ export class cfStorageStack extends Construct {
             encryptionKey: props.ecrKey
         });
 
-        cdk.Tags.of(this.ecrRepositoryWebBaseImage).add('Name', 'ecrRepositoryWebBaseImage');
+        cdk.Tags.of(this.ecrRepositoryWebBaseImage).add('Name', `${commonProps.projectName}-${commonProps.envName}-ecr-repository-web-baseimage`);
         cdk.Tags.of(this.ecrRepositoryWebBaseImage).add('ProvisionedBy', 'AWS');
 
         const lifecyclePolicyText = readFileSync('json/amazon-ecr-lifecycle-policy.json', 'utf8');
@@ -237,7 +247,7 @@ export class cfStorageStack extends Construct {
             encryptionKey: props.ecrKey
         });
 
-        cdk.Tags.of(this.ecrRepositoryAppBaseImage).add('Name', 'ecrRepositoryAppBaseImage');
+        cdk.Tags.of(this.ecrRepositoryAppBaseImage).add('Name', `${commonProps.projectName}-${commonProps.envName}-ecr-repository-app-baseimage`);
         cdk.Tags.of(this.ecrRepositoryAppBaseImage).add('ProvisionedBy', 'AWS');
 
         const lifecyclePolicyTextApp = readFileSync('json/amazon-ecr-lifecycle-policy.json', 'utf8');
@@ -258,7 +268,7 @@ export class cfStorageStack extends Construct {
             encryptionKey: props.ecrKey
         });
 
-        cdk.Tags.of(this.ecrRepositoryWeb).add('Name', 'ecrRepositoryWeb');
+        cdk.Tags.of(this.ecrRepositoryWeb).add('Name', `${commonProps.projectName}-${commonProps.envName}-ecr-repository-web`);
         cdk.Tags.of(this.ecrRepositoryWeb).add('ProvisionedBy', 'AWS');
 
         const lifecyclePolicyTextWeb = readFileSync('json/amazon-ecr-lifecycle-policy.json', 'utf8');
@@ -279,7 +289,7 @@ export class cfStorageStack extends Construct {
             encryptionKey: props.ecrKey
         });
 
-        cdk.Tags.of(this.ecrRepositoryApp).add('Name', 'ecrRepositoryApp');
+        cdk.Tags.of(this.ecrRepositoryApp).add('Name', `${commonProps.projectName}-${commonProps.envName}-ecr-repository-app`);
         cdk.Tags.of(this.ecrRepositoryApp).add('ProvisionedBy', 'AWS');
 
         const lifecyclePolicyTextAppConfig = readFileSync('json/amazon-ecr-lifecycle-policy.json', 'utf8');
@@ -303,7 +313,7 @@ export class cfStorageStack extends Construct {
             enforceSSL: true,
         });
 
-        cdk.Tags.of(this.s3BucketAlbLogs).add('Name', 's3BucketAlbLogs');
+        cdk.Tags.of(this.s3BucketAlbLogs).add('Name', `${commonProps.projectName}-${commonProps.envName}-s3-bucket-alb-logs`);
         cdk.Tags.of(this.s3BucketAlbLogs).add('ProvisionedBy', 'AWS');
 
 
@@ -321,7 +331,7 @@ export class cfStorageStack extends Construct {
             enforceSSL: true,
         });
 
-        cdk.Tags.of(this.s3BucketNginxLogs).add('Name', 's3BucketNginxLogs');
+        cdk.Tags.of(this.s3BucketNginxLogs).add('Name', `${commonProps.projectName}-${commonProps.envName}-s3-bucket-nginx-logs`);
         cdk.Tags.of(this.s3BucketNginxLogs).add('ProvisionedBy', 'AWS');
 
 
@@ -339,7 +349,7 @@ export class cfStorageStack extends Construct {
             enforceSSL: true,
         });
 
-        cdk.Tags.of(this.s3BucketAppLogs).add('Name', 's3BucketAppLogs');
+        cdk.Tags.of(this.s3BucketAppLogs).add('Name', `${commonProps.projectName}-${commonProps.envName}-s3-bucket-app-logs`);
         cdk.Tags.of(this.s3BucketAppLogs).add('ProvisionedBy', 'AWS');
 
 
@@ -357,7 +367,7 @@ export class cfStorageStack extends Construct {
             enforceSSL: true,
         });
 
-        cdk.Tags.of(this.s3BucketDeploymentCode).add('Name', 's3BucketDeploymentCode');
+        cdk.Tags.of(this.s3BucketDeploymentCode).add('Name', `${commonProps.projectName}-${commonProps.envName}-s3-bucket-deployment-code`);
         cdk.Tags.of(this.s3BucketDeploymentCode).add('ProvisionedBy', 'AWS');
     }
 }
