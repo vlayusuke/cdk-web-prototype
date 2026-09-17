@@ -1,6 +1,16 @@
 import { aws_ec2 as ec2 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
+export interface commonProps {
+    projectName: string;
+    envName: string;
+}
+
+export interface pocProps {
+  vpcCidr: string;
+  defaultGatewayCidr: string;
+}
+
 export interface sgProps {
     albSecurityGroupFrame: ec2.SecurityGroup;
     batchSecurityGroupFrame: ec2.SecurityGroup;
