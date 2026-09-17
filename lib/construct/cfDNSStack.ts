@@ -8,6 +8,11 @@ export interface commonProps {
     nakedDomainName: string;
 }
 
+export interface pocProps {
+  vpcCidr: string;
+  defaultGatewayCidr: string;
+}
+
 
 // ------------------------------------------------------------
 // [10] - DNS Configuration Stack
