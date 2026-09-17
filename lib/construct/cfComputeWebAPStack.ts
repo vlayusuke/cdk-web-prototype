@@ -3,6 +3,16 @@ import { aws_ec2 as ec2, aws_ecs as ecs, aws_iam as iam } from "aws-cdk-lib";
 import type * as kms from 'aws-cdk-lib/aws-kms';
 import { Construct } from "constructs";
 
+export interface commonProps {
+    projectName: string;
+    envName: string;
+}
+
+export interface pocProps {
+  vpcCidr: string;
+  defaultGatewayCidr: string;
+}
+
 export interface kmsProps {
     applicationKey: kms.Key;
     bastionKey: kms.Key;
@@ -24,7 +34,7 @@ export interface sgProps {
 export class cfComputeWebAPStack extends Construct {
     public readonly ecsCluster: ecs.Cluster;
 
-    constructor(scope: Construct, id: string, kmsProps: kmsProps, networkingProps: networkingProps, sgProps: sgProps) {
+    constructor(scope: Construct, id: string, kmsProps: kmsProps, networkingProps: networkingProps, sgProps: sgProps, commonProps: commonProps) {
         super(scope, id);
 
         // ------------------------------------------------------------
@@ -43,7 +53,7 @@ export class cfComputeWebAPStack extends Construct {
             resources: [ `arn:aws:ssm:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:document/AWS-StartSession` ],
         }));
 
-        cdk.Tags.of(ec2IamRoleForBastion).add('Name', 'ec2IamRoleForBastion');
+        cdk.Tags.of(ec2IamRoleForBastion).add('Name', `${commonProps.projectName}-${commonProps.envName}-iam-role-for-bastion`);
         cdk.Tags.of(ec2IamRoleForBastion).add('ProvisionedBy', 'AWS');
 
         const ec2IamPolicyForBastion = new iam.Policy(this, 'ec2IamPolicyForBastion', {
@@ -56,7 +66,7 @@ export class cfComputeWebAPStack extends Construct {
             ],
         });
 
-        cdk.Tags.of(ec2IamPolicyForBastion).add('Name', 'ec2IamPolicyForBastion');
+        cdk.Tags.of(ec2IamPolicyForBastion).add('Name', `${commonProps.projectName}-${commonProps.envName}-iam-policy-for-bastion`);
         cdk.Tags.of(ec2IamPolicyForBastion).add('ProvisionedBy', 'AWS');
 
         ec2IamPolicyForBastion.attachToRole(ec2IamRoleForBastion);
@@ -66,7 +76,7 @@ export class cfComputeWebAPStack extends Construct {
             role: ec2IamRoleForBastion,
         });
 
-        cdk.Tags.of(ec2IamInstanceProfileForBastion).add('Name', 'ec2IamInstanceProfileForBastion');
+        cdk.Tags.of(ec2IamInstanceProfileForBastion).add('Name', `${commonProps.projectName}-${commonProps.envName}-iam-instance-profile-for-bastion`);
         cdk.Tags.of(ec2IamInstanceProfileForBastion).add('ProvisionedBy', 'AWS');
 
 
@@ -85,7 +95,7 @@ export class cfComputeWebAPStack extends Construct {
             { capacityProvider: 'FARGATE_SPOT', base: 0, weight: 1 },
         ]);
 
-        cdk.Tags.of(this.ecsCluster).add('Name', 'EcsCluster');
+        cdk.Tags.of(this.ecsCluster).add('Name', `${commonProps.projectName}-${commonProps.envName}-ecs-cluster`);
         cdk.Tags.of(this.ecsCluster).add('ProvisionedBy', 'AWS');
 
 
@@ -93,7 +103,7 @@ export class cfComputeWebAPStack extends Construct {
         // Amazon EC2 Bastion Key Pair Configuration
         // ------------------------------------------------------------
         const bastionKeyPair = new ec2.KeyPair(this, 'bastionKeyPair', {
-            keyPairName: 'BastionKeyPair',
+            keyPairName: `${commonProps.projectName}-${commonProps.envName}-bastion-key-pair`,
             publicKeyMaterial: kmsProps.bastionKey.keyId,
             type: ec2.KeyPairType.ED25519,
             format: ec2.KeyPairFormat.PEM,
@@ -104,7 +114,7 @@ export class cfComputeWebAPStack extends Construct {
         // Amazon EC2 Bastion Configuration
         // ------------------------------------------------------------
         const ec2InstanceBastion = new ec2.Instance(this, 'ec2InstanceBastion', {
-            instanceName: 'Ec2InstanceBastion',
+            instanceName: `${commonProps.projectName}-${commonProps.envName}-ec2-instance-bastion`,
             instanceType: new ec2.InstanceType('t4g.medium'),
             machineImage: ec2.MachineImage.latestAmazonLinux2023(),
             vpc: ec2.Vpc.fromVpcAttributes(this, 'vpc', {
@@ -139,7 +149,7 @@ export class cfComputeWebAPStack extends Construct {
             ],
         });
 
-        cdk.Tags.of(ec2InstanceBastion).add('Name', 'Ec2InstanceBastion');
+        cdk.Tags.of(ec2InstanceBastion).add('Name', `${commonProps.projectName}-${commonProps.envName}-ec2-instance-bastion`);
         cdk.Tags.of(ec2InstanceBastion).add('ProvisionedBy', 'AWS');
 
 
@@ -150,7 +160,7 @@ export class cfComputeWebAPStack extends Construct {
             domain: 'vpc',
         });
 
-        cdk.Tags.of(bastionEip).add('Name', 'BastionEip');
+        cdk.Tags.of(bastionEip).add('Name', `${commonProps.projectName}-${commonProps.envName}-bastion-eip`);
         cdk.Tags.of(bastionEip).add('ProvisionedBy', 'AWS');
 
         new ec2.CfnEIPAssociation(this, 'bastionEipAssociation', {
