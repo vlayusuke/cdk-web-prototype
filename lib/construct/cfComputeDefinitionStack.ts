@@ -3,6 +3,16 @@ import * as cdk from "aws-cdk-lib";
 import { aws_ec2 as ec2, aws_ecs as ecs, aws_iam as iam } from "aws-cdk-lib";
 import { Construct } from "constructs";
 
+export interface commonProps {
+    projectName: string;
+    envName: string;
+}
+
+export interface pocProps {
+  vpcCidr: string;
+  defaultGatewayCidr: string;
+}
+
 export interface kmsProps {
     applicationKey: kms.Key;
 }
@@ -26,7 +36,7 @@ export interface ecsProps {
 // ------------------------------------------------------------
 export class cfComputeDefinitionStack extends Construct {
 
-    constructor(scope: Construct, id: string, sgProps: sgProps, ecsProps: ecsProps, kmsProps: kmsProps) {
+    constructor(scope: Construct, id: string, sgProps: sgProps, ecsProps: ecsProps, kmsProps: kmsProps, commonProps: commonProps) {
         super(scope, id);
 
 
@@ -34,7 +44,7 @@ export class cfComputeDefinitionStack extends Construct {
         // AWS IAM for Amazon ECS Service Configuration
         // ------------------------------------------------------------
         const iamEcsTaskExecutionRole = new iam.Role(this, 'iamEcsTaskExecutionRole', {
-            roleName: 'iamEcsTaskExecutionRole',
+            roleName: `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-execution-role`,
             description: 'IAM role for ECS task execution',
             assumedBy: new iam.CompositePrincipal(
                 new iam.ServicePrincipal('ecs.amazonaws.com'),
@@ -42,11 +52,11 @@ export class cfComputeDefinitionStack extends Construct {
             )
         });
 
-        cdk.Tags.of(iamEcsTaskExecutionRole).add('Name', 'iamEcsTaskExecutionRole');
+        cdk.Tags.of(iamEcsTaskExecutionRole).add('Name', `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-execution-role`);
         cdk.Tags.of(iamEcsTaskExecutionRole).add('ProvisionedBy', 'AWS');
 
         const iamEcsTaskExectionPolicy = new iam.Policy(this, 'iamEcsTaskExectionPolicy', {
-            policyName: 'iamEcsTaskExectionPolicy',
+            policyName: `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-execution-policy`,
             roles: [iamEcsTaskExecutionRole],
             statements: [
                 new iam.PolicyStatement({
@@ -79,7 +89,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         iamEcsTaskExecutionRole.attachInlinePolicy(iamEcsTaskExectionPolicy);
 
-        cdk.Tags.of(iamEcsTaskExectionPolicy).add('Name', 'iamEcsTaskExectionPolicy');
+        cdk.Tags.of(iamEcsTaskExectionPolicy).add('Name', `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-execution-policy`);
         cdk.Tags.of(iamEcsTaskExectionPolicy).add('ProvisionedBy', 'AWS');
 
 
@@ -87,7 +97,7 @@ export class cfComputeDefinitionStack extends Construct {
         // AWS IAM for Amazon ECS Task Configuration
         // ------------------------------------------------------------
         const iamEcsTaskRole = new iam.Role(this, 'iamEcsTaskRole', {
-            roleName: 'iamEcsTaskRole',
+            roleName: `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-role`,
             description: 'IAM role for ECS task',
             assumedBy: new iam.CompositePrincipal(
                 new iam.ServicePrincipal('ecs.amazonaws.com'),
@@ -96,10 +106,11 @@ export class cfComputeDefinitionStack extends Construct {
             )
         });
 
-        cdk.Tags.of(iamEcsTaskRole).add('Name', 'iamEcsTaskRole');
+        cdk.Tags.of(iamEcsTaskRole).add('Name', `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-role`);
         cdk.Tags.of(iamEcsTaskRole).add('ProvisionedBy', 'AWS');
 
-        const iamEcsTaskPolicy = new iam.Policy(this, 'iamEcsTaskPolicy', {
+        const iamEcsTaskPolicy = new iam.Policy(this, `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-policy`, {
+            policyName: `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-policy`,
             statements: [
                 new iam.PolicyStatement({
                     sid: 'PassRole',
@@ -149,7 +160,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         iamEcsTaskRole.attachInlinePolicy(iamEcsTaskPolicy);
 
-        cdk.Tags.of(iamEcsTaskPolicy).add('Name', 'iamEcsTaskPolicy');
+        cdk.Tags.of(iamEcsTaskPolicy).add('Name', `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-policy`);
         cdk.Tags.of(iamEcsTaskPolicy).add('ProvisionedBy', 'AWS');
 
 
@@ -166,7 +177,7 @@ export class cfComputeDefinitionStack extends Construct {
             }
         });
 
-        cdk.Tags.of(ecsAppTaskDefinition).add('Name', 'ecsAppTaskDefinition');
+        cdk.Tags.of(ecsAppTaskDefinition).add('Name', `${commonProps.projectName}-${commonProps.envName}-ecs-app-task-definition`);
         cdk.Tags.of(ecsAppTaskDefinition).add('ProvisionedBy', 'AWS');
 
         ecsAppTaskDefinition.addContainer('app', {
@@ -189,7 +200,7 @@ export class cfComputeDefinitionStack extends Construct {
             }
         });
 
-        cdk.Tags.of(ecsCronTaskDefinition).add('Name', 'ecsCronTaskDefinition');
+        cdk.Tags.of(ecsCronTaskDefinition).add('Name', `${commonProps.projectName}-${commonProps.envName}-ecs-cron-task-definition`);
         cdk.Tags.of(ecsCronTaskDefinition).add('ProvisionedBy', 'AWS');
 
         ecsCronTaskDefinition.addContainer('cron', {
@@ -212,7 +223,7 @@ export class cfComputeDefinitionStack extends Construct {
             }
         });
 
-        cdk.Tags.of(ecsQueueTaskDefinition).add('Name', 'ecsQueueTaskDefinition');
+        cdk.Tags.of(ecsQueueTaskDefinition).add('Name', `${commonProps.projectName}-${commonProps.envName}-ecs-queue-task-definition`);
         cdk.Tags.of(ecsQueueTaskDefinition).add('ProvisionedBy', 'AWS');
 
         ecsQueueTaskDefinition.addContainer('queue', {
@@ -263,7 +274,7 @@ export class cfComputeDefinitionStack extends Construct {
             securityGroups: [sgProps.ecsSecurityGroup],
         });
 
-        cdk.Tags.of(ecsAppService).add('Name', 'ecsAppService');
+        cdk.Tags.of(ecsAppService).add('Name', `${commonProps.projectName}-${commonProps.envName}-ecs-app-service`);
         cdk.Tags.of(ecsAppService).add('ProvisionedBy', 'AWS');
 
 
@@ -300,7 +311,7 @@ export class cfComputeDefinitionStack extends Construct {
             securityGroups: [sgProps.ecsSecurityGroup],
         });
 
-        cdk.Tags.of(ecsCronServiceConfiguration).add('Name', 'ecsCronService');
+        cdk.Tags.of(ecsCronServiceConfiguration).add('Name', `${commonProps.projectName}-${commonProps.envName}-ecs-cron-service`);
         cdk.Tags.of(ecsCronServiceConfiguration).add('ProvisionedBy', 'AWS');
 
 
@@ -337,7 +348,7 @@ export class cfComputeDefinitionStack extends Construct {
             securityGroups: [sgProps.ecsSecurityGroup],
         });
 
-        cdk.Tags.of(ecsQueueServiceConfiguration).add('Name', 'ecsQueueService');
+        cdk.Tags.of(ecsQueueServiceConfiguration).add('Name', `${commonProps.projectName}-${commonProps.envName}-ecs-queue-service`);
         cdk.Tags.of(ecsQueueServiceConfiguration).add('ProvisionedBy', 'AWS');
     }
 }
