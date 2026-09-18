@@ -10,8 +10,8 @@ export interface commonProps {
 }
 
 export interface pocProps {
-  vpcCidr: string;
-  defaultGatewayCidr: string;
+    vpcCidr: string;
+    defaultGatewayCidr: string;
 }
 
 export interface kmsProps {
@@ -25,14 +25,14 @@ export interface kmsProps {
 export class cfNetworkStack extends Construct {
     public readonly Vpc: ec2.IVpc;
 
-    constructor(scope: Construct, id: string, props: commonProps, pocProps: pocProps, kmsProps: kmsProps) {
+    constructor(scope: Construct, id: string, props: commonProps & pocProps, kmsProps: kmsProps) {
         super(scope, id);
 
         // ------------------------------------------------------------
         // Amazon VPC Configuration
         // ------------------------------------------------------------
         const Vpc = new ec2.Vpc(this, 'Vpc', {
-            ipAddresses: IpAddresses.cidr(pocProps.vpcCidr),
+            ipAddresses: IpAddresses.cidr(props.vpcCidr),
             maxAzs: 2,
             natGateways: 2,
 
@@ -145,7 +145,7 @@ export class cfNetworkStack extends Construct {
 
         new ec2.CfnRoute(this, 'PublicRoute', {
             routeTableId: publicRouteTableAZa,
-            destinationCidrBlock: pocProps.defaultGatewayCidr,
+            destinationCidrBlock: props.defaultGatewayCidr,
             gatewayId: internetGateway.ref,
         });
 
@@ -158,7 +158,7 @@ export class cfNetworkStack extends Construct {
 
         new ec2.CfnRoute(this, 'PublicRouteAZc', {
             routeTableId: publicRouteTableAZc,
-            destinationCidrBlock: pocProps.defaultGatewayCidr,
+            destinationCidrBlock: props.defaultGatewayCidr,
             gatewayId: internetGateway.ref,
         });
 
@@ -175,7 +175,7 @@ export class cfNetworkStack extends Construct {
 
         new ec2.CfnRoute(this, 'PrivateRouteAZa', {
             routeTableId: privateRouteTableAZa,
-            destinationCidrBlock: pocProps.defaultGatewayCidr,
+            destinationCidrBlock: props.defaultGatewayCidr,
             natGatewayId: natGatewayAZa.ref,
         });
 
@@ -188,7 +188,7 @@ export class cfNetworkStack extends Construct {
 
         new ec2.CfnRoute(this, 'PrivateRouteAZc', {
             routeTableId: privateRouteTableAZc,
-            destinationCidrBlock: pocProps.defaultGatewayCidr,
+            destinationCidrBlock: props.defaultGatewayCidr,
             natGatewayId: natGatewayAZc.ref,
         });
 
