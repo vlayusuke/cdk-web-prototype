@@ -15,7 +15,7 @@ export interface pocProps {
 }
 
 export interface kmsProps {
-    auroraKey: kms.Key;
+    auroraKey: kms.IKey;
 }
 
 export interface networkingProps {
