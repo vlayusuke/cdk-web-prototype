@@ -31,8 +31,8 @@ export interface sgProps {
 }
 
 export interface kmsProps {
-    ecrKey: kms.Key;
-    s3Key: kms.Key;
+    ecrKey: kms.IKey;
+    s3Key: kms.IKey;
 }
 
 export interface CfStorageStackProps extends networkingProps, kmsProps {}
