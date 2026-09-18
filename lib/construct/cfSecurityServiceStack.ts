@@ -14,7 +14,7 @@ export interface pocProps {
 }
 
 export interface kmsProps {
-    s3Key: kms.Key;
+    s3Key: kms.IKey;
 }
 
 
