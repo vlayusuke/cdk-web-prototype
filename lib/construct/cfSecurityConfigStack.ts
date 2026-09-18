@@ -18,6 +18,7 @@ export interface pocProps {
 // ------------------------------------------------------------
 export class cfSecurityConfigStack extends Construct {
     public readonly applicationKey: kms.IKey;
+    public readonly bastionKey: kms.IKey;
     public readonly s3Key: kms.IKey;
     public readonly ecrKey: kms.IKey;
     public readonly auroraKey: kms.IKey;
@@ -42,6 +43,16 @@ export class cfSecurityConfigStack extends Construct {
         cdk.Tags.of(this.applicationKey).add('Name', `${props.projectName}-${props.envName}-kms-application-key`);
         cdk.Tags.of(this.applicationKey).add('ProvisionedBy', 'AWS');
 
+        this.bastionKey = new kms.Key(this, 'bastionKey', {
+            description: 'KMS key for bastion and administration access',
+            enableKeyRotation: true,
+            keyUsage: kms.KeyUsage.ENCRYPT_DECRYPT,
+            pendingWindow: cdk.Duration.days(7),
+        });
+
+        cdk.Tags.of(this.bastionKey).add('Name', `${props.projectName}-${props.envName}-kms-bastion-key`);
+        cdk.Tags.of(this.bastionKey).add('ProvisionedBy', 'AWS');
+
         // AWS KMS Key policy for application encryption
         const kmsApplicationKeyPolicy = new iam.PolicyStatement({
             sid: 'ApplicationKMS',
@@ -49,6 +60,14 @@ export class cfSecurityConfigStack extends Construct {
             actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:GenerateDataKey', 'kms:DescribeKey'],
             resources: [this.applicationKey.keyArn],
             principals: [new iam.ServicePrincipal('ecs.amazonaws.com'), new iam.ServicePrincipal('ecs-tasks.amazonaws.com'), new iam.ServicePrincipal('ec2.amazonaws.com'), new iam.ServicePrincipal('secretsmanager.amazonaws.com')],
+        });
+
+        const kmsBastionKeyPolicy = new iam.PolicyStatement({
+            sid: 'BastionKMS',
+            effect: iam.Effect.ALLOW,
+            actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:GenerateDataKey', 'kms:DescribeKey'],
+            resources: [this.bastionKey.keyArn],
+            principals: [new iam.ServicePrincipal('ec2.amazonaws.com')],
         });
 
         const kmsAccountAccessPolicy = new iam.PolicyStatement({
@@ -61,6 +80,8 @@ export class cfSecurityConfigStack extends Construct {
 
         this.applicationKey.addToResourcePolicy(kmsApplicationKeyPolicy);
         this.applicationKey.addToResourcePolicy(kmsAccountAccessPolicy);
+        this.bastionKey.addToResourcePolicy(kmsBastionKeyPolicy);
+        this.bastionKey.addToResourcePolicy(kmsAccountAccessPolicy);
 
 
         // ------------------------------------------------------------
