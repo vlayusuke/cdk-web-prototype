@@ -14,7 +14,7 @@ export interface pocProps {
 }
 
 export interface kmsProps {
-    applicationKey: kms.Key;
+    applicationKey: kms.IKey;
 }
 
 export interface networkingProps {
