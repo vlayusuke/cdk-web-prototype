@@ -17,7 +17,7 @@ export interface pocProps {
 
 
 // ------------------------------------------------------------
-// [10][11] - DNS Configuration Stack
+// [10][11] - DNS Stack
 // ------------------------------------------------------------
 export class cfDNSStack extends Construct {
     public readonly albExternal: elbv2.ApplicationLoadBalancer;
