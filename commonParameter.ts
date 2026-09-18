@@ -8,7 +8,7 @@ export interface commonParameter {
 }
 
 // Parameters for common
-export const pocParameter: commonParameter = {
+export const commonParameter: commonParameter = {
     projectName: 'cdk-web',
     envName: 'poc',
     dashboardName: 'cdk-web-prototype',
