@@ -1,6 +1,10 @@
-import * as cdk from 'aws-cdk-lib';
-import { aws_iam as iam, aws_kms as kms, aws_secretsmanager as secretsmanager } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
+import * as cdk from "aws-cdk-lib";
+import {
+    aws_iam as iam,
+    aws_kms as kms,
+    aws_secretsmanager as secretsmanager,
+} from "aws-cdk-lib";
+import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
@@ -8,10 +12,9 @@ export interface commonProps {
 }
 
 export interface pocProps {
-  vpcCidr: string;
-  defaultGatewayCidr: string;
+    vpcCidr: string;
+    defaultGatewayCidr: string;
 }
-
 
 // ------------------------------------------------------------
 // [01] - Security Configuration Stack
@@ -33,47 +36,68 @@ export class cfSecurityConfigStack extends Construct {
         // ------------------------------------------------------------
         // AWS KMS Key for application encryption Configuration
         // ------------------------------------------------------------
-        this.applicationKey = new kms.Key(this, 'applicationKey', {
-            description: 'KMS key for application encryption',
+        this.applicationKey = new kms.Key(this, "applicationKey", {
+            description: "KMS key for application encryption",
             enableKeyRotation: true,
             keyUsage: kms.KeyUsage.ENCRYPT_DECRYPT,
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.applicationKey).add('Name', `${props.projectName}-${props.envName}-kms-application-key`);
-        cdk.Tags.of(this.applicationKey).add('ProvisionedBy', 'AWS');
+        cdk.Tags.of(this.applicationKey).add(
+            "Name",
+            `${props.projectName}-${props.envName}-kms-application-key`,
+        );
+        cdk.Tags.of(this.applicationKey).add("ProvisionedBy", "AWS");
 
-        this.bastionKey = new kms.Key(this, 'bastionKey', {
-            description: 'KMS key for bastion and administration access',
+        this.bastionKey = new kms.Key(this, "bastionKey", {
+            description: "KMS key for bastion and administration access",
             enableKeyRotation: true,
             keyUsage: kms.KeyUsage.ENCRYPT_DECRYPT,
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.bastionKey).add('Name', `${props.projectName}-${props.envName}-kms-bastion-key`);
-        cdk.Tags.of(this.bastionKey).add('ProvisionedBy', 'AWS');
+        cdk.Tags.of(this.bastionKey).add(
+            "Name",
+            `${props.projectName}-${props.envName}-kms-bastion-key`,
+        );
+        cdk.Tags.of(this.bastionKey).add("ProvisionedBy", "AWS");
 
         // AWS KMS Key policy for application encryption
         const kmsApplicationKeyPolicy = new iam.PolicyStatement({
-            sid: 'ApplicationKMS',
+            sid: "ApplicationKMS",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:GenerateDataKey', 'kms:DescribeKey'],
+            actions: [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+            ],
             resources: [this.applicationKey.keyArn],
-            principals: [new iam.ServicePrincipal('ecs.amazonaws.com'), new iam.ServicePrincipal('ecs-tasks.amazonaws.com'), new iam.ServicePrincipal('ec2.amazonaws.com'), new iam.ServicePrincipal('secretsmanager.amazonaws.com')],
+            principals: [
+                new iam.ServicePrincipal("ecs.amazonaws.com"),
+                new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
+                new iam.ServicePrincipal("ec2.amazonaws.com"),
+                new iam.ServicePrincipal("secretsmanager.amazonaws.com"),
+            ],
         });
 
         const kmsBastionKeyPolicy = new iam.PolicyStatement({
-            sid: 'BastionKMS',
+            sid: "BastionKMS",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:GenerateDataKey', 'kms:DescribeKey'],
+            actions: [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+            ],
             resources: [this.bastionKey.keyArn],
-            principals: [new iam.ServicePrincipal('ec2.amazonaws.com')],
+            principals: [new iam.ServicePrincipal("ec2.amazonaws.com")],
         });
 
         const kmsAccountAccessPolicy = new iam.PolicyStatement({
-            sid: 'AllowAccountAccess',
+            sid: "AllowAccountAccess",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:*'],
+            actions: ["kms:*"],
             resources: [this.applicationKey.keyArn],
             principals: [new iam.AccountRootPrincipal()],
         });
@@ -83,33 +107,40 @@ export class cfSecurityConfigStack extends Construct {
         this.bastionKey.addToResourcePolicy(kmsBastionKeyPolicy);
         this.bastionKey.addToResourcePolicy(kmsAccountAccessPolicy);
 
-
         // ------------------------------------------------------------
         // AWS KMS Key for Amazon ECR encryption Configuration
         // ------------------------------------------------------------
-        this.ecrKey = new kms.Key(this, 'ECRKey', {
-            description: 'KMS key for ECR encryption',
+        this.ecrKey = new kms.Key(this, "ECRKey", {
+            description: "KMS key for ECR encryption",
             enableKeyRotation: true,
             keyUsage: kms.KeyUsage.ENCRYPT_DECRYPT,
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.ecrKey).add('Name', `${props.projectName}-${props.envName}-kms-ecr-key`);
-        cdk.Tags.of(this.ecrKey).add('ProvisionedBy', 'AWS');
+        cdk.Tags.of(this.ecrKey).add(
+            "Name",
+            `${props.projectName}-${props.envName}-kms-ecr-key`,
+        );
+        cdk.Tags.of(this.ecrKey).add("ProvisionedBy", "AWS");
 
         // AWS KMS Key policy for Amazon ECR encryption
         const kmsEcrKeyPolicy = new iam.PolicyStatement({
-            sid: 'ECRKMS',
+            sid: "ECRKMS",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:GenerateDataKey', 'kms:DescribeKey'],
+            actions: [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+            ],
             resources: [this.ecrKey.keyArn],
-            principals: [new iam.ServicePrincipal('ecr.amazonaws.com')],
+            principals: [new iam.ServicePrincipal("ecr.amazonaws.com")],
         });
 
         const kmsAccountEcrAccessPolicy = new iam.PolicyStatement({
-            sid: 'AllowAccountECRAccess',
+            sid: "AllowAccountECRAccess",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:*'],
+            actions: ["kms:*"],
             resources: [this.ecrKey.keyArn],
             principals: [new iam.AccountRootPrincipal()],
         });
@@ -117,33 +148,40 @@ export class cfSecurityConfigStack extends Construct {
         this.ecrKey.addToResourcePolicy(kmsEcrKeyPolicy);
         this.ecrKey.addToResourcePolicy(kmsAccountEcrAccessPolicy);
 
-
         // ------------------------------------------------------------
         // AWS KMS Key for Amazon Aurora encryption Configuration
         // ------------------------------------------------------------
-        this.auroraKey = new kms.Key(this, 'AuroraKey', {
-            description: 'KMS key for Aurora encryption',
+        this.auroraKey = new kms.Key(this, "AuroraKey", {
+            description: "KMS key for Aurora encryption",
             enableKeyRotation: true,
             keyUsage: kms.KeyUsage.ENCRYPT_DECRYPT,
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.auroraKey).add('Name', `${props.projectName}-${props.envName}-kms-aurora-key`);
-        cdk.Tags.of(this.auroraKey).add('ProvisionedBy', 'AWS');
+        cdk.Tags.of(this.auroraKey).add(
+            "Name",
+            `${props.projectName}-${props.envName}-kms-aurora-key`,
+        );
+        cdk.Tags.of(this.auroraKey).add("ProvisionedBy", "AWS");
 
         // AWS KMS Key policy for Amazon Aurora encryption
         const kmsAuroraKeyPolicy = new iam.PolicyStatement({
-            sid: 'AuroraKMS',
+            sid: "AuroraKMS",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:GenerateDataKey', 'kms:DescribeKey'],
+            actions: [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+            ],
             resources: [this.auroraKey.keyArn],
-            principals: [new iam.ServicePrincipal('rds.amazonaws.com')],
+            principals: [new iam.ServicePrincipal("rds.amazonaws.com")],
         });
 
         const kmsAccountAuroraAccessPolicy = new iam.PolicyStatement({
-            sid: 'AllowAccountAuroraAccess',
+            sid: "AllowAccountAuroraAccess",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:*'],
+            actions: ["kms:*"],
             resources: [this.auroraKey.keyArn],
             principals: [new iam.AccountRootPrincipal()],
         });
@@ -151,33 +189,40 @@ export class cfSecurityConfigStack extends Construct {
         this.auroraKey.addToResourcePolicy(kmsAuroraKeyPolicy);
         this.auroraKey.addToResourcePolicy(kmsAccountAuroraAccessPolicy);
 
-
         // ------------------------------------------------------------
         // AWS KMS Key for Amazon S3 encryption Configuration
         // ------------------------------------------------------------
-        this.s3Key = new kms.Key(this, 'S3Key', {
-            description: 'KMS key for S3 encryption',
+        this.s3Key = new kms.Key(this, "S3Key", {
+            description: "KMS key for S3 encryption",
             enableKeyRotation: true,
             keyUsage: kms.KeyUsage.ENCRYPT_DECRYPT,
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.s3Key).add('Name', `${props.projectName}-${props.envName}-kms-s3-key`);
-        cdk.Tags.of(this.s3Key).add('ProvisionedBy', 'AWS');
+        cdk.Tags.of(this.s3Key).add(
+            "Name",
+            `${props.projectName}-${props.envName}-kms-s3-key`,
+        );
+        cdk.Tags.of(this.s3Key).add("ProvisionedBy", "AWS");
 
         // AWS KMS Key policy for Amazon S3 encryption
         const kmsS3KeyPolicy = new iam.PolicyStatement({
-            sid: 'S3KMS',
+            sid: "S3KMS",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:GenerateDataKey', 'kms:DescribeKey'],
+            actions: [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+            ],
             resources: [this.s3Key.keyArn],
-            principals: [new iam.ServicePrincipal('s3.amazonaws.com')],
+            principals: [new iam.ServicePrincipal("s3.amazonaws.com")],
         });
 
         const kmsAccountS3AccessPolicy = new iam.PolicyStatement({
-            sid: 'AllowAccountS3Access',
+            sid: "AllowAccountS3Access",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:*'],
+            actions: ["kms:*"],
             resources: [this.s3Key.keyArn],
             principals: [new iam.AccountRootPrincipal()],
         });
@@ -185,33 +230,40 @@ export class cfSecurityConfigStack extends Construct {
         this.s3Key.addToResourcePolicy(kmsS3KeyPolicy);
         this.s3Key.addToResourcePolicy(kmsAccountS3AccessPolicy);
 
-
         // ------------------------------------------------------------
         // AWS KMS Key for Amazon EBS encryption Configuration
         // ------------------------------------------------------------
-        this.ebsKey = new kms.Key(this, 'EBSKey', {
-            description: 'KMS key for EBS encryption',
+        this.ebsKey = new kms.Key(this, "EBSKey", {
+            description: "KMS key for EBS encryption",
             enableKeyRotation: true,
             keyUsage: kms.KeyUsage.ENCRYPT_DECRYPT,
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.ebsKey).add('Name', `${props.projectName}-${props.envName}-kms-ebs-key`);
-        cdk.Tags.of(this.ebsKey).add('ProvisionedBy', 'AWS');
+        cdk.Tags.of(this.ebsKey).add(
+            "Name",
+            `${props.projectName}-${props.envName}-kms-ebs-key`,
+        );
+        cdk.Tags.of(this.ebsKey).add("ProvisionedBy", "AWS");
 
         // AWS KMS Key policy for Amazon EBS encryption
         const kmsEbsKeyPolicy = new iam.PolicyStatement({
-            sid: 'EBSKMS',
+            sid: "EBSKMS",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:GenerateDataKey', 'kms:DescribeKey'],
+            actions: [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+            ],
             resources: [this.ebsKey.keyArn],
-            principals: [new iam.ServicePrincipal('ec2.amazonaws.com')],
+            principals: [new iam.ServicePrincipal("ec2.amazonaws.com")],
         });
 
         const kmsAccountEbsAccessPolicy = new iam.PolicyStatement({
-            sid: 'AllowAccountEbsAccess',
+            sid: "AllowAccountEbsAccess",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:*'],
+            actions: ["kms:*"],
             resources: [this.ebsKey.keyArn],
             principals: [new iam.AccountRootPrincipal()],
         });
@@ -219,33 +271,40 @@ export class cfSecurityConfigStack extends Construct {
         this.ebsKey.addToResourcePolicy(kmsEbsKeyPolicy);
         this.ebsKey.addToResourcePolicy(kmsAccountEbsAccessPolicy);
 
-
         // ------------------------------------------------------------
         // AWS KMS Key for AWS Lambda encryption Configuration
         // ------------------------------------------------------------
-        this.lambdaKey = new kms.Key(this, 'LambdaKey', {
-            description: 'KMS key for Lambda encryption',
+        this.lambdaKey = new kms.Key(this, "LambdaKey", {
+            description: "KMS key for Lambda encryption",
             enableKeyRotation: true,
             keyUsage: kms.KeyUsage.ENCRYPT_DECRYPT,
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.lambdaKey).add('Name', `${props.projectName}-${props.envName}-kms-lambda-key`);
-        cdk.Tags.of(this.lambdaKey).add('ProvisionedBy', 'AWS');
+        cdk.Tags.of(this.lambdaKey).add(
+            "Name",
+            `${props.projectName}-${props.envName}-kms-lambda-key`,
+        );
+        cdk.Tags.of(this.lambdaKey).add("ProvisionedBy", "AWS");
 
         // AWS KMS Key policy for AWS Lambda encryption
         const kmsLambdaKeyPolicy = new iam.PolicyStatement({
-            sid: 'LambdaKMS',
+            sid: "LambdaKMS",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:GenerateDataKey', 'kms:DescribeKey'],
+            actions: [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+            ],
             resources: [this.lambdaKey.keyArn],
-            principals: [new iam.ServicePrincipal('lambda.amazonaws.com')],
+            principals: [new iam.ServicePrincipal("lambda.amazonaws.com")],
         });
 
         const kmsAccountLambdaAccessPolicy = new iam.PolicyStatement({
-            sid: 'AllowAccountLambdaAccess',
+            sid: "AllowAccountLambdaAccess",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:*'],
+            actions: ["kms:*"],
             resources: [this.lambdaKey.keyArn],
             principals: [new iam.AccountRootPrincipal()],
         });
@@ -253,64 +312,87 @@ export class cfSecurityConfigStack extends Construct {
         this.lambdaKey.addToResourcePolicy(kmsLambdaKeyPolicy);
         this.lambdaKey.addToResourcePolicy(kmsAccountLambdaAccessPolicy);
 
-
         // ------------------------------------------------------------
         // AWS KMS Key for Amazon EventBridge Configuration
         // ------------------------------------------------------------
-        this.eventBridgeKey = new kms.Key(this, 'EventBridgeKey', {
-            description: 'KMS key for Amazon EventBridge encryption',
+        this.eventBridgeKey = new kms.Key(this, "EventBridgeKey", {
+            description: "KMS key for Amazon EventBridge encryption",
             enableKeyRotation: true,
             keyUsage: kms.KeyUsage.ENCRYPT_DECRYPT,
             pendingWindow: cdk.Duration.days(7),
         });
 
-        cdk.Tags.of(this.eventBridgeKey).add('Name', `${props.projectName}-${props.envName}-kms-event-bridge-key`);
-        cdk.Tags.of(this.eventBridgeKey).add('ProvisionedBy', 'AWS');
+        cdk.Tags.of(this.eventBridgeKey).add(
+            "Name",
+            `${props.projectName}-${props.envName}-kms-event-bridge-key`,
+        );
+        cdk.Tags.of(this.eventBridgeKey).add("ProvisionedBy", "AWS");
 
         // AWS KMS Key policy for Amazon EventBridge encryption
         const kmsEventBridgeKeyPolicy = new iam.PolicyStatement({
-            sid: 'EventBridgeKMS',
+            sid: "EventBridgeKMS",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:Encrypt', 'kms:Decrypt', 'kms:GenerateDataKey', 'kms:DescribeKey'],
+            actions: [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+            ],
             resources: [this.eventBridgeKey.keyArn],
-            principals: [new iam.ServicePrincipal('events.amazonaws.com')],
+            principals: [new iam.ServicePrincipal("events.amazonaws.com")],
         });
 
         const kmsAccountEventBridgeAccessPolicy = new iam.PolicyStatement({
-            sid: 'AllowAccountEventBridgeAccess',
+            sid: "AllowAccountEventBridgeAccess",
             effect: iam.Effect.ALLOW,
-            actions: ['kms:*'],
+            actions: ["kms:*"],
             resources: [this.eventBridgeKey.keyArn],
             principals: [new iam.AccountRootPrincipal()],
         });
 
         this.eventBridgeKey.addToResourcePolicy(kmsEventBridgeKeyPolicy);
-        this.eventBridgeKey.addToResourcePolicy(kmsAccountEventBridgeAccessPolicy);
-
+        this.eventBridgeKey.addToResourcePolicy(
+            kmsAccountEventBridgeAccessPolicy,
+        );
 
         // ------------------------------------------------------------
         // AWS Secrets Manager for PostgreSQL Credentials
         // ------------------------------------------------------------
-        const postgresqlUsername = new cdk.CfnParameter(this, 'PostgreSQLUsername', {
-            type: 'String',
-            noEcho: true,
-        });
-
-        const postgresqlPassword = new cdk.CfnParameter(this, 'PostgreSQLPassword', {
-            type: 'String',
-            noEcho: true,
-        });
-
-        this.postgresqlSecret = new secretsmanager.Secret(this, 'PostgreSQLSecret', {
-            description: 'Secret for PostgreSQL credentials',
-            encryptionKey: this.applicationKey,
-            secretObjectValue: {
-                username: cdk.SecretValue.cfnParameter(postgresqlUsername),
-                password: cdk.SecretValue.cfnParameter(postgresqlPassword),
+        const postgresqlUsername = new cdk.CfnParameter(
+            this,
+            "PostgreSQLUsername",
+            {
+                type: "String",
+                noEcho: true,
             },
-        });
+        );
 
-        cdk.Tags.of(this.postgresqlSecret).add('Name', `${props.projectName}-${props.envName}-smg-postgresql-secret`);
-        cdk.Tags.of(this.postgresqlSecret).add('ProvisionedBy', 'AWS');
+        const postgresqlPassword = new cdk.CfnParameter(
+            this,
+            "PostgreSQLPassword",
+            {
+                type: "String",
+                noEcho: true,
+            },
+        );
+
+        this.postgresqlSecret = new secretsmanager.Secret(
+            this,
+            "PostgreSQLSecret",
+            {
+                description: "Secret for PostgreSQL credentials",
+                encryptionKey: this.applicationKey,
+                secretObjectValue: {
+                    username: cdk.SecretValue.cfnParameter(postgresqlUsername),
+                    password: cdk.SecretValue.cfnParameter(postgresqlPassword),
+                },
+            },
+        );
+
+        cdk.Tags.of(this.postgresqlSecret).add(
+            "Name",
+            `${props.projectName}-${props.envName}-smg-postgresql-secret`,
+        );
+        cdk.Tags.of(this.postgresqlSecret).add("ProvisionedBy", "AWS");
     }
 }
