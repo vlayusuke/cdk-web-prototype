@@ -247,11 +247,5 @@ export class CdkWebPrototypeStack extends cdk.Stack {
       },
       commonParameter,
     );
-
-
-    // example resource
-    // const queue = new sqs.Queue(this, 'CdkWebPrototypeQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
   }
 }
