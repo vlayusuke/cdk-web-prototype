@@ -16,6 +16,7 @@ export interface sgProps {
     batchSecurityGroupFrame: ec2.SecurityGroup;
     bastionSecurityGroupFrame: ec2.SecurityGroup;
     ecsSecurityGroupFrame: ec2.SecurityGroup;
+    elasticacheSecurityGroupFrame: ec2.SecurityGroup;
     auroraSecurityGroupFrame: ec2.SecurityGroup;
     lambdaSecurityGroupFrame: ec2.SecurityGroup;
     vpcEndPointS3SecurityGroupFrame: ec2.SecurityGroup;
@@ -33,6 +34,7 @@ export class cfSgRuleStack extends Construct {
     public readonly batchSecurityGroup: ec2.SecurityGroup;
     public readonly bastionSecurityGroup: ec2.SecurityGroup;
     public readonly ecsSecurityGroup: ec2.SecurityGroup;
+    public readonly elasticacheSecurityGroup: ec2.SecurityGroup;
     public readonly auroraSecurityGroup: ec2.SecurityGroup;
     public readonly lambdaSecurityGroup: ec2.SecurityGroup;
     public readonly vpcEndPointS3SecurityGroup: ec2.SecurityGroup;
@@ -49,6 +51,7 @@ export class cfSgRuleStack extends Construct {
         this.batchSecurityGroup = props.batchSecurityGroupFrame;
         this.bastionSecurityGroup = props.bastionSecurityGroupFrame;
         this.ecsSecurityGroup = props.ecsSecurityGroupFrame;
+        this.elasticacheSecurityGroup = props.elasticacheSecurityGroupFrame;
         this.auroraSecurityGroup = props.auroraSecurityGroupFrame;
         this.lambdaSecurityGroup = props.lambdaSecurityGroupFrame;
         this.vpcEndPointS3SecurityGroup = props.vpcEndPointS3SecurityGroupFrame;
@@ -130,6 +133,23 @@ export class cfSgRuleStack extends Construct {
             this.bastionSecurityGroup,
             ec2.Port.tcp(5432),
             "Allow PostgreSQL from Bastion",
+        );
+
+        // Security group rules for ElastiCache
+        this.elasticacheSecurityGroup.addIngressRule(
+            this.ecsSecurityGroup,
+            ec2.Port.tcp(6379),
+            "Allow Redis from ECS",
+        );
+        this.elasticacheSecurityGroup.addIngressRule(
+            this.batchSecurityGroup,
+            ec2.Port.tcp(6379),
+            "Allow Redis from Batch",
+        );
+        this.elasticacheSecurityGroup.addIngressRule(
+            this.bastionSecurityGroup,
+            ec2.Port.tcp(6379),
+            "Allow Redis from Bastion",
         );
 
         // Security group rules for Bastion, Batch, and Lambda
