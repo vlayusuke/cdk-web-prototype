@@ -1,19 +1,18 @@
-import * as cdk from 'aws-cdk-lib/core';
-import type { Construct } from 'constructs';
-import { commonParameter } from '../commonParameter';
-import { pocParameter } from '../pocParameter';
-import { cfComputeBatchStack } from './construct/cfComputeBatchStack';
-import { cfComputeDefinitionStack } from './construct/cfComputeDefinitionStack';
-import { cfComputeWebAPStack } from './construct/cfComputeWebAPStack';
-import { cfDatabaseStack } from './construct/cfDatabaseStack';
-import { cfDNSStack } from './construct/cfDNSStack';
-import { cfNetworkStack } from './construct/cfNetworkStack';
-import { cfSecurityConfigStack } from './construct/cfSecurityConfigStack';
-import { cfSecurityServiceStack } from './construct/cfSecurityServiceStack';
-import { cfSgFrameStack } from './construct/cfSgFrameStack';
-import { cfSgRuleStack } from './construct/cfSgRuleStack';
-import { cfStorageStack } from './construct/cfStorageStack';
-
+import * as cdk from "aws-cdk-lib/core";
+import type { Construct } from "constructs";
+import { commonParameter } from "../commonParameter";
+import { pocParameter } from "../pocParameter";
+import { cfComputeBatchStack } from "./construct/cfComputeBatchStack";
+import { cfComputeDefinitionStack } from "./construct/cfComputeDefinitionStack";
+import { cfComputeWebAPStack } from "./construct/cfComputeWebAPStack";
+import { cfDatabaseStack } from "./construct/cfDatabaseStack";
+import { cfDNSStack } from "./construct/cfDNSStack";
+import { cfNetworkStack } from "./construct/cfNetworkStack";
+import { cfSecurityConfigStack } from "./construct/cfSecurityConfigStack";
+import { cfSecurityServiceStack } from "./construct/cfSecurityServiceStack";
+import { cfSgFrameStack } from "./construct/cfSgFrameStack";
+import { cfSgRuleStack } from "./construct/cfSgRuleStack";
+import { cfStorageStack } from "./construct/cfStorageStack";
 
 export interface commonProps {
     projectName: string;
@@ -24,7 +23,6 @@ export interface pocProps {
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
-
 
 /**
  * The main stack for the web prototype.
@@ -45,207 +43,204 @@ export interface pocProps {
  *  9. [09] cfSgRuleStack as sgRuleStack
  * 10. [10][11] cfDNSStack as dnsStack
  * 11. [12] cfComputeDefinitionStack as computeDefinitionStack
-*/
+ * 12. [13] cfMonitoringAndLoggingStack as monitoringAndLoggingStack
+ */
 export class CdkWebPrototypeStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+        super(scope, id, props);
 
-    // ------------------------------------------------------------
-    // [01] - cfSecurityConfigStack
-    // ------------------------------------------------------------
-    const securityConfigStack: cfSecurityConfigStack = new cfSecurityConfigStack(
-      this,
-      'cfSecurityConfigStack',
-      commonParameter,
-    );
+        // ------------------------------------------------------------
+        // [01] - cfSecurityConfigStack
+        // ------------------------------------------------------------
+        const securityConfigStack: cfSecurityConfigStack =
+            new cfSecurityConfigStack(
+                this,
+                "cfSecurityConfigStack",
+                commonParameter,
+            );
 
+        // ------------------------------------------------------------
+        // [02] - cfNetowrkStack
+        // ------------------------------------------------------------
+        const networkStack: cfNetworkStack = new cfNetworkStack(
+            this,
+            "cfNetworkStack",
+            {
+                ...commonParameter,
+                vpcCidr: pocParameter.vpcCidr,
+                defaultGatewayCidr: pocParameter.defaultGatewayCidr,
+            },
+            {
+                s3Key: securityConfigStack.s3Key,
+            },
+        );
 
-    // ------------------------------------------------------------
-    // [02] - cfNetowrkStack
-    // ------------------------------------------------------------
-    const networkStack: cfNetworkStack = new cfNetworkStack(
-      this,
-      'cfNetworkStack',
-      {
-        ...commonParameter,
-        vpcCidr: pocParameter.vpcCidr,
-        defaultGatewayCidr: pocParameter.defaultGatewayCidr,
-      },
-      {
-        s3Key: securityConfigStack.s3Key,
-      },
-    );
+        // ------------------------------------------------------------
+        // [03] - cfSgFrameStack
+        // ------------------------------------------------------------
+        const sgFrameStack = new cfSgFrameStack(
+            this,
+            "cfSgFrameStack",
+            commonParameter,
+        );
 
+        // ------------------------------------------------------------
+        // [04] - cfDatabaseStack
+        // ------------------------------------------------------------
+        const databaseStack = new cfDatabaseStack(
+            this,
+            "cfDatabaseStack",
+            commonParameter,
+            {
+                auroraSecurityGroup: sgFrameStack.auroraSecurityGroupFrame,
+            },
+            {
+                subnetIds: networkStack.Vpc.privateSubnets.map(
+                    (subnet) => subnet.subnetId,
+                ),
+            },
+            {
+                auroraKey: securityConfigStack.auroraKey,
+            },
+        );
 
-    // ------------------------------------------------------------
-    // [03] - cfSgFrameStack
-    // ------------------------------------------------------------
-    const sgFrameStack = new cfSgFrameStack(
-      this,
-      'cfSgFrameStack',
-      commonParameter,
-    );
+        // ------------------------------------------------------------
+        // [05] - cfSecurityServiceStack
+        // ------------------------------------------------------------
+        const securityServiceStack = new cfSecurityServiceStack(
+            this,
+            "cfSecurityServiceStack",
+            {
+                s3Key: securityConfigStack.s3Key,
+            },
+            commonParameter,
+        );
 
+        // ------------------------------------------------------------
+        // [06] - cfStorageStack
+        // ------------------------------------------------------------
+        const storageStack = new cfStorageStack(
+            this,
+            "cfStorageStack",
+            {
+                vpcId: networkStack.Vpc.vpcId,
+                privateSubnetA: networkStack.Vpc.privateSubnets[0].subnetId,
+                privateSubnetC: networkStack.Vpc.privateSubnets[1].subnetId,
+                ecrKey: securityConfigStack.ecrKey,
+                s3Key: securityConfigStack.s3Key,
+            },
+            {
+                vpcEndPointS3SecurityGroup:
+                    sgFrameStack.vpcEndPointS3SecurityGroupFrame,
+                vpcEndPointECRSecurityGroup:
+                    sgFrameStack.vpcEndPointECRSecurityGroupFrame,
+                vpcEndPointSSMSecurityGroup:
+                    sgFrameStack.vpcEndPointSSMSecurityGroupFrame,
+                vpcEndPointSSMEC2SecurityGroup:
+                    sgFrameStack.vpcEndPointSSMSecurityGroupFrame,
+                vpcEndPointSSMEC2MessagesSecurityGroup:
+                    sgFrameStack.vpcEndPointSSMSecurityGroupFrame,
+                vpcEndPointKMSSecurityGroup:
+                    sgFrameStack.vpcEndPointKMSSecurityGroupFrame,
+                vpcEndPointCloudWatchLogsSecurityGroup:
+                    sgFrameStack.vpcEndPointCloudWatchLogsSecurityGroupFrame,
+            },
+            commonParameter,
+        );
 
-    // ------------------------------------------------------------
-    // [04] - cfDatabaseStack
-    // ------------------------------------------------------------
-    const databaseStack = new cfDatabaseStack(
-      this,
-      'cfDatabaseStack',
-      commonParameter,
-      {
-        auroraSecurityGroup: sgFrameStack.auroraSecurityGroupFrame,
-      },
-      {
-        subnetIds: networkStack.Vpc.privateSubnets.map((subnet) => subnet.subnetId),
-      },
-      {
-        auroraKey: securityConfigStack.auroraKey,
-      },
-    );
+        // ------------------------------------------------------------
+        // [07] - cfComputeWebAPStack
+        // ------------------------------------------------------------
+        const computeWebAPStack = new cfComputeWebAPStack(
+            this,
+            "cfComputeWebAPStack",
+            {
+                applicationKey: securityConfigStack.applicationKey,
+                bastionKey: securityConfigStack.bastionKey,
+            },
+            {
+                vpcId: networkStack.Vpc.vpcId,
+                subnetIds: [
+                    networkStack.Vpc.privateSubnets[0].subnetId,
+                    networkStack.Vpc.privateSubnets[1].subnetId,
+                ],
+            },
+            {
+                bastionSecurityGroup: sgFrameStack.bastionSecurityGroupFrame,
+            },
+            commonParameter,
+        );
 
+        // ------------------------------------------------------------
+        // [08] - cfComputeBatchStack
+        // ------------------------------------------------------------
+        const computeBatchStack = new cfComputeBatchStack(
+            this,
+            "cfComputeBatchStack",
+            {
+                applicationKey: securityConfigStack.applicationKey,
+                bastionKey: securityConfigStack.bastionKey,
+            },
+            {
+                vpcId: networkStack.Vpc.vpcId,
+                subnetIds: [
+                    networkStack.Vpc.privateSubnets[0].subnetId,
+                    networkStack.Vpc.privateSubnets[1].subnetId,
+                ],
+            },
+            {
+                batchSecurityGroup: sgFrameStack.batchSecurityGroupFrame,
+            },
+            commonParameter,
+        );
 
-    // ------------------------------------------------------------
-    // [05] - cfSecurityServiceStack
-    // ------------------------------------------------------------
-    const securityServiceStack = new cfSecurityServiceStack(
-      this,
-      'cfSecurityServiceStack',
-      {
-        s3Key: securityConfigStack.s3Key,
-      },
-      commonParameter,
-    );
+        // ------------------------------------------------------------
+        // [09] - cfSgRuleStack
+        // ------------------------------------------------------------
+        const sgRuleStack = new cfSgRuleStack(this, "cfSgRuleStack", {
+            albSecurityGroupFrame: sgFrameStack.albSecurityGroupFrame,
+            batchSecurityGroupFrame: sgFrameStack.batchSecurityGroupFrame,
+            bastionSecurityGroupFrame: sgFrameStack.bastionSecurityGroupFrame,
+            ecsSecurityGroupFrame: sgFrameStack.ecsSecurityGroupFrame,
+            auroraSecurityGroupFrame: sgFrameStack.auroraSecurityGroupFrame,
+            lambdaSecurityGroupFrame: sgFrameStack.lambdaSecurityGroupFrame,
+            vpcEndPointS3SecurityGroupFrame:
+                sgFrameStack.vpcEndPointS3SecurityGroupFrame,
+            vpcEndPointECRSecurityGroupFrame:
+                sgFrameStack.vpcEndPointECRSecurityGroupFrame,
+            vpcEndPointSSMSecurityGroupFrame:
+                sgFrameStack.vpcEndPointSSMSecurityGroupFrame,
+            vpcEndPointKMSSecurityGroupFrame:
+                sgFrameStack.vpcEndPointKMSSecurityGroupFrame,
+            vpcEndPointCloudWatchLogsSecurityGroupFrame:
+                sgFrameStack.vpcEndPointCloudWatchLogsSecurityGroupFrame,
+        });
 
+        // ------------------------------------------------------------
+        // [10][11] - cfDNSStack
+        // ------------------------------------------------------------
+        const dnsStack = new cfDNSStack(this, "cfDNSStack", commonParameter, {
+            Vpc: networkStack.Vpc,
+            vpcCidr: pocParameter.vpcCidr,
+            defaultGatewayCidr: pocParameter.defaultGatewayCidr,
+        });
 
-    // ------------------------------------------------------------
-    // [06] - cfStorageStack
-    // ------------------------------------------------------------
-    const storageStack = new cfStorageStack(
-      this,
-      'cfStorageStack',
-      {
-        vpcId: networkStack.Vpc.vpcId,
-        privateSubnetA: networkStack.Vpc.privateSubnets[0].subnetId,
-        privateSubnetC: networkStack.Vpc.privateSubnets[1].subnetId,
-        ecrKey: securityConfigStack.ecrKey,
-        s3Key: securityConfigStack.s3Key,
-      },
-      {
-        vpcEndPointS3SecurityGroup: sgFrameStack.vpcEndPointS3SecurityGroupFrame,
-        vpcEndPointECRSecurityGroup: sgFrameStack.vpcEndPointECRSecurityGroupFrame,
-        vpcEndPointSSMSecurityGroup: sgFrameStack.vpcEndPointSSMSecurityGroupFrame,
-        vpcEndPointSSMEC2SecurityGroup: sgFrameStack.vpcEndPointSSMSecurityGroupFrame,
-        vpcEndPointSSMEC2MessagesSecurityGroup: sgFrameStack.vpcEndPointSSMSecurityGroupFrame,
-        vpcEndPointKMSSecurityGroup: sgFrameStack.vpcEndPointKMSSecurityGroupFrame,
-        vpcEndPointCloudWatchLogsSecurityGroup: sgFrameStack.vpcEndPointCloudWatchLogsSecurityGroupFrame,
-      },
-      commonParameter,
-    );
-
-
-    // ------------------------------------------------------------
-    // [07] - cfComputeWebAPStack
-    // ------------------------------------------------------------
-    const computeWebAPStack = new cfComputeWebAPStack(
-      this,
-      'cfComputeWebAPStack',
-      {
-        applicationKey: securityConfigStack.applicationKey,
-        bastionKey: securityConfigStack.bastionKey,
-      },
-      {
-        vpcId: networkStack.Vpc.vpcId,
-        subnetIds: [
-          networkStack.Vpc.privateSubnets[0].subnetId,
-          networkStack.Vpc.privateSubnets[1].subnetId,
-        ],
-      },
-      {
-        bastionSecurityGroup: sgFrameStack.bastionSecurityGroupFrame,
-      },
-      commonParameter,
-    );
-
-
-    // ------------------------------------------------------------
-    // [08] - cfComputeBatchStack
-    // ------------------------------------------------------------
-    const computeBatchStack = new cfComputeBatchStack(
-      this,
-      'cfComputeBatchStack',
-      {
-        applicationKey: securityConfigStack.applicationKey,
-        bastionKey: securityConfigStack.bastionKey,
-      },
-      {
-        vpcId: networkStack.Vpc.vpcId,
-        subnetIds: [
-          networkStack.Vpc.privateSubnets[0].subnetId,
-          networkStack.Vpc.privateSubnets[1].subnetId,
-        ],
-      },
-      {
-        batchSecurityGroup: sgFrameStack.batchSecurityGroupFrame,
-      },
-      commonParameter,
-    );
-
-
-    // ------------------------------------------------------------
-    // [09] - cfSgRuleStack
-    // ------------------------------------------------------------
-    const sgRuleStack = new cfSgRuleStack(
-      this,
-      'cfSgRuleStack',
-      {
-        albSecurityGroupFrame: sgFrameStack.albSecurityGroupFrame,
-        batchSecurityGroupFrame: sgFrameStack.batchSecurityGroupFrame,
-        bastionSecurityGroupFrame: sgFrameStack.bastionSecurityGroupFrame,
-        ecsSecurityGroupFrame: sgFrameStack.ecsSecurityGroupFrame,
-        auroraSecurityGroupFrame: sgFrameStack.auroraSecurityGroupFrame,
-        lambdaSecurityGroupFrame: sgFrameStack.lambdaSecurityGroupFrame,
-        vpcEndPointS3SecurityGroupFrame: sgFrameStack.vpcEndPointS3SecurityGroupFrame,
-        vpcEndPointECRSecurityGroupFrame: sgFrameStack.vpcEndPointECRSecurityGroupFrame,
-        vpcEndPointSSMSecurityGroupFrame: sgFrameStack.vpcEndPointSSMSecurityGroupFrame,
-        vpcEndPointKMSSecurityGroupFrame: sgFrameStack.vpcEndPointKMSSecurityGroupFrame,
-        vpcEndPointCloudWatchLogsSecurityGroupFrame: sgFrameStack.vpcEndPointCloudWatchLogsSecurityGroupFrame,
-      },
-    );
-
-
-    // ------------------------------------------------------------
-    // [10][11] - cfDNSStack
-    // ------------------------------------------------------------
-    const dnsStack = new cfDNSStack(
-      this,
-      'cfDNSStack',
-      commonParameter,
-      {
-        Vpc: networkStack.Vpc,
-        vpcCidr: pocParameter.vpcCidr,
-        defaultGatewayCidr: pocParameter.defaultGatewayCidr,
-      },
-    );
-
-
-    // ------------------------------------------------------------
-    // [12] - cfComputeDefinitionStack
-    // ------------------------------------------------------------
-    const computeDefinitionStack = new cfComputeDefinitionStack(
-      this,
-      'cfComputeDefinitionStack',
-      {
-        ecsSecurityGroup: sgFrameStack.ecsSecurityGroupFrame,
-      },
-      {
-        ecsCluster: computeWebAPStack.ecsCluster,
-      },
-      {
-        applicationKey: securityConfigStack.applicationKey,
-      },
-      commonParameter,
-    );
-  }
+        // ------------------------------------------------------------
+        // [12] - cfComputeDefinitionStack
+        // ------------------------------------------------------------
+        const computeDefinitionStack = new cfComputeDefinitionStack(
+            this,
+            "cfComputeDefinitionStack",
+            {
+                ecsSecurityGroup: sgFrameStack.ecsSecurityGroupFrame,
+            },
+            {
+                ecsCluster: computeWebAPStack.ecsCluster,
+            },
+            {
+                applicationKey: securityConfigStack.applicationKey,
+            },
+            commonParameter,
+        );
+    }
 }
