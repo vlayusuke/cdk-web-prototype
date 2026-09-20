@@ -21,6 +21,7 @@ export class cfSgFrameStack extends Construct {
     public readonly batchSecurityGroupFrame: ec2.SecurityGroup;
     public readonly bastionSecurityGroupFrame: ec2.SecurityGroup;
     public readonly ecsSecurityGroupFrame: ec2.SecurityGroup;
+    public readonly elasticacheSecurityGroupFrame: ec2.SecurityGroup;
     public readonly auroraSecurityGroupFrame: ec2.SecurityGroup;
     public readonly lambdaSecurityGroupFrame: ec2.SecurityGroup;
     public readonly vpcEndPointS3SecurityGroupFrame: ec2.SecurityGroup;
@@ -135,6 +136,29 @@ export class cfSgFrameStack extends Construct {
             `${props.projectName}-${props.envName}-sg-aurora`,
         );
         cdk.Tags.of(this.auroraSecurityGroupFrame).add("ProvisionedBy", "AWS");
+
+        // ------------------------------------------------------------
+        // Security group for Amazon ElastiCache (Frame Only)
+        // ------------------------------------------------------------
+        this.elasticacheSecurityGroupFrame = new ec2.SecurityGroup(
+            this,
+            "ElasticacheSecurityGroupFrame",
+            {
+                vpc: this.vpc,
+                description: `Security group for Amazon ElastiCache - ${props.projectName}-${props.envName}`,
+                securityGroupName: `${props.projectName}-${props.envName}-sg-elasticache`,
+                allowAllOutbound: false,
+            },
+        );
+
+        cdk.Tags.of(this.elasticacheSecurityGroupFrame).add(
+            "Name",
+            `${props.projectName}-${props.envName}-sg-elasticache`,
+        );
+        cdk.Tags.of(this.elasticacheSecurityGroupFrame).add(
+            "ProvisionedBy",
+            "AWS",
+        );
 
         // ------------------------------------------------------------
         // Security group for AWS Lambda (Frame Only)
