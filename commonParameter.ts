@@ -1,4 +1,3 @@
-
 // Parameters for common
 export interface commonParameter {
     projectName: string;
@@ -9,8 +8,8 @@ export interface commonParameter {
 
 // Parameters for common
 export const commonParameter: commonParameter = {
-    projectName: 'cdk-web',
-    envName: 'poc',
-    dashboardName: 'cdk-web-prototype',
-    nakedDomainName: 'example.com',
+    projectName: "cdk-web",
+    envName: "poc",
+    dashboardName: "cdk-web-prototype",
+    nakedDomainName: "example.com",
 };
