@@ -25,6 +25,7 @@ export class cfSecurityConfigStack extends Construct {
     public readonly s3Key: kms.IKey;
     public readonly ecrKey: kms.IKey;
     public readonly auroraKey: kms.IKey;
+    public readonly elasticacheKey: kms.IKey;
     public readonly ebsKey: kms.IKey;
     public readonly lambdaKey: kms.IKey;
     public readonly eventBridgeKey: kms.IKey;
@@ -188,6 +189,49 @@ export class cfSecurityConfigStack extends Construct {
 
         this.auroraKey.addToResourcePolicy(kmsAuroraKeyPolicy);
         this.auroraKey.addToResourcePolicy(kmsAccountAuroraAccessPolicy);
+
+        // ------------------------------------------------------------
+        // AWS KMS Key for Amazon ElastiCache encryption Configuration
+        // ------------------------------------------------------------
+        this.elasticacheKey = new kms.Key(this, "ElasticacheKey", {
+            description: "KMS key for ElastiCache encryption",
+            enableKeyRotation: true,
+            keyUsage: kms.KeyUsage.ENCRYPT_DECRYPT,
+            pendingWindow: cdk.Duration.days(7),
+        });
+
+        cdk.Tags.of(this.elasticacheKey).add(
+            "Name",
+            `${props.projectName}-${props.envName}-kms-elasticache-key`,
+        );
+        cdk.Tags.of(this.elasticacheKey).add("ProvisionedBy", "AWS");
+
+        // AWS KMS Key policy for Amazon ElastiCache encryption
+        const kmsElasticacheKeyPolicy = new iam.PolicyStatement({
+            sid: "ElasticacheKMS",
+            effect: iam.Effect.ALLOW,
+            actions: [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+            ],
+            resources: [this.elasticacheKey.keyArn],
+            principals: [new iam.ServicePrincipal("elasticache.amazonaws.com")],
+        });
+
+        const kmsAccountElasticacheAccessPolicy = new iam.PolicyStatement({
+            sid: "AllowAccountElasticacheAccess",
+            effect: iam.Effect.ALLOW,
+            actions: ["kms:*"],
+            resources: [this.elasticacheKey.keyArn],
+            principals: [new iam.AccountRootPrincipal()],
+        });
+
+        this.elasticacheKey.addToResourcePolicy(kmsElasticacheKeyPolicy);
+        this.elasticacheKey.addToResourcePolicy(
+            kmsAccountElasticacheAccessPolicy,
+        );
 
         // ------------------------------------------------------------
         // AWS KMS Key for Amazon S3 encryption Configuration
