@@ -1,6 +1,13 @@
 import type { aws_kms as kms } from "aws-cdk-lib";
 import * as cdk from "aws-cdk-lib";
-import { aws_ec2 as ec2, aws_ecs as ecs, aws_iam as iam } from "aws-cdk-lib";
+import {
+    aws_applicationautoscaling as applicationautoscaling,
+    aws_cloudwatch as cloudwatch,
+    aws_ec2 as ec2,
+    aws_ecs as ecs,
+    aws_iam as iam,
+} from "aws-cdk-lib";
+import type * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import { Construct } from "constructs";
 
 export interface commonProps {
@@ -30,6 +37,10 @@ export interface ecsProps {
     ecsCluster: ecs.Cluster;
 }
 
+export interface albProps {
+    targetGroup: elbv2.IApplicationTargetGroup;
+}
+
 // ------------------------------------------------------------
 // [12] - Compute Definition Stack
 // ------------------------------------------------------------
@@ -38,6 +49,7 @@ export class cfComputeDefinitionStack extends Construct {
         scope: Construct,
         id: string,
         sgProps: sgProps,
+        albProps: albProps,
         ecsProps: ecsProps,
         kmsProps: kmsProps,
         commonProps: commonProps,
@@ -209,6 +221,7 @@ export class cfComputeDefinitionStack extends Construct {
             ),
             cpu: 512,
             memoryReservationMiB: 1024,
+            portMappings: [{ containerPort: 80, protocol: ecs.Protocol.TCP }],
         });
 
         // ------------------------------------------------------------
@@ -319,11 +332,66 @@ export class cfComputeDefinitionStack extends Construct {
             },
         );
 
+        ecsAppService.attachToApplicationTargetGroup(albProps.targetGroup);
+
         cdk.Tags.of(ecsAppService).add(
             "Name",
             `${commonProps.projectName}-${commonProps.envName}-ecs-app-service`,
         );
         cdk.Tags.of(ecsAppService).add("ProvisionedBy", "AWS");
+
+        const ecsAppScalableTarget = ecsAppService.autoScaleTaskCount({
+            minCapacity: 2,
+            maxCapacity: 4,
+        });
+
+        cdk.Tags.of(ecsAppScalableTarget).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-ecs-app-autoscaling-target`,
+        );
+        cdk.Tags.of(ecsAppScalableTarget).add("ProvisionedBy", "AWS");
+
+        new applicationautoscaling.StepScalingPolicy(
+            this,
+            "AutoScaleOutEcsApp",
+            {
+                scalingTarget: ecsAppScalableTarget,
+                metric: new cloudwatch.Metric({
+                    namespace: "AWS/ECS",
+                    metricName: "CPUUtilization",
+                    dimensionsMap: {
+                        TaskDefinitionFamily: ecsAppTaskDefinition.family,
+                    },
+                    statistic: "Average",
+                    period: cdk.Duration.seconds(60),
+                }),
+                adjustmentType:
+                    applicationautoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
+                scalingSteps: [{ change: 1, lower: 0 }],
+                cooldown: cdk.Duration.seconds(120),
+            },
+        );
+
+        new applicationautoscaling.StepScalingPolicy(
+            this,
+            "AutoScaleInEcsApp",
+            {
+                scalingTarget: ecsAppScalableTarget,
+                metric: new cloudwatch.Metric({
+                    namespace: "AWS/ECS",
+                    metricName: "CPUUtilization",
+                    dimensionsMap: {
+                        TaskDefinitionFamily: ecsAppTaskDefinition.family,
+                    },
+                    statistic: "Average",
+                    period: cdk.Duration.seconds(60),
+                }),
+                adjustmentType:
+                    applicationautoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
+                scalingSteps: [{ change: -1, upper: 0 }],
+                cooldown: cdk.Duration.seconds(300),
+            },
+        );
 
         // ------------------------------------------------------------
         // Amazon ECS Cron Service Configuration
