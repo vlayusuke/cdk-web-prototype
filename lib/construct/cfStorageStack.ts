@@ -55,7 +55,9 @@ export class cfStorageStack extends Construct {
     public readonly ecrRepositoryWeb: ecr.Repository;
     public readonly ecrRepositoryApp: ecr.Repository;
     public readonly s3BucketAlbLogs: s3.Bucket;
+    public readonly s3BucketAuroraLogs: s3.Bucket;
     public readonly s3BucketEcsLogs: s3.Bucket;
+    public readonly s3BucketElastiCacheLogs: s3.Bucket;
     public readonly s3BucketLambdaLogs: s3.Bucket;
     public readonly s3BucketDeploymentCode: s3.Bucket;
 
@@ -498,6 +500,70 @@ export class cfStorageStack extends Construct {
             destinationBucket: this.s3BucketLambdaLogs,
             destinationKeyPrefix: "cwt-metrics-alarm",
         });
+
+        // ------------------------------------------------------------
+        // Amazon S3 Bucket for Amazon Aurora Logs Configuration
+        // ------------------------------------------------------------
+        this.s3BucketAuroraLogs = new s3.Bucket(this, "s3BucketAuroraLogs", {
+            bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-aurora-logs`,
+            versioned: true,
+            accessControl: s3.BucketAccessControl.PRIVATE,
+            encryptionKey: props.s3Key,
+            encryption: s3.BucketEncryption.KMS,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+            removalPolicy: cdk.RemovalPolicy.RETAIN,
+            enforceSSL: true,
+            blockedEncryptionTypes: [s3.BlockedEncryptionType.SSE_C],
+        });
+
+        cdk.Tags.of(this.s3BucketAuroraLogs).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-s3-bucket-aurora-logs`,
+        );
+        cdk.Tags.of(this.s3BucketAuroraLogs).add("ProvisionedBy", "AWS");
+
+        new s3deploy.BucketDeployment(this, "deployAuroraInstanceLogs", {
+            sources: [s3deploy.Source.asset("./")],
+            destinationBucket: this.s3BucketAuroraLogs,
+            destinationKeyPrefix: "instance-logs",
+        });
+
+        new s3deploy.BucketDeployment(this, "deployAuroraPostgreSqlLogs", {
+            sources: [s3deploy.Source.asset("./")],
+            destinationBucket: this.s3BucketAuroraLogs,
+            destinationKeyPrefix: "postgresql-logs",
+        });
+
+        new s3deploy.BucketDeployment(this, "deployAuroraIamAuthErrorLogs", {
+            sources: [s3deploy.Source.asset("./")],
+            destinationBucket: this.s3BucketAuroraLogs,
+            destinationKeyPrefix: "iam-auth-error-logs",
+        });
+
+        // ------------------------------------------------------------
+        // Amazon S3 Bucket for Amazon ElastiCache Logs Configuration
+        // ------------------------------------------------------------
+        this.s3BucketElastiCacheLogs = new s3.Bucket(
+            this,
+            "s3BucketElastiCacheLogs",
+            {
+                bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-elasticache-logs`,
+                versioned: true,
+                accessControl: s3.BucketAccessControl.PRIVATE,
+                encryptionKey: props.s3Key,
+                encryption: s3.BucketEncryption.KMS,
+                blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+                removalPolicy: cdk.RemovalPolicy.RETAIN,
+                enforceSSL: true,
+                blockedEncryptionTypes: [s3.BlockedEncryptionType.SSE_C],
+            },
+        );
+
+        cdk.Tags.of(this.s3BucketElastiCacheLogs).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-s3-bucket-elasticache-logs`,
+        );
+        cdk.Tags.of(this.s3BucketElastiCacheLogs).add("ProvisionedBy", "AWS");
 
         // ------------------------------------------------------------
         // Amazon S3 Bucket for Deployment Code Configuration
