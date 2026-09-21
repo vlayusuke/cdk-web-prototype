@@ -171,6 +171,14 @@ export class cfComputeDefinitionStack extends Construct {
                         ],
                     }),
                     new iam.PolicyStatement({
+                        sid: "ElastiCacheConnect",
+                        actions: ["elasticache:Connect"],
+                        resources: [
+                            `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:replicationgroup:*`,
+                            `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:user:*`,
+                        ],
+                    }),
+                    new iam.PolicyStatement({
                         sid: "AllowECSExec",
                         actions: [
                             "ssmmessages:CreateControlChannel",
