@@ -20,6 +20,7 @@ export interface pocProps {
 
 export interface kmsProps {
     auroraKey: kms.IKey;
+    elasticacheKey: kms.IKey;
 }
 
 export interface networkingProps {
@@ -388,6 +389,7 @@ export class cfDatabaseStack extends Construct {
                 securityGroupIds: [
                     sgProps.elasticacheSecurityGroup.securityGroupId,
                 ],
+                kmsKeyId: kmsProps.elasticacheKey.keyId,
                 cacheSubnetGroupName: elasticacheSubnetGroup.ref,
                 cacheParameterGroupName: elasticacheParameterGroup.ref,
                 preferredMaintenanceWindow: "sat:21:30-sat:22:30",
