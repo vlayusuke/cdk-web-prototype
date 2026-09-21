@@ -396,7 +396,7 @@ export class cfStorageStack extends Construct {
         // Amazon S3 Bucket for ALB Logs Configuration
         // ------------------------------------------------------------
         this.s3BucketAlbLogs = new s3.Bucket(this, "s3BucketAlbLogs", {
-            bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-alb-logs`,
+            bucketName: `${commonProps.projectName}-${commonProps.envName}-alb-logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
             encryptionKey: props.s3Key,
@@ -417,7 +417,7 @@ export class cfStorageStack extends Construct {
         // Amazon S3 Bucket for Amazon ECS Logs Configuration
         // ------------------------------------------------------------
         this.s3BucketEcsLogs = new s3.Bucket(this, "s3BucketEcsLogs", {
-            bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-ecs-logs`,
+            bucketName: `${commonProps.projectName}-${commonProps.envName}-ecs-logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
             encryptionKey: props.s3Key,
@@ -463,7 +463,7 @@ export class cfStorageStack extends Construct {
         // Amazon S3 Bucket for AWS Lambda Logs Configuration
         // ------------------------------------------------------------
         this.s3BucketLambdaLogs = new s3.Bucket(this, "s3BucketLambdaLogs", {
-            bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-lambda-logs`,
+            bucketName: `${commonProps.projectName}-${commonProps.envName}-lambda-logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
             encryptionKey: props.s3Key,
@@ -506,7 +506,7 @@ export class cfStorageStack extends Construct {
         // Amazon S3 Bucket for Amazon Aurora Logs Configuration
         // ------------------------------------------------------------
         this.s3BucketAuroraLogs = new s3.Bucket(this, "s3BucketAuroraLogs", {
-            bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-aurora-logs`,
+            bucketName: `${commonProps.projectName}-${commonProps.envName}-aurora-logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
             encryptionKey: props.s3Key,
@@ -548,7 +548,7 @@ export class cfStorageStack extends Construct {
             this,
             "s3BucketElastiCacheLogs",
             {
-                bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-elasticache-logs`,
+                bucketName: `${commonProps.projectName}-${commonProps.envName}-elasticache-logs`,
                 versioned: true,
                 accessControl: s3.BucketAccessControl.PRIVATE,
                 encryptionKey: props.s3Key,
@@ -570,7 +570,7 @@ export class cfStorageStack extends Construct {
         // Amazon S3 Bucket for Assets Configuration
         // ------------------------------------------------------------
         this.s3BucketAssets = new s3.Bucket(this, "s3BucketAssets", {
-            bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-assets`,
+            bucketName: `${commonProps.projectName}-${commonProps.envName}-assets`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
             encryptionKey: props.s3Key,
