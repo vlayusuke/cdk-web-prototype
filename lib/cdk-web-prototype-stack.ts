@@ -93,6 +93,8 @@ export class CdkWebPrototypeStack extends cdk.Stack {
             commonParameter,
             {
                 auroraSecurityGroup: sgFrameStack.auroraSecurityGroupFrame,
+                elasticacheSecurityGroup:
+                    sgFrameStack.elasticacheSecurityGroupFrame,
             },
             {
                 subnetIds: networkStack.Vpc.privateSubnets.map(
@@ -101,6 +103,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
             },
             {
                 auroraKey: securityConfigStack.auroraKey,
+                elasticacheKey: securityConfigStack.elasticacheKey,
             },
         );
 
@@ -203,6 +206,8 @@ export class CdkWebPrototypeStack extends cdk.Stack {
             bastionSecurityGroupFrame: sgFrameStack.bastionSecurityGroupFrame,
             ecsSecurityGroupFrame: sgFrameStack.ecsSecurityGroupFrame,
             auroraSecurityGroupFrame: sgFrameStack.auroraSecurityGroupFrame,
+            elasticacheSecurityGroupFrame:
+                sgFrameStack.elasticacheSecurityGroupFrame,
             lambdaSecurityGroupFrame: sgFrameStack.lambdaSecurityGroupFrame,
             vpcEndPointS3SecurityGroupFrame:
                 sgFrameStack.vpcEndPointS3SecurityGroupFrame,
