@@ -8,6 +8,7 @@ import { Construct } from "constructs";
 export interface commonProps {
     projectName: string;
     envName: string;
+    nakedDomainName: string;
 }
 
 export interface pocProps {
@@ -59,7 +60,7 @@ export class cfStorageStack extends Construct {
     public readonly s3BucketEcsLogs: s3.Bucket;
     public readonly s3BucketElastiCacheLogs: s3.Bucket;
     public readonly s3BucketLambdaLogs: s3.Bucket;
-    public readonly s3BucketDeploymentCode: s3.Bucket;
+    public readonly s3BucketAssets: s3.Bucket;
 
     constructor(
         scope: Construct,
@@ -566,28 +567,50 @@ export class cfStorageStack extends Construct {
         cdk.Tags.of(this.s3BucketElastiCacheLogs).add("ProvisionedBy", "AWS");
 
         // ------------------------------------------------------------
-        // Amazon S3 Bucket for Deployment Code Configuration
+        // Amazon S3 Bucket for Assets Configuration
         // ------------------------------------------------------------
-        this.s3BucketDeploymentCode = new s3.Bucket(
-            this,
-            "s3BucketDeploymentCode",
-            {
-                bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-deployment-code`,
-                versioned: true,
-                accessControl: s3.BucketAccessControl.PRIVATE,
-                encryptionKey: props.s3Key,
-                encryption: s3.BucketEncryption.KMS,
-                blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-                removalPolicy: cdk.RemovalPolicy.RETAIN,
-                enforceSSL: true,
-                blockedEncryptionTypes: [s3.BlockedEncryptionType.SSE_C],
-            },
-        );
+        this.s3BucketAssets = new s3.Bucket(this, "s3BucketAssets", {
+            bucketName: `${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}-assets`,
+            versioned: true,
+            accessControl: s3.BucketAccessControl.PRIVATE,
+            encryptionKey: props.s3Key,
+            encryption: s3.BucketEncryption.KMS,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+            removalPolicy: cdk.RemovalPolicy.RETAIN,
+            enforceSSL: true,
+            blockedEncryptionTypes: [s3.BlockedEncryptionType.SSE_C],
+            cors: [
+                {
+                    allowedMethods: [
+                        s3.HttpMethods.HEAD,
+                        s3.HttpMethods.POST,
+                        s3.HttpMethods.GET,
+                    ],
+                    allowedOrigins: [
+                        `https://${commonProps.envName}.${commonProps.nakedDomainName}`,
+                    ],
+                    allowedHeaders: ["*"],
+                    maxAge: 3600, // Cache for 1 hour
+                },
+            ],
+        });
 
-        cdk.Tags.of(this.s3BucketDeploymentCode).add(
+        cdk.Tags.of(this.s3BucketAssets).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-s3-bucket-deployment-code`,
+            `${commonProps.projectName}-${commonProps.envName}-s3-bucket-assets`,
         );
-        cdk.Tags.of(this.s3BucketDeploymentCode).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.s3BucketAssets).add("ProvisionedBy", "AWS");
+
+        new s3deploy.BucketDeployment(this, "deployAssets", {
+            sources: [s3deploy.Source.asset("./")],
+            destinationBucket: this.s3BucketAssets,
+            destinationKeyPrefix: "assets",
+        });
+
+        new s3deploy.BucketDeployment(this, "deployPictures", {
+            sources: [s3deploy.Source.asset("./")],
+            destinationBucket: this.s3BucketAssets,
+            destinationKeyPrefix: "pictures",
+        });
     }
 }
