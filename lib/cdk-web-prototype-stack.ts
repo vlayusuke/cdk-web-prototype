@@ -224,11 +224,19 @@ export class CdkWebPrototypeStack extends cdk.Stack {
         // ------------------------------------------------------------
         // [10][11] - cfDNSStack
         // ------------------------------------------------------------
-        const dnsStack = new cfDNSStack(this, "cfDNSStack", commonParameter, {
-            Vpc: networkStack.Vpc,
-            vpcCidr: pocParameter.vpcCidr,
-            defaultGatewayCidr: pocParameter.defaultGatewayCidr,
-        });
+        const dnsStack = new cfDNSStack(
+            this,
+            "cfDNSStack",
+            commonParameter,
+            {
+                Vpc: networkStack.Vpc,
+                vpcCidr: pocParameter.vpcCidr,
+                defaultGatewayCidr: pocParameter.defaultGatewayCidr,
+            },
+            {
+                albSecurityGroup: sgFrameStack.albSecurityGroupFrame,
+            },
+        );
 
         // ------------------------------------------------------------
         // [12] - cfComputeDefinitionStack
@@ -238,6 +246,9 @@ export class CdkWebPrototypeStack extends cdk.Stack {
             "cfComputeDefinitionStack",
             {
                 ecsSecurityGroup: sgFrameStack.ecsSecurityGroupFrame,
+            },
+            {
+                targetGroup: dnsStack.albExternalTargetGroup,
             },
             {
                 ecsCluster: computeWebAPStack.ecsCluster,
