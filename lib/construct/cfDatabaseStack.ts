@@ -1,5 +1,9 @@
 import * as cdk from "aws-cdk-lib";
-import { aws_iam as iam, aws_rds as rds } from "aws-cdk-lib";
+import {
+    aws_elasticache as elasticache,
+    aws_iam as iam,
+    aws_rds as rds,
+} from "aws-cdk-lib";
 import type * as ec2 from "aws-cdk-lib/aws-ec2";
 import type * as kms from "aws-cdk-lib/aws-kms";
 import { Construct } from "constructs";
@@ -16,6 +20,7 @@ export interface pocProps {
 
 export interface kmsProps {
     auroraKey: kms.IKey;
+    elasticacheKey: kms.IKey;
 }
 
 export interface networkingProps {
@@ -24,6 +29,7 @@ export interface networkingProps {
 
 export interface sgProps {
     auroraSecurityGroup: ec2.SecurityGroup;
+    elasticacheSecurityGroup: ec2.SecurityGroup;
 }
 
 // ------------------------------------------------------------
@@ -123,14 +129,56 @@ export class cfDatabaseStack extends Construct {
         );
 
         // ------------------------------------------------------------
-        // Subnet Group Configuration
+        // AWS IAM for Amaazon ElastiCache Configuration
+        // ------------------------------------------------------------
+        const elasticacheIamRole = new iam.Role(this, "ElasticacheIamRole", {
+            description: "IAM role for Amazon ElastiCache",
+            assumedBy: new iam.ServicePrincipal("elasticache.amazonaws.com"),
+        });
+
+        cdk.Tags.of(elasticacheIamRole).add(
+            "Name",
+            `${props.projectName}-${props.envName}-iam-elasticache-role`,
+        );
+        cdk.Tags.of(elasticacheIamRole).add("ProvisionedBy", "AWS");
+
+        const elasticacheIamPolicy = new iam.Policy(
+            this,
+            "ElasticacheIamPolicy",
+            {
+                statements: [
+                    new iam.PolicyStatement({
+                        sid: "ElasticacheAccess",
+                        actions: [
+                            "elasticache:DescribeCacheClusters",
+                            "elasticache:DescribeCacheSubnetGroups",
+                        ],
+                        resources: [
+                            `arn:aws:elasticache:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:cluster:*`,
+                            `arn:aws:elasticache:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:subnet-group:*`,
+                        ],
+                    }),
+                ],
+            },
+        );
+
+        cdk.Tags.of(elasticacheIamPolicy).add(
+            "Name",
+            `${props.projectName}-${props.envName}-iam-elasticache-policy`,
+        );
+        cdk.Tags.of(elasticacheIamPolicy).add("ProvisionedBy", "AWS");
+
+        elasticacheIamRole.attachInlinePolicy(elasticacheIamPolicy);
+
+        // ------------------------------------------------------------
+        // Amazon Aurora Subnet Group Configuration
         // ------------------------------------------------------------
         const auroraSubnetGroup = new rds.CfnDBSubnetGroup(
             this,
             "AuroraSubnetGroup",
             {
                 dbSubnetGroupDescription: "Subnet group for Amazon Aurora",
-                subnetIds: [networkingProps.subnetIds[2]],
+                subnetIds: [networkingProps.subnetIds[1]],
             },
         );
 
@@ -141,7 +189,7 @@ export class cfDatabaseStack extends Construct {
         cdk.Tags.of(auroraSubnetGroup).add("ProvisionedBy", "AWS");
 
         // ------------------------------------------------------------
-        // DB Parameter Group Configuration
+        // Amazon Aurora DB Parameter Group Configuration
         // ------------------------------------------------------------
         const auroraDbParameterGroup = new rds.CfnDBParameterGroup(
             this,
@@ -264,5 +312,96 @@ export class cfDatabaseStack extends Construct {
             "Name",
             `${props.projectName}-${props.envName}-aurora-writer-instance`,
         );
+
+        // ------------------------------------------------------------
+        // Amazon ElastiCache Subnet Group Configuration
+        // ------------------------------------------------------------
+        const elasticacheSubnetGroup = new elasticache.CfnSubnetGroup(
+            this,
+            "ElasticacheSubnetGroup",
+            {
+                description: "Subnet group for Amazon ElastiCache",
+                subnetIds: [networkingProps.subnetIds[1]],
+                cacheSubnetGroupName: "elasticache-subnet-group",
+            },
+        );
+
+        cdk.Tags.of(elasticacheSubnetGroup).add(
+            "Name",
+            `${props.projectName}-${props.envName}-elasticache-subnet-group`,
+        );
+        cdk.Tags.of(elasticacheSubnetGroup).add("ProvisionedBy", "AWS");
+
+        // ------------------------------------------------------------
+        // ElastiCache Parameter Group Configuration
+        // ------------------------------------------------------------
+        const elasticacheParameterGroup = new elasticache.CfnParameterGroup(
+            this,
+            "ElasticacheParameterGroup",
+            {
+                cacheParameterGroupFamily: "redis7",
+                description: "Parameter group for Amazon ElastiCache",
+                properties: {
+                    "maxmemory-policy": "allkeys-lru",
+                },
+            },
+        );
+        cdk.Tags.of(elasticacheParameterGroup).add(
+            "Name",
+            `${props.projectName}-${props.envName}-elasticache-parameter-group`,
+        );
+        cdk.Tags.of(elasticacheParameterGroup).add("ProvisionedBy", "AWS");
+
+        // ------------------------------------------------------------
+        // Amazon ElastiCache Replication Group Configuration
+        // ------------------------------------------------------------
+        const elasticacheReplicationGroup = new elasticache.CfnReplicationGroup(
+            this,
+            "ElasticacheReplicationGroup",
+            {
+                replicationGroupDescription:
+                    "Replication group for Amazon ElastiCache",
+                nodeGroupConfiguration: [
+                    {
+                        nodeGroupId: "0001",
+                        primaryAvailabilityZone: cdk.Fn.select(
+                            0,
+                            cdk.Fn.getAzs(),
+                        ),
+                        replicaAvailabilityZones: [
+                            cdk.Fn.select(1, cdk.Fn.getAzs()),
+                        ],
+                        replicaCount: 1,
+                        slots: "0-8191",
+                    },
+                ],
+                multiAzEnabled: true,
+                networkType: "ipv4",
+                engine: "redis",
+                engineVersion: "7.0",
+                cacheNodeType: "cache.t4g.micro",
+                numCacheClusters: 1,
+                numNodeGroups: 2,
+                port: 6379,
+                automaticFailoverEnabled: true,
+                snapshotRetentionLimit: 14,
+                snapshotWindow: "20:00-21:00",
+                securityGroupIds: [
+                    sgProps.elasticacheSecurityGroup.securityGroupId,
+                ],
+                kmsKeyId: kmsProps.elasticacheKey.keyId,
+                cacheSubnetGroupName: elasticacheSubnetGroup.ref,
+                cacheParameterGroupName: elasticacheParameterGroup.ref,
+                preferredMaintenanceWindow: "sat:21:30-sat:22:30",
+                atRestEncryptionEnabled: true,
+                transitEncryptionEnabled: true,
+            },
+        );
+
+        cdk.Tags.of(elasticacheReplicationGroup).add(
+            "Name",
+            `${props.projectName}-${props.envName}-elasticache-replication-group`,
+        );
+        cdk.Tags.of(elasticacheReplicationGroup).add("ProvisionedBy", "AWS");
     }
 }
