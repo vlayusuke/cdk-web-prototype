@@ -4,6 +4,7 @@ export interface commonParameter {
     envName: string;
     dashboardName: string;
     nakedDomainName: string;
+    auroraMaxConnections: number;
 }
 
 // Parameters for common
@@ -12,4 +13,5 @@ export const commonParameter: commonParameter = {
     envName: "poc",
     dashboardName: "cdk-web-prototype",
     nakedDomainName: "example.com",
+    auroraMaxConnections: 512,
 };
