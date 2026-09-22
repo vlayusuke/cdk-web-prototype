@@ -7,6 +7,7 @@ import { cfComputeDefinitionStack } from "./construct/cfComputeDefinitionStack";
 import { cfComputeWebAPStack } from "./construct/cfComputeWebAPStack";
 import { cfDatabaseStack } from "./construct/cfDatabaseStack";
 import { cfDNSStack } from "./construct/cfDNSStack";
+import { cfMonitoringAndLoggingStack } from "./construct/cfMonitoringAndLoggingStack";
 import { cfNetworkStack } from "./construct/cfNetworkStack";
 import { cfSecurityConfigStack } from "./construct/cfSecurityConfigStack";
 import { cfSecurityServiceStack } from "./construct/cfSecurityServiceStack";
@@ -255,6 +256,19 @@ export class CdkWebPrototypeStack extends cdk.Stack {
             },
             {
                 applicationKey: securityConfigStack.applicationKey,
+            },
+            commonParameter,
+        );
+
+        // ------------------------------------------------------------
+        // [13] - cfMonitoringAndLoggingStack
+        // ------------------------------------------------------------
+        const monitoringAndLoggingStack = new cfMonitoringAndLoggingStack(
+            this,
+            "cfMonitoringAndLoggingStack",
+            {
+                ecsAppScalableTarget:
+                    computeDefinitionStack.ecsAppScalableTarget,
             },
             commonParameter,
         );
