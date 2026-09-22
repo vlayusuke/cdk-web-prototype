@@ -45,6 +45,8 @@ export interface albProps {
 // [12] - Compute Definition Stack
 // ------------------------------------------------------------
 export class cfComputeDefinitionStack extends Construct {
+    public readonly ecsAppScalableTarget: ecs.ScalableTaskCount;
+
     constructor(
         scope: Construct,
         id: string,
@@ -348,22 +350,22 @@ export class cfComputeDefinitionStack extends Construct {
         );
         cdk.Tags.of(ecsAppService).add("ProvisionedBy", "AWS");
 
-        const ecsAppScalableTarget = ecsAppService.autoScaleTaskCount({
+        this.ecsAppScalableTarget = ecsAppService.autoScaleTaskCount({
             minCapacity: 2,
             maxCapacity: 4,
         });
 
-        cdk.Tags.of(ecsAppScalableTarget).add(
+        cdk.Tags.of(this.ecsAppScalableTarget).add(
             "Name",
             `${commonProps.projectName}-${commonProps.envName}-ecs-app-autoscaling-target`,
         );
-        cdk.Tags.of(ecsAppScalableTarget).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.ecsAppScalableTarget).add("ProvisionedBy", "AWS");
 
         new applicationautoscaling.StepScalingPolicy(
             this,
             "AutoScaleOutEcsApp",
             {
-                scalingTarget: ecsAppScalableTarget,
+                scalingTarget: this.ecsAppScalableTarget,
                 metric: new cloudwatch.Metric({
                     namespace: "AWS/ECS",
                     metricName: "CPUUtilization",
@@ -384,7 +386,7 @@ export class cfComputeDefinitionStack extends Construct {
             this,
             "AutoScaleInEcsApp",
             {
-                scalingTarget: ecsAppScalableTarget,
+                scalingTarget: this.ecsAppScalableTarget,
                 metric: new cloudwatch.Metric({
                     namespace: "AWS/ECS",
                     metricName: "CPUUtilization",
