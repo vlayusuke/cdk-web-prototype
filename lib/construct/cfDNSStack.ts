@@ -30,7 +30,7 @@ export interface sgProps {
 }
 
 // ------------------------------------------------------------
-// [10][11] - DNS Stack
+// [11] - DNS Stack
 // ------------------------------------------------------------
 export class cfDNSStack extends Construct {
     public readonly route53PublicHostedZone: route53.PublicHostedZone;
