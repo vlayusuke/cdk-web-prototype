@@ -34,17 +34,18 @@ export interface pocProps {
  *
  * construction order:
  *  1. [01] cfSecurityConfigStack as securityConfigStack
- *  2. [02] cfNetworkStack as networkStack
- *  3. [03] cfSgFrameStack as sgFrameStack
- *  4. [04] cfDatabaseStack as databaseStack
- *  5. [05] cfSecurityServiceStack as securityServiceStack
- *  6. [06] cfStorageStack as storageStack
- *  7. [07] cfComputeWebAPStack as computeWebAPStack
- *  8. [08] cfComputeBatchStack as computeBatchStack
- *  9. [09] cfSgRuleStack as sgRuleStack
- * 10. [10][11] cfDNSStack as dnsStack
- * 11. [12] cfComputeDefinitionStack as computeDefinitionStack
- * 12. [13] cfMonitoringAndLoggingStack as monitoringAndLoggingStack
+ *   2. [02] cfNetworkStack as networkStack
+ *   3. [03] cfSgFrameStack as sgFrameStack
+ *   4. [04] cfDatabaseStack as databaseStack
+ *   5. [05] cfSecurityServiceStack as securityServiceStack
+ *   6. [06] cfStorageStack as storageStack
+ *   7. [07] cfComputeWebAPStack as computeWebAPStack
+ *   8. [08] cfComputeBatchStack as computeBatchStack
+ *   9. [09] cfComputeServerlessStack as computeServerlessStack
+ *  10. [10] cfSgRuleStack as sgRuleStack
+ *  11. [11] cfDNSStack as dnsStack
+ *  12. [12] cfComputeDefinitionStack as computeDefinitionStack
+ *  13. [13] cfMonitoringAndLoggingStack as monitoringAndLoggingStack
  */
 export class CdkWebPrototypeStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -199,7 +200,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [09] - cfSgRuleStack
+        // [10] - cfSgRuleStack
         // ------------------------------------------------------------
         const sgRuleStack = new cfSgRuleStack(this, "cfSgRuleStack", {
             albSecurityGroupFrame: sgFrameStack.albSecurityGroupFrame,
@@ -223,7 +224,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
         });
 
         // ------------------------------------------------------------
-        // [10][11] - cfDNSStack
+        // [11] - cfDNSStack
         // ------------------------------------------------------------
         const dnsStack = new cfDNSStack(
             this,
