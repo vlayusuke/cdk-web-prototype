@@ -7,7 +7,7 @@ import { cfComputeDefinitionStack } from "./construct/cfComputeDefinitionStack";
 import { cfComputeWebAPStack } from "./construct/cfComputeWebAPStack";
 import { cfDatabaseStack } from "./construct/cfDatabaseStack";
 import { cfDNSStack } from "./construct/cfDNSStack";
-import { cfMonitoringAndLoggingStack } from "./construct/cfMonitoringAndLoggingStack";
+import { cfMonitoringStack } from "./construct/cfMonitoringStack";
 import { cfNetworkStack } from "./construct/cfNetworkStack";
 import { cfSecurityConfigStack } from "./construct/cfSecurityConfigStack";
 import { cfSecurityServiceStack } from "./construct/cfSecurityServiceStack";
@@ -46,7 +46,8 @@ export interface pocProps {
  *  11. [11] cfDNSStack as dnsStack
  *  12. [12] cfComputeDefinitionStack as computeDefinitionStack
  *  13. [13] cfNotificationStack as notificationStack
- *  14. [14] cfMonitoringAndLoggingStack as monitoringAndLoggingStack
+ *  14. [14] cfMonitoringStack as monitoringStack
+ *  15. [15] cfLoggingStack as loggingStack
  */
 export class CdkWebPrototypeStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -274,16 +275,20 @@ export class CdkWebPrototypeStack extends cdk.Stack {
         // Reservation
 
         // ------------------------------------------------------------
-        // [14] - cfMonitoringAndLoggingStack
+        // [14] - cfMonitoringStack
         // ------------------------------------------------------------
-        const monitoringAndLoggingStack = new cfMonitoringAndLoggingStack(
+        const monitoringStack = new cfMonitoringStack(
             this,
-            "cfMonitoringAndLoggingStack",
+            "cfMonitoringStack",
             {
                 ecsAppScalableTarget:
                     computeDefinitionStack.ecsAppScalableTarget,
             },
             commonProps,
         );
+
+        // ------------------------------------------------------------
+        // [15] - cfLoggingStack
+        // ------------------------------------------------------------
     }
 }
