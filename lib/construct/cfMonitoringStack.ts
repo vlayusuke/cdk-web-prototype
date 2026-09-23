@@ -19,9 +19,9 @@ export interface ecsProps {
 }
 
 // ------------------------------------------------------------
-// [14] - cfMonitoringAndLoggingStack
+// [14] - cfMonitoringStack
 // ------------------------------------------------------------
-export class cfMonitoringAndLoggingStack extends Construct {
+export class cfMonitoringStack extends Construct {
     private readonly cpuUtilizationHighAlarmEcsApp: cloudwatch.Alarm;
     private readonly cpuUtilizationLowAlarmEcsApp: cloudwatch.Alarm;
     private readonly memoryUtilizationHighAlarmEcsApp: cloudwatch.Alarm;
