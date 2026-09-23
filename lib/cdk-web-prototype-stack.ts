@@ -45,7 +45,8 @@ export interface pocProps {
  *  10. [10] cfSgRuleStack as sgRuleStack
  *  11. [11] cfDNSStack as dnsStack
  *  12. [12] cfComputeDefinitionStack as computeDefinitionStack
- *  13. [13] cfMonitoringAndLoggingStack as monitoringAndLoggingStack
+ *  13. [13] cfNotificationStack as notificationStack
+ *  14. [14] cfMonitoringAndLoggingStack as monitoringAndLoggingStack
  */
 export class CdkWebPrototypeStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -267,7 +268,13 @@ export class CdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [13] - cfMonitoringAndLoggingStack
+        // [13] - cfNotificationStack
+        // ------------------------------------------------------------
+
+        // Reservation
+
+        // ------------------------------------------------------------
+        // [14] - cfMonitoringAndLoggingStack
         // ------------------------------------------------------------
         const monitoringAndLoggingStack = new cfMonitoringAndLoggingStack(
             this,
