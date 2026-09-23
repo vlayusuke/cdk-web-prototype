@@ -682,6 +682,78 @@ export class cfMonitoringAndLoggingStack extends Construct {
             "AWS",
         );
 
+        this.diskUtilizationHighAlarmEc2BatchAzA = new cloudwatch.Alarm(
+            this,
+            "DiskUtilizationHighAlarmEc2BatchAzA",
+            {
+                metric: new cloudwatch.Metric({
+                    namespace: "AWS/EC2",
+                    metricName: "DiskUtilization",
+                    dimensionsMap: {
+                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-batch-az-a-instance`,
+                    },
+                    statistic: "Maximum",
+                    period: cdk.Duration.seconds(60),
+                }),
+                threshold: 80,
+                evaluationPeriods: 2,
+                datapointsToAlarm: 2,
+                treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+                comparisonOperator:
+                    cloudwatch.ComparisonOperator
+                        .GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+                alarmDescription:
+                    "Amazon EC2 (batch AZ-a) Alarm when Disk utilization exceeds 80%",
+                alarmName: "DiskUtilizationHighAlarmEc2BatchAzA",
+                actionsEnabled: true,
+            },
+        );
+
+        cdk.Tags.of(this.diskUtilizationHighAlarmEc2BatchAzA).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-disk-utilization-high-alarm-ec2-batch-az-a`,
+        );
+        cdk.Tags.of(this.diskUtilizationHighAlarmEc2BatchAzA).add(
+            "ProvisionedBy",
+            "AWS",
+        );
+
+        this.statusCheckFailedAlarmEc2BatchAzA = new cloudwatch.Alarm(
+            this,
+            "StatusCheckFailedAlarmEc2BatchAzA",
+            {
+                metric: new cloudwatch.Metric({
+                    namespace: "AWS/EC2",
+                    metricName: "StatusCheckFailed",
+                    dimensionsMap: {
+                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-batch-az-a-instance`,
+                    },
+                    statistic: "Minimum",
+                    period: cdk.Duration.seconds(60),
+                }),
+                threshold: 1,
+                evaluationPeriods: 2,
+                datapointsToAlarm: 2,
+                treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+                comparisonOperator:
+                    cloudwatch.ComparisonOperator
+                        .GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+                alarmDescription:
+                    "Amazon EC2 (batch AZ-a) Alarm when status check fails",
+                alarmName: "StatusCheckFailedAlarmEc2BatchAzA",
+                actionsEnabled: true,
+            },
+        );
+
+        cdk.Tags.of(this.statusCheckFailedAlarmEc2BatchAzA).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-status-check-failed-alarm-ec2-batch-az-a`,
+        );
+        cdk.Tags.of(this.statusCheckFailedAlarmEc2BatchAzA).add(
+            "ProvisionedBy",
+            "AWS",
+        );
+
         this.cpuUtilizationHighAlarmEc2BatchAzC = new cloudwatch.Alarm(
             this,
             "CpuUtilizationHighAlarmEc2BatchAzC",
@@ -750,6 +822,78 @@ export class cfMonitoringAndLoggingStack extends Construct {
             `${commonProps.projectName}-${commonProps.envName}-memory-utilization-high-alarm-ec2-batch-az-c`,
         );
         cdk.Tags.of(this.memoryUtilizationHighAlarmEc2BatchAzC).add(
+            "ProvisionedBy",
+            "AWS",
+        );
+
+        this.diskUtilizationHighAlarmEc2BatchAzC = new cloudwatch.Alarm(
+            this,
+            "DiskUtilizationHighAlarmEc2BatchAzC",
+            {
+                metric: new cloudwatch.Metric({
+                    namespace: "AWS/EC2",
+                    metricName: "DiskUtilization",
+                    dimensionsMap: {
+                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-batch-az-c-instance`,
+                    },
+                    statistic: "Maximum",
+                    period: cdk.Duration.seconds(60),
+                }),
+                threshold: 80,
+                evaluationPeriods: 2,
+                datapointsToAlarm: 2,
+                treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+                comparisonOperator:
+                    cloudwatch.ComparisonOperator
+                        .GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+                alarmDescription:
+                    "Amazon EC2 (batch AZ-c) Alarm when Disk utilization exceeds 80%",
+                alarmName: "DiskUtilizationHighAlarmEc2BatchAzC",
+                actionsEnabled: true,
+            },
+        );
+
+        cdk.Tags.of(this.diskUtilizationHighAlarmEc2BatchAzC).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-disk-utilization-high-alarm-ec2-batch-az-c`,
+        );
+        cdk.Tags.of(this.diskUtilizationHighAlarmEc2BatchAzC).add(
+            "ProvisionedBy",
+            "AWS",
+        );
+
+        this.statusCheckFailedAlarmEc2BatchAzC = new cloudwatch.Alarm(
+            this,
+            "StatusCheckFailedAlarmEc2BatchAzC",
+            {
+                metric: new cloudwatch.Metric({
+                    namespace: "AWS/EC2",
+                    metricName: "StatusCheckFailed",
+                    dimensionsMap: {
+                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-batch-az-c-instance`,
+                    },
+                    statistic: "Minimum",
+                    period: cdk.Duration.seconds(60),
+                }),
+                threshold: 1,
+                evaluationPeriods: 2,
+                datapointsToAlarm: 2,
+                treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+                comparisonOperator:
+                    cloudwatch.ComparisonOperator
+                        .GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+                alarmDescription:
+                    "Amazon EC2 (batch AZ-c) Alarm when Status Check Failed exceeds 1",
+                alarmName: "StatusCheckFailedAlarmEc2BatchAzC",
+                actionsEnabled: true,
+            },
+        );
+
+        cdk.Tags.of(this.statusCheckFailedAlarmEc2BatchAzC).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-status-check-failed-alarm-ec2-batch-az-c`,
+        );
+        cdk.Tags.of(this.statusCheckFailedAlarmEc2BatchAzC).add(
             "ProvisionedBy",
             "AWS",
         );
