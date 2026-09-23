@@ -33,10 +33,16 @@ export class cfMonitoringAndLoggingStack extends Construct {
     private readonly memoryUtilizationHighAlarmEcsQueue: cloudwatch.Alarm;
     private readonly cpuUtilizationHighAlarmEc2Bastion: cloudwatch.Alarm;
     private readonly memoryUtilizationHighAlarmEc2Bastion: cloudwatch.Alarm;
+    private readonly diskUtilizationHighAlarmEc2Bastion: cloudwatch.Alarm;
+    private readonly statusCheckFailedAlarmEc2Bastion: cloudwatch.Alarm;
     private readonly cpuUtilizationHighAlarmEc2BatchAzA: cloudwatch.Alarm;
     private readonly memoryUtilizationHighAlarmEc2BatchAzA: cloudwatch.Alarm;
+    private readonly diskUtilizationHighAlarmEc2BatchAzA: cloudwatch.Alarm;
+    private readonly statusCheckFailedAlarmEc2BatchAzA: cloudwatch.Alarm;
     private readonly cpuUtilizationHighAlarmEc2BatchAzC: cloudwatch.Alarm;
     private readonly memoryUtilizationHighAlarmEc2BatchAzC: cloudwatch.Alarm;
+    private readonly diskUtilizationHighAlarmEc2BatchAzC: cloudwatch.Alarm;
+    private readonly statusCheckFailedAlarmEc2BatchAzC: cloudwatch.Alarm;
     private readonly healtyHostCounAlarmAlb: cloudwatch.Alarm;
     private readonly unHealthyHostCountAlarmAlb: cloudwatch.Alarm;
     private readonly rejectedConnectionCountAlarmAlb: cloudwatch.Alarm;
@@ -525,6 +531,78 @@ export class cfMonitoringAndLoggingStack extends Construct {
             `${commonProps.projectName}-${commonProps.envName}-memory-utilization-high-alarm-bastion`,
         );
         cdk.Tags.of(this.memoryUtilizationHighAlarmEc2Bastion).add(
+            "ProvisionedBy",
+            "AWS",
+        );
+
+        this.diskUtilizationHighAlarmEc2Bastion = new cloudwatch.Alarm(
+            this,
+            "DiskUtilizationHighAlarmBastion",
+            {
+                metric: new cloudwatch.Metric({
+                    namespace: "AWS/EC2",
+                    metricName: "DiskUtilization",
+                    dimensionsMap: {
+                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-bastion-instance`,
+                    },
+                    statistic: "Maximum",
+                    period: cdk.Duration.seconds(60),
+                }),
+                threshold: 80,
+                evaluationPeriods: 2,
+                datapointsToAlarm: 2,
+                treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+                comparisonOperator:
+                    cloudwatch.ComparisonOperator
+                        .GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+                alarmDescription:
+                    "Amazon EC2 (bastion) Alarm when Disk utilization exceeds 80%",
+                alarmName: "DiskUtilizationHighAlarmBastion",
+                actionsEnabled: true,
+            },
+        );
+
+        cdk.Tags.of(this.diskUtilizationHighAlarmEc2Bastion).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-disk-utilization-high-alarm-bastion`,
+        );
+        cdk.Tags.of(this.diskUtilizationHighAlarmEc2Bastion).add(
+            "ProvisionedBy",
+            "AWS",
+        );
+
+        this.statusCheckFailedAlarmEc2Bastion = new cloudwatch.Alarm(
+            this,
+            "StatusCheckFailedAlarmBastion",
+            {
+                metric: new cloudwatch.Metric({
+                    namespace: "AWS/EC2",
+                    metricName: "StatusCheckFailed",
+                    dimensionsMap: {
+                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-bastion-instance`,
+                    },
+                    statistic: "Minimum",
+                    period: cdk.Duration.seconds(60),
+                }),
+                threshold: 1,
+                evaluationPeriods: 2,
+                datapointsToAlarm: 2,
+                treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+                comparisonOperator:
+                    cloudwatch.ComparisonOperator
+                        .GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+                alarmDescription:
+                    "Amazon EC2 (bastion) Alarm when Status Check Failed exceeds 1",
+                alarmName: "StatusCheckFailedAlarmBastion",
+                actionsEnabled: true,
+            },
+        );
+
+        cdk.Tags.of(this.statusCheckFailedAlarmEc2Bastion).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-status-check-failed-alarm-bastion`,
+        );
+        cdk.Tags.of(this.statusCheckFailedAlarmEc2Bastion).add(
             "ProvisionedBy",
             "AWS",
         );
