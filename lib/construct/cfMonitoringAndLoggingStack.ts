@@ -11,6 +11,7 @@ export interface commonProps {
     projectName: string;
     envName: string;
     auroraMaxConnections: number;
+    lambdaConcurrentExecutions: number;
 }
 
 export interface ecsProps {
@@ -18,7 +19,7 @@ export interface ecsProps {
 }
 
 // ------------------------------------------------------------
-// [13] - cfMonitoringAndLoggingStack
+// [14] - cfMonitoringAndLoggingStack
 // ------------------------------------------------------------
 export class cfMonitoringAndLoggingStack extends Construct {
     private readonly cpuUtilizationHighAlarmEcsApp: cloudwatch.Alarm;
@@ -45,6 +46,9 @@ export class cfMonitoringAndLoggingStack extends Construct {
     private readonly cpuUtilizationHighAlarmElastiCache: cloudwatch.Alarm;
     private readonly memoryUtilizationHighAlarmElastiCache: cloudwatch.Alarm;
     private readonly swapUsageHighAlarmElastiCache: cloudwatch.Alarm;
+    private readonly errorAlarmLambda: cloudwatch.Alarm;
+    private readonly throttlesAlarmLambda: cloudwatch.Alarm;
+    private readonly concurrentExecutionsAlarmLambda: cloudwatch.Alarm;
 
     constructor(
         scope: Construct,
@@ -991,6 +995,104 @@ export class cfMonitoringAndLoggingStack extends Construct {
             `${commonProps.projectName}-${commonProps.envName}-swap-usage-high-alarm-elasticache`,
         );
         cdk.Tags.of(this.swapUsageHighAlarmElastiCache).add(
+            "ProvisionedBy",
+            "AWS",
+        );
+
+        // ------------------------------------------------------------
+        // Amazon CloudWatch Metrics for AWS Lambda Configuration
+        // ------------------------------------------------------------
+        this.errorAlarmLambda = new cloudwatch.Alarm(this, "ErrorAlarmLambda", {
+            metric: new cloudwatch.Metric({
+                namespace: "AWS/Lambda",
+                metricName: "Errors",
+                dimensionsMap: {
+                    FunctionName: `${commonProps.projectName}-${commonProps.envName}-lambda`,
+                },
+                statistic: "Sum",
+                period: cdk.Duration.seconds(60),
+            }),
+            threshold: 1,
+            evaluationPeriods: 1,
+            datapointsToAlarm: 1,
+            treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+            comparisonOperator:
+                cloudwatch.ComparisonOperator
+                    .GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+            alarmDescription: "AWS Lambda Alarm when Errors exceed 1",
+            alarmName: "ErrorAlarmLambda",
+            actionsEnabled: true,
+        });
+
+        cdk.Tags.of(this.errorAlarmLambda).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-error-alarm-lambda`,
+        );
+        cdk.Tags.of(this.errorAlarmLambda).add("ProvisionedBy", "AWS");
+
+        this.throttlesAlarmLambda = new cloudwatch.Alarm(
+            this,
+            "ThrottlesAlarmLambda",
+            {
+                metric: new cloudwatch.Metric({
+                    namespace: "AWS/Lambda",
+                    metricName: "Throttles",
+                    dimensionsMap: {
+                        FunctionName: `${commonProps.projectName}-${commonProps.envName}-lambda`,
+                    },
+                    statistic: "Sum",
+                    period: cdk.Duration.seconds(60),
+                }),
+                threshold: 1,
+                evaluationPeriods: 1,
+                datapointsToAlarm: 1,
+                treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+                comparisonOperator:
+                    cloudwatch.ComparisonOperator
+                        .GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+                alarmDescription: "AWS Lambda Alarm when Throttles exceed 1",
+                alarmName: "ThrottlesAlarmLambda",
+                actionsEnabled: true,
+            },
+        );
+
+        cdk.Tags.of(this.throttlesAlarmLambda).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-throttles-alarm-lambda`,
+        );
+        cdk.Tags.of(this.throttlesAlarmLambda).add("ProvisionedBy", "AWS");
+
+        this.concurrentExecutionsAlarmLambda = new cloudwatch.Alarm(
+            this,
+            "ConcurrentExecutionsAlarmLambda",
+            {
+                metric: new cloudwatch.Metric({
+                    namespace: "AWS/Lambda",
+                    metricName: "ConcurrentExecutions",
+                    dimensionsMap: {
+                        FunctionName: `${commonProps.projectName}-${commonProps.envName}-lambda`,
+                    },
+                    statistic: "Sum",
+                    period: cdk.Duration.seconds(60),
+                }),
+                threshold: commonProps.lambdaConcurrentExecutions * 0.8,
+                evaluationPeriods: 1,
+                datapointsToAlarm: 1,
+                treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+                comparisonOperator:
+                    cloudwatch.ComparisonOperator
+                        .GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+                alarmDescription: `AWS Lambda Alarm when Concurrent Executions exceed 80% of the ${commonProps.lambdaConcurrentExecutions} concurrent executions quota`,
+                alarmName: "ConcurrentExecutionsAlarmLambda",
+                actionsEnabled: true,
+            },
+        );
+
+        cdk.Tags.of(this.concurrentExecutionsAlarmLambda).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-concurrent-executions-alarm-lambda`,
+        );
+        cdk.Tags.of(this.concurrentExecutionsAlarmLambda).add(
             "ProvisionedBy",
             "AWS",
         );
