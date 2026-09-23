@@ -51,6 +51,11 @@ export class CdkWebPrototypeStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
+        const commonProps = {
+            ...commonParameter,
+            envName: pocParameter.envName,
+        };
+
         // ------------------------------------------------------------
         // [01] - cfSecurityConfigStack
         // ------------------------------------------------------------
@@ -58,7 +63,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
             new cfSecurityConfigStack(
                 this,
                 "cfSecurityConfigStack",
-                commonParameter,
+                commonProps,
             );
 
         // ------------------------------------------------------------
@@ -68,7 +73,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
             this,
             "cfNetworkStack",
             {
-                ...commonParameter,
+                ...commonProps,
                 vpcCidr: pocParameter.vpcCidr,
                 defaultGatewayCidr: pocParameter.defaultGatewayCidr,
             },
@@ -83,7 +88,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
         const sgFrameStack = new cfSgFrameStack(
             this,
             "cfSgFrameStack",
-            commonParameter,
+            commonProps,
         );
 
         // ------------------------------------------------------------
@@ -92,7 +97,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
         const databaseStack = new cfDatabaseStack(
             this,
             "cfDatabaseStack",
-            commonParameter,
+            commonProps,
             {
                 auroraSecurityGroup: sgFrameStack.auroraSecurityGroupFrame,
                 elasticacheSecurityGroup:
@@ -118,7 +123,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
             {
                 s3Key: securityConfigStack.s3Key,
             },
-            commonParameter,
+            commonProps,
         );
 
         // ------------------------------------------------------------
@@ -150,7 +155,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
                 vpcEndPointCloudWatchLogsSecurityGroup:
                     sgFrameStack.vpcEndPointCloudWatchLogsSecurityGroupFrame,
             },
-            commonParameter,
+            commonProps,
         );
 
         // ------------------------------------------------------------
@@ -173,7 +178,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
             {
                 bastionSecurityGroup: sgFrameStack.bastionSecurityGroupFrame,
             },
-            commonParameter,
+            commonProps,
         );
 
         // ------------------------------------------------------------
@@ -196,7 +201,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
             {
                 batchSecurityGroup: sgFrameStack.batchSecurityGroupFrame,
             },
-            commonParameter,
+            commonProps,
         );
 
         // ------------------------------------------------------------
@@ -229,7 +234,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
         const dnsStack = new cfDNSStack(
             this,
             "cfDNSStack",
-            commonParameter,
+            commonProps,
             {
                 Vpc: networkStack.Vpc,
                 vpcCidr: pocParameter.vpcCidr,
@@ -258,7 +263,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
             {
                 applicationKey: securityConfigStack.applicationKey,
             },
-            commonParameter,
+            commonProps,
         );
 
         // ------------------------------------------------------------
@@ -271,7 +276,7 @@ export class CdkWebPrototypeStack extends cdk.Stack {
                 ecsAppScalableTarget:
                     computeDefinitionStack.ecsAppScalableTarget,
             },
-            commonParameter,
+            commonProps,
         );
     }
 }
