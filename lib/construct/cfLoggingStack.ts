@@ -25,6 +25,7 @@ export class cfLoggingStack extends Construct {
     public readonly logGroupEc2Bastion: logs.LogGroup;
     public readonly logGroupEc2BatchAzA: logs.LogGroup;
     public readonly logGroupEc2BatchAzC: logs.LogGroup;
+    public readonly logGroupSns: logs.LogGroup;
     public readonly logStreamNginxEcsApp: logs.LogStream;
     public readonly logStreamAppEcsApp: logs.LogStream;
     public readonly logStreamEcsCron: logs.LogStream;
@@ -39,6 +40,7 @@ export class cfLoggingStack extends Construct {
     public readonly logStreamEc2Bastion: logs.LogStream;
     public readonly logStreamEc2BatchAzA: logs.LogStream;
     public readonly logStreamEc2BatchAzC: logs.LogStream;
+    public readonly logStreamSns: logs.LogStream;
 
     constructor(scope: Construct, id: string, commonProps: commonProps) {
         super(scope, id);
@@ -418,5 +420,24 @@ export class cfLoggingStack extends Construct {
                 logStreamName: `/ec2/${commonProps.projectName}/${commonProps.envName}/batch-az-c`,
             },
         );
+
+        // ------------------------------------------------------------
+        // Amazon CloudWatch Logs for Amazon SNS Configuration
+        // ------------------------------------------------------------
+        this.logGroupSns = new logs.LogGroup(this, "LogGroupSns", {
+            logGroupName: `/sns/${commonProps.projectName}/${commonProps.envName}`,
+            logGroupClass: logs.LogGroupClass.STANDARD,
+            retention: logs.RetentionDays.ONE_YEAR,
+        });
+        cdk.Tags.of(this.logGroupSns).add(
+            "Name",
+            `${commonProps.envName}-${commonProps.projectName}-loggroup-sns`,
+        );
+        cdk.Tags.of(this.logGroupSns).add("ProvisionedBy", "AWS");
+
+        this.logStreamSns = new logs.LogStream(this, "LogStreamSns", {
+            logGroup: this.logGroupSns,
+            logStreamName: `/sns/${commonProps.projectName}/${commonProps.envName}`,
+        });
     }
 }
