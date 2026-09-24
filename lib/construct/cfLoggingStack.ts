@@ -22,6 +22,9 @@ export class cfLoggingStack extends Construct {
     public readonly logGroupLambdaLogsAlert: logs.LogGroup;
     public readonly logGroupLambdaMetricsAlert: logs.LogGroup;
     public readonly logGroupLambdaRdsControl: logs.LogGroup;
+    public readonly logGroupEc2Bastion: logs.LogGroup;
+    public readonly logGroupEc2BatchAzA: logs.LogGroup;
+    public readonly logGroupEc2BatchAzC: logs.LogGroup;
     public readonly logStreamNginxEcsApp: logs.LogStream;
     public readonly logStreamAppEcsApp: logs.LogStream;
     public readonly logStreamEcsCron: logs.LogStream;
@@ -33,6 +36,9 @@ export class cfLoggingStack extends Construct {
     public readonly logStreamLambdaLogsAlert: logs.LogStream;
     public readonly logStreamLambdaMetricsAlert: logs.LogStream;
     public readonly logStreamLambdaRdsControl: logs.LogStream;
+    public readonly logStreamEc2Bastion: logs.LogStream;
+    public readonly logStreamEc2BatchAzA: logs.LogStream;
+    public readonly logStreamEc2BatchAzC: logs.LogStream;
 
     constructor(scope: Construct, id: string, commonProps: commonProps) {
         super(scope, id);
@@ -328,6 +334,88 @@ export class cfLoggingStack extends Construct {
             {
                 logGroup: this.logGroupLambdaRdsControl,
                 logStreamName: `/lambda/${commonProps.projectName}/${commonProps.envName}/rds-control`,
+            },
+        );
+
+        // ------------------------------------------------------------
+        // Amazon CloudWatch Logs for Amazon EC2 Bastion Configuration
+        // ------------------------------------------------------------
+        this.logGroupEc2Bastion = new logs.LogGroup(
+            this,
+            "LogGroupEc2Bastion",
+            {
+                logGroupName: `/ec2/${commonProps.projectName}/${commonProps.envName}/bastion`,
+                logGroupClass: logs.LogGroupClass.STANDARD,
+                retention: logs.RetentionDays.ONE_YEAR,
+            },
+        );
+
+        cdk.Tags.of(this.logGroupEc2Bastion).add(
+            "Name",
+            `${commonProps.envName}-${commonProps.projectName}-loggroup-ec2-bastion`,
+        );
+        cdk.Tags.of(this.logGroupEc2Bastion).add("ProvisionedBy", "AWS");
+
+        this.logStreamEc2Bastion = new logs.LogStream(
+            this,
+            "LogStreamEc2Bastion",
+            {
+                logGroup: this.logGroupEc2Bastion,
+                logStreamName: `/ec2/${commonProps.projectName}/${commonProps.envName}/bastion`,
+            },
+        );
+
+        // ------------------------------------------------------------
+        // Amazon CloudWatch Logs for Amazon EC2 Batch (AZ-a) Configuration
+        // ------------------------------------------------------------
+        this.logGroupEc2BatchAzA = new logs.LogGroup(
+            this,
+            "LogGroupEc2BatchAzA",
+            {
+                logGroupName: `/ec2/${commonProps.projectName}/${commonProps.envName}/batch-az-a`,
+                logGroupClass: logs.LogGroupClass.STANDARD,
+                retention: logs.RetentionDays.ONE_YEAR,
+            },
+        );
+        cdk.Tags.of(this.logGroupEc2BatchAzA).add(
+            "Name",
+            `${commonProps.envName}-${commonProps.projectName}-loggroup-ec2-batch-az-a`,
+        );
+        cdk.Tags.of(this.logGroupEc2BatchAzA).add("ProvisionedBy", "AWS");
+
+        this.logStreamEc2BatchAzA = new logs.LogStream(
+            this,
+            "LogStreamEc2BatchAzA",
+            {
+                logGroup: this.logGroupEc2BatchAzA,
+                logStreamName: `/ec2/${commonProps.projectName}/${commonProps.envName}/batch-az-a`,
+            },
+        );
+
+        // ------------------------------------------------------------
+        // Amazon CloudWatch Logs for Amazon EC2 Batch (AZ-c) Configuration
+        // ------------------------------------------------------------
+        this.logGroupEc2BatchAzC = new logs.LogGroup(
+            this,
+            "LogGroupEc2BatchAzC",
+            {
+                logGroupName: `/ec2/${commonProps.projectName}/${commonProps.envName}/batch-az-c`,
+                logGroupClass: logs.LogGroupClass.STANDARD,
+                retention: logs.RetentionDays.ONE_YEAR,
+            },
+        );
+        cdk.Tags.of(this.logGroupEc2BatchAzC).add(
+            "Name",
+            `${commonProps.envName}-${commonProps.projectName}-loggroup-ec2-batch-az-c`,
+        );
+        cdk.Tags.of(this.logGroupEc2BatchAzC).add("ProvisionedBy", "AWS");
+
+        this.logStreamEc2BatchAzC = new logs.LogStream(
+            this,
+            "LogStreamEc2BatchAzC",
+            {
+                logGroup: this.logGroupEc2BatchAzC,
+                logStreamName: `/ec2/${commonProps.projectName}/${commonProps.envName}/batch-az-c`,
             },
         );
     }
