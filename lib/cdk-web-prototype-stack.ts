@@ -10,6 +10,7 @@ import { cfDNSStack } from "./construct/cfDNSStack";
 import { cfLoggingStack } from "./construct/cfLoggingStack";
 import { cfMonitoringStack } from "./construct/cfMonitoringStack";
 import { cfNetworkStack } from "./construct/cfNetworkStack";
+import { cfNotificationStack } from "./construct/cfNotificationStack";
 import { cfSecurityConfigStack } from "./construct/cfSecurityConfigStack";
 import { cfSecurityServiceStack } from "./construct/cfSecurityServiceStack";
 import { cfSgFrameStack } from "./construct/cfSgFrameStack";
@@ -272,8 +273,19 @@ export class CdkWebPrototypeStack extends cdk.Stack {
         // ------------------------------------------------------------
         // [13] - cfNotificationStack
         // ------------------------------------------------------------
-
-        // Reservation
+        const notificationStack = new cfNotificationStack(
+            this,
+            "cfNotificationStack",
+            commonProps,
+            {
+                monitoringNotificationEmail: pocParameter.monitoringNotifyEmail,
+                monitoringSlackWorkspaceId:
+                    pocParameter.monitoringSlackWorkspaceId,
+            },
+            {
+                snsKeyArn: securityConfigStack.snsKey,
+            },
+        );
 
         // ------------------------------------------------------------
         // [14] - cfMonitoringStack
