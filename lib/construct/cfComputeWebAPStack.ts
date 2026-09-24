@@ -160,7 +160,7 @@ export class cfComputeWebAPStack extends Construct {
             "ec2InstanceBastion",
             {
                 instanceName: `${commonProps.projectName}-${commonProps.envName}-ec2-instance-bastion`,
-                instanceType: new ec2.InstanceType("t4g.medium"),
+                instanceType: new ec2.InstanceType("t4g.small"),
                 machineImage: ec2.MachineImage.latestAmazonLinux2023(),
                 vpc: ec2.Vpc.fromVpcAttributes(this, "vpc", {
                     vpcId: networkingProps.vpcId,
