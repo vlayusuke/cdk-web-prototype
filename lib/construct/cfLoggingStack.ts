@@ -19,6 +19,9 @@ export class cfLoggingStack extends Construct {
     public readonly logGroupAuroraPostgresql: logs.LogGroup;
     public readonly logGroupAuroraIamDbAuthError: logs.LogGroup;
     public readonly logGroupElastiCache: logs.LogGroup;
+    public readonly logGroupLambdaLogsAlert: logs.LogGroup;
+    public readonly logGroupLambdaMetricsAlert: logs.LogGroup;
+    public readonly logGroupLambdaRdsControl: logs.LogGroup;
     public readonly logStreamNginxEcsApp: logs.LogStream;
     public readonly logStreamAppEcsApp: logs.LogStream;
     public readonly logStreamEcsCron: logs.LogStream;
@@ -27,6 +30,9 @@ export class cfLoggingStack extends Construct {
     public readonly logStreamAuroraPostgresql: logs.LogStream;
     public readonly logStreamAuroraIamDbAuthError: logs.LogStream;
     public readonly logStreamElastiCache: logs.LogStream;
+    public readonly logStreamLambdaLogsAlert: logs.LogStream;
+    public readonly logStreamLambdaMetricsAlert: logs.LogStream;
+    public readonly logStreamLambdaRdsControl: logs.LogStream;
 
     constructor(scope: Construct, id: string, commonProps: commonProps) {
         super(scope, id);
@@ -235,6 +241,93 @@ export class cfLoggingStack extends Construct {
             {
                 logGroup: this.logGroupElastiCache,
                 logStreamName: `/elasticache/${commonProps.projectName}/${commonProps.envName}`,
+            },
+        );
+
+        // ------------------------------------------------------------
+        // Amazon CloudWatch Logs for AWS Lambda Configuration (cloudwatch-logs-alert)
+        // ------------------------------------------------------------
+        this.logGroupLambdaLogsAlert = new logs.LogGroup(
+            this,
+            "LogGroupLambdaLogsAlert",
+            {
+                logGroupName: `/lambda/${commonProps.projectName}/${commonProps.envName}/cloudwatch-logs-alert`,
+                logGroupClass: logs.LogGroupClass.STANDARD,
+                retention: logs.RetentionDays.ONE_YEAR,
+            },
+        );
+
+        cdk.Tags.of(this.logGroupLambdaLogsAlert).add(
+            "Name",
+            `${commonProps.envName}-${commonProps.projectName}-loggroup-lambda-logs-alert`,
+        );
+        cdk.Tags.of(this.logGroupLambdaLogsAlert).add("ProvisionedBy", "AWS");
+
+        this.logStreamLambdaLogsAlert = new logs.LogStream(
+            this,
+            "LogStreamLambdaLogsAlert",
+            {
+                logGroup: this.logGroupLambdaLogsAlert,
+                logStreamName: `/lambda/${commonProps.projectName}/${commonProps.envName}/cloudwatch-logs-alert`,
+            },
+        );
+
+        // ------------------------------------------------------------
+        // Amazon CloudWatch Logs for AWS Lambda Configuration (cloudwatch-metrics-alert)
+        // ------------------------------------------------------------
+        this.logGroupLambdaMetricsAlert = new logs.LogGroup(
+            this,
+            "LogGroupLambdaMetricsAlert",
+            {
+                logGroupName: `/lambda/${commonProps.projectName}/${commonProps.envName}/cloudwatch-metrics-alert`,
+                logGroupClass: logs.LogGroupClass.STANDARD,
+                retention: logs.RetentionDays.ONE_YEAR,
+            },
+        );
+
+        cdk.Tags.of(this.logGroupLambdaMetricsAlert).add(
+            "Name",
+            `${commonProps.envName}-${commonProps.projectName}-loggroup-lambda-metrics-alert`,
+        );
+        cdk.Tags.of(this.logGroupLambdaMetricsAlert).add(
+            "ProvisionedBy",
+            "AWS",
+        );
+
+        this.logStreamLambdaMetricsAlert = new logs.LogStream(
+            this,
+            "LogStreamLambdaMetricsAlert",
+            {
+                logGroup: this.logGroupLambdaMetricsAlert,
+                logStreamName: `/lambda/${commonProps.projectName}/${commonProps.envName}/cloudwatch-metrics-alert`,
+            },
+        );
+
+        // ------------------------------------------------------------
+        // Amazon CloudWatch Logs for AWS Lambda Configuration (rds-control)
+        // ------------------------------------------------------------
+        this.logGroupLambdaRdsControl = new logs.LogGroup(
+            this,
+            "LogGroupLambdaRdsControl",
+            {
+                logGroupName: `/lambda/${commonProps.projectName}/${commonProps.envName}/rds-control`,
+                logGroupClass: logs.LogGroupClass.STANDARD,
+                retention: logs.RetentionDays.ONE_YEAR,
+            },
+        );
+
+        cdk.Tags.of(this.logGroupLambdaRdsControl).add(
+            "Name",
+            `${commonProps.envName}-${commonProps.projectName}-loggroup-lambda-rds-control`,
+        );
+        cdk.Tags.of(this.logGroupLambdaRdsControl).add("ProvisionedBy", "AWS");
+
+        this.logStreamLambdaRdsControl = new logs.LogStream(
+            this,
+            "LogStreamLambdaRdsControl",
+            {
+                logGroup: this.logGroupLambdaRdsControl,
+                logStreamName: `/lambda/${commonProps.projectName}/${commonProps.envName}/rds-control`,
             },
         );
     }
