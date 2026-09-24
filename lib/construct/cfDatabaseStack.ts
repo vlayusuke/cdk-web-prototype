@@ -129,7 +129,7 @@ export class cfDatabaseStack extends Construct {
         );
 
         // ------------------------------------------------------------
-        // AWS IAM for Amaazon ElastiCache Configuration
+        // AWS IAM for Amazon ElastiCache Configuration
         // ------------------------------------------------------------
         const elasticacheIamRole = new iam.Role(this, "ElasticacheIamRole", {
             description: "IAM role for Amazon ElastiCache",
@@ -220,11 +220,11 @@ export class cfDatabaseStack extends Construct {
             ],
             availabilityZones: ["ap-northeast-1a", "ap-northeast-1c"],
             dbSubnetGroupName: auroraSubnetGroup.ref,
-            backupRetentionPeriod: 14,
+            backupRetentionPeriod: 7,
             backtrackWindow: 86400,
-            databaseName: "cdk-web-prototype-database",
+            databaseName: `${props.projectName}-${props.envName}-aurora-db`,
             databaseInsightsMode: "standard",
-            deletionProtection: true,
+            deletionProtection: false,
             enableCloudwatchLogsExports: [
                 `instance`,
                 `postgresql`,
@@ -267,12 +267,14 @@ export class cfDatabaseStack extends Construct {
                 dbClusterIdentifier: auroraCluster.ref,
                 dbParameterGroupName: auroraDbParameterGroup.ref,
                 dbSubnetGroupName: auroraSubnetGroup.ref,
+                deletionProtection: false,
                 publiclyAccessible: false,
                 enablePerformanceInsights: true,
-                performanceInsightsRetentionPeriod: 7,
+                performanceInsightsRetentionPeriod: 3,
                 kmsKeyId: kmsProps.auroraKey.keyId,
                 caCertificateIdentifier: "rds-ca-rsa2048-g1",
                 promotionTier: 0,
+                applyImmediately: true,
             },
         );
 
@@ -288,11 +290,13 @@ export class cfDatabaseStack extends Construct {
                 dbParameterGroupName: auroraDbParameterGroup.ref,
                 dbSubnetGroupName: auroraSubnetGroup.ref,
                 publiclyAccessible: false,
+                deletionProtection: false,
                 enablePerformanceInsights: true,
-                performanceInsightsRetentionPeriod: 7,
+                performanceInsightsRetentionPeriod: 3,
                 kmsKeyId: kmsProps.auroraKey.keyId,
                 caCertificateIdentifier: "rds-ca-rsa2048-g1",
                 promotionTier: 1,
+                applyImmediately: true,
             },
         );
 
@@ -333,7 +337,7 @@ export class cfDatabaseStack extends Construct {
         cdk.Tags.of(elasticacheSubnetGroup).add("ProvisionedBy", "AWS");
 
         // ------------------------------------------------------------
-        // ElastiCache Parameter Group Configuration
+        // Amazon ElastiCache Parameter Group Configuration
         // ------------------------------------------------------------
         const elasticacheParameterGroup = new elasticache.CfnParameterGroup(
             this,
@@ -384,7 +388,7 @@ export class cfDatabaseStack extends Construct {
                 numNodeGroups: 2,
                 port: 6379,
                 automaticFailoverEnabled: true,
-                snapshotRetentionLimit: 14,
+                snapshotRetentionLimit: 7,
                 snapshotWindow: "20:00-21:00",
                 securityGroupIds: [
                     sgProps.elasticacheSecurityGroup.securityGroupId,
