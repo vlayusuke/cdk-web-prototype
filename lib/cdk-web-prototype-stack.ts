@@ -35,7 +35,7 @@ export interface pocProps {
  * This stack ensures that all components are properly configured and interconnected to support the web prototype's functionality.
  *
  * construction order:
- *  1. [01] cfSecurityConfigStack as securityConfigStack
+ *   1. [01] cfSecurityConfigStack as securityConfigStack
  *   2. [02] cfNetworkStack as networkStack
  *   3. [03] cfSgFrameStack as sgFrameStack
  *   4. [04] cfDatabaseStack as databaseStack
@@ -50,6 +50,7 @@ export interface pocProps {
  *  13. [13] cfNotificationStack as notificationStack
  *  14. [14] cfMonitoringStack as monitoringStack
  *  15. [15] cfLoggingStack as loggingStack
+ *  16. [16] cfCICDStack as cicdStack
  */
 export class CdkWebPrototypeStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -308,5 +309,11 @@ export class CdkWebPrototypeStack extends cdk.Stack {
             "cfLoggingStack",
             commonProps,
         );
+
+        // ------------------------------------------------------------
+        // [16] - cfCICDStack
+        // ------------------------------------------------------------
+
+        // Reservation for future stacks
     }
 }
