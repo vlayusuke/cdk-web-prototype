@@ -29,6 +29,7 @@ export class cfSecurityConfigStack extends Construct {
     public readonly ebsKey: kms.IKey;
     public readonly lambdaKey: kms.IKey;
     public readonly eventBridgeKey: kms.IKey;
+    public readonly snsKey: kms.IKey;
     public readonly postgresqlSecret: secretsmanager.ISecret;
 
     constructor(scope: Construct, id: string, props: commonProps) {
@@ -398,6 +399,47 @@ export class cfSecurityConfigStack extends Construct {
         this.eventBridgeKey.addToResourcePolicy(
             kmsAccountEventBridgeAccessPolicy,
         );
+
+        // ------------------------------------------------------------
+        // AWS KMS Key for Amazon SNS Configuration
+        // ------------------------------------------------------------
+        this.snsKey = new kms.Key(this, "SnsKey", {
+            description: "KMS key for Amazon SNS encryption",
+            enableKeyRotation: true,
+            keyUsage: kms.KeyUsage.ENCRYPT_DECRYPT,
+            pendingWindow: cdk.Duration.days(7),
+        });
+
+        cdk.Tags.of(this.snsKey).add(
+            "Name",
+            `${props.projectName}-${props.envName}-kms-sns-key`,
+        );
+        cdk.Tags.of(this.snsKey).add("ProvisionedBy", "AWS");
+
+        // AWS KMS Key policy for Amazon SNS encryption
+        const kmsSnsKeyPolicy = new iam.PolicyStatement({
+            sid: "SnsKMS",
+            effect: iam.Effect.ALLOW,
+            actions: [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+            ],
+            resources: [this.snsKey.keyArn],
+            principals: [new iam.ServicePrincipal("sns.amazonaws.com")],
+        });
+
+        const kmsAccountSnsAccessPolicy = new iam.PolicyStatement({
+            sid: "AllowAccountSnsAccess",
+            effect: iam.Effect.ALLOW,
+            actions: ["kms:*"],
+            resources: [this.snsKey.keyArn],
+            principals: [new iam.AccountRootPrincipal()],
+        });
+
+        this.snsKey.addToResourcePolicy(kmsSnsKeyPolicy);
+        this.snsKey.addToResourcePolicy(kmsAccountSnsAccessPolicy);
 
         // ------------------------------------------------------------
         // AWS Secrets Manager for PostgreSQL Credentials
