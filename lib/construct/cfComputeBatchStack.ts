@@ -131,7 +131,7 @@ export class cfComputeBatchStack extends Construct {
             "ec2InstanceBatchAZa",
             {
                 instanceName: `${commonProps.projectName}-${commonProps.envName}-ec2-instance-batch-az-a`,
-                instanceType: new ec2.InstanceType("t4g.large"),
+                instanceType: new ec2.InstanceType("t4g.small"),
                 machineImage: ec2.MachineImage.latestAmazonLinux2023(),
                 vpc: ec2.Vpc.fromVpcAttributes(this, "vpc", {
                     vpcId: networkingProps.vpcId,
@@ -151,14 +151,14 @@ export class cfComputeBatchStack extends Construct {
                     {
                         mappingEnabled: true,
                         deviceName: "/dev/xvda",
-                        volume: ec2.BlockDeviceVolume.ebs(64, {
+                        volume: ec2.BlockDeviceVolume.ebs(8, {
                             encrypted: true,
                         }),
                     },
                     {
                         mappingEnabled: true,
                         deviceName: "/dev/xvdb",
-                        volume: ec2.BlockDeviceVolume.ebs(128, {
+                        volume: ec2.BlockDeviceVolume.ebs(256, {
                             encrypted: true,
                         }),
                     },
@@ -180,7 +180,7 @@ export class cfComputeBatchStack extends Construct {
             "ec2InstanceBatchAZc",
             {
                 instanceName: `${commonProps.projectName}-${commonProps.envName}-ec2-instance-batch-az-c`,
-                instanceType: new ec2.InstanceType("t4g.large"),
+                instanceType: new ec2.InstanceType("t4g.small"),
                 machineImage: ec2.MachineImage.latestAmazonLinux2023(),
                 vpc: ec2.Vpc.fromVpcAttributes(this, "vpc", {
                     vpcId: networkingProps.vpcId,
@@ -200,14 +200,14 @@ export class cfComputeBatchStack extends Construct {
                     {
                         mappingEnabled: true,
                         deviceName: "/dev/xvda",
-                        volume: ec2.BlockDeviceVolume.ebs(64, {
+                        volume: ec2.BlockDeviceVolume.ebs(8, {
                             encrypted: true,
                         }),
                     },
                     {
                         mappingEnabled: true,
                         deviceName: "/dev/xvdb",
-                        volume: ec2.BlockDeviceVolume.ebs(128, {
+                        volume: ec2.BlockDeviceVolume.ebs(256, {
                             encrypted: true,
                         }),
                     },
