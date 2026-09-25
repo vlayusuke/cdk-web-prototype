@@ -1,6 +1,5 @@
 import * as cdk from "aws-cdk-lib";
 import { aws_ec2 as ec2, aws_ecs as ecs, aws_iam as iam } from "aws-cdk-lib";
-import type * as kms from "aws-cdk-lib/aws-kms";
 import { Construct } from "constructs";
 
 export interface commonProps {
@@ -11,11 +10,6 @@ export interface commonProps {
 export interface pocProps {
     vpcCidr: string;
     defaultGatewayCidr: string;
-}
-
-export interface kmsProps {
-    applicationKey: kms.IKey;
-    bastionKey: kms.IKey;
 }
 
 export interface networkingProps {
@@ -36,7 +30,6 @@ export class cfComputeWebAPStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        kmsProps: kmsProps,
         networkingProps: networkingProps,
         sgProps: sgProps,
         commonProps: commonProps,
@@ -66,7 +59,7 @@ export class cfComputeWebAPStack extends Construct {
                 sid: "SSMAccess",
                 actions: ["ssm:StartSession", "ssm:SendCommand"],
                 resources: [
-                    `arn:aws:ssm:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:document/AWS-StartSession`,
+                    `arn:aws:ssm:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:document/AWS-StartSession`,
                 ],
             }),
         );
@@ -126,7 +119,7 @@ export class cfComputeWebAPStack extends Construct {
         // ------------------------------------------------------------
         this.ecsCluster = new ecs.Cluster(this, "ecsCluster", {
             clusterName: "EcsCluster",
-            containerInsights: true,
+            containerInsightsV2: ecs.ContainerInsights.ENABLED,
             // Registers FARGATE and FARGATE_SPOT as capacity providers on the cluster.
             enableFargateCapacityProviders: true,
         });
@@ -147,7 +140,6 @@ export class cfComputeWebAPStack extends Construct {
         // ------------------------------------------------------------
         const bastionKeyPair = new ec2.KeyPair(this, "bastionKeyPair", {
             keyPairName: `${commonProps.projectName}-${commonProps.envName}-bastion-key-pair`,
-            publicKeyMaterial: kmsProps.bastionKey.keyId,
             type: ec2.KeyPairType.ED25519,
             format: ec2.KeyPairFormat.PEM,
         });
@@ -169,7 +161,6 @@ export class cfComputeWebAPStack extends Construct {
                 }),
                 securityGroup: sgProps.bastionSecurityGroup,
                 instanceProfile: ec2IamInstanceProfileForBastion,
-                keyName: kmsProps.bastionKey.keyId,
                 disableApiTermination: true,
                 detailedMonitoring: true,
                 allowAllIpv6Outbound: false,
