@@ -2,6 +2,7 @@ import * as cdk from "aws-cdk-lib/core";
 import type { Construct } from "constructs";
 import { commonParameter } from "../commonParameter";
 import { pocParameter } from "../pocParameter";
+import { cfCICDStack } from "./construct/cfCICDStack";
 import { cfComputeBatchStack } from "./construct/cfComputeBatchStack";
 import { cfComputeDefinitionStack } from "./construct/cfComputeDefinitionStack";
 import { cfComputeWebAPStack } from "./construct/cfComputeWebAPStack";
@@ -313,7 +314,8 @@ export class CdkWebPrototypeStack extends cdk.Stack {
         // ------------------------------------------------------------
         // [16] - cfCICDStack
         // ------------------------------------------------------------
-
-        // Reservation for future stacks
+        const cicdStack = new cfCICDStack(this, "cfCICDStack", commonProps, {
+            codeCommitKey: securityConfigStack.codeCommitKey,
+        });
     }
 }
