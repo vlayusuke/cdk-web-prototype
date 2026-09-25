@@ -30,6 +30,7 @@ export class cfSecurityConfigStack extends Construct {
     public readonly lambdaKey: kms.IKey;
     public readonly eventBridgeKey: kms.IKey;
     public readonly snsKey: kms.IKey;
+    public readonly codeCommitKey: kms.IKey;
     public readonly postgresqlSecret: secretsmanager.ISecret;
 
     constructor(scope: Construct, id: string, props: commonProps) {
@@ -440,6 +441,49 @@ export class cfSecurityConfigStack extends Construct {
 
         this.snsKey.addToResourcePolicy(kmsSnsKeyPolicy);
         this.snsKey.addToResourcePolicy(kmsAccountSnsAccessPolicy);
+
+        // ------------------------------------------------------------
+        // AWS KMS Key for AWS CodeCommit Configuration
+        // ------------------------------------------------------------
+        this.codeCommitKey = new kms.Key(this, "CodeCommitKey", {
+            description: "KMS key for AWS CodeCommit encryption",
+            enableKeyRotation: true,
+            keyUsage: kms.KeyUsage.ENCRYPT_DECRYPT,
+            pendingWindow: cdk.Duration.days(7),
+        });
+
+        cdk.Tags.of(this.codeCommitKey).add(
+            "Name",
+            `${props.projectName}-${props.envName}-kms-codecommit-key`,
+        );
+        cdk.Tags.of(this.codeCommitKey).add("ProvisionedBy", "AWS");
+
+        // AWS KMS Key policy for AWS CodeCommit encryption
+        const kmsCodeCommitKeyPolicy = new iam.PolicyStatement({
+            sid: "CodeCommitKMS",
+            effect: iam.Effect.ALLOW,
+            actions: [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:DescribeKey",
+            ],
+            resources: [this.codeCommitKey.keyArn],
+            principals: [new iam.ServicePrincipal("codecommit.amazonaws.com")],
+        });
+
+        const kmsAccountCodeCommitAccessPolicy = new iam.PolicyStatement({
+            sid: "AllowAccountCodeCommitAccess",
+            effect: iam.Effect.ALLOW,
+            actions: ["kms:*"],
+            resources: [this.codeCommitKey.keyArn],
+            principals: [new iam.AccountRootPrincipal()],
+        });
+
+        this.codeCommitKey.addToResourcePolicy(kmsCodeCommitKeyPolicy);
+        this.codeCommitKey.addToResourcePolicy(
+            kmsAccountCodeCommitAccessPolicy,
+        );
 
         // ------------------------------------------------------------
         // AWS Secrets Manager for PostgreSQL Credentials
