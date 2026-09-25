@@ -1,6 +1,5 @@
 import * as cdk from "aws-cdk-lib";
 import { aws_ec2 as ec2, aws_iam as iam } from "aws-cdk-lib";
-import type * as kms from "aws-cdk-lib/aws-kms";
 import { Construct } from "constructs";
 
 export interface commonProps {
@@ -11,11 +10,6 @@ export interface commonProps {
 export interface pocProps {
     vpcCidr: string;
     defaultGatewayCidr: string;
-}
-
-export interface kmsProps {
-    applicationKey: kms.IKey;
-    bastionKey: kms.IKey;
 }
 
 export interface networkingProps {
@@ -34,7 +28,6 @@ export class cfComputeBatchStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        kmsProps: kmsProps,
         networkingProps: networkingProps,
         sgProps: sgProps,
         commonProps: commonProps,
@@ -60,7 +53,7 @@ export class cfComputeBatchStack extends Construct {
                 sid: "SSMAccess",
                 actions: ["ssm:StartSession", "ssm:SendCommand"],
                 resources: [
-                    `arn:aws:ssm:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:document/AWS-StartSession`,
+                    `arn:aws:ssm:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:document/AWS-StartSession`,
                 ],
             }),
         );
@@ -83,7 +76,7 @@ export class cfComputeBatchStack extends Construct {
                             "rds-data:ExecuteStatement",
                         ],
                         resources: [
-                            `arn:aws:rds:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:db:*`,
+                            `arn:aws:rds:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:db:*`,
                         ],
                     }),
                 ],
@@ -118,7 +111,6 @@ export class cfComputeBatchStack extends Construct {
         // ------------------------------------------------------------
         const batchKeyPair = new ec2.KeyPair(this, "batchKeyPair", {
             keyPairName: `${commonProps.projectName}-${commonProps.envName}-batch-key-pair`,
-            publicKeyMaterial: kmsProps.bastionKey.keyId,
             type: ec2.KeyPairType.ED25519,
             format: ec2.KeyPairFormat.PEM,
         });
@@ -140,7 +132,6 @@ export class cfComputeBatchStack extends Construct {
                 }),
                 securityGroup: sgProps.batchSecurityGroup,
                 instanceProfile: ec2IamInstanceProfileForBatch,
-                keyName: `${commonProps.projectName}-${commonProps.envName}-batch-key-pair`,
                 disableApiTermination: true,
                 detailedMonitoring: true,
                 allowAllIpv6Outbound: false,
@@ -182,14 +173,13 @@ export class cfComputeBatchStack extends Construct {
                 instanceName: `${commonProps.projectName}-${commonProps.envName}-ec2-instance-batch-az-c`,
                 instanceType: new ec2.InstanceType("t4g.small"),
                 machineImage: ec2.MachineImage.latestAmazonLinux2023(),
-                vpc: ec2.Vpc.fromVpcAttributes(this, "vpc", {
+                vpc: ec2.Vpc.fromVpcAttributes(this, "vpcAZc", {
                     vpcId: networkingProps.vpcId,
                     availabilityZones: ["ap-northeast-1c"],
                     publicSubnetIds: [networkingProps.subnetIds[1]],
                 }),
                 securityGroup: sgProps.batchSecurityGroup,
                 instanceProfile: ec2IamInstanceProfileForBatch,
-                keyName: `${commonProps.projectName}-${commonProps.envName}-batch-key-pair`,
                 disableApiTermination: true,
                 detailedMonitoring: true,
                 allowAllIpv6Outbound: false,
