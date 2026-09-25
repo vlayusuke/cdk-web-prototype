@@ -169,7 +169,7 @@ export class cfComputeDefinitionStack extends Construct {
                             "rds-data:ExecuteStatement",
                         ],
                         resources: [
-                            `arn:aws:rds-db:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:dbuser:*/*`,
+                            `arn:aws:rds-db:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:dbuser:*/*`,
                         ],
                     }),
                     new iam.PolicyStatement({
@@ -210,6 +210,8 @@ export class cfComputeDefinitionStack extends Construct {
             "ecsAppTaskDefinition",
             {
                 family: "app",
+                cpu: 512,
+                memoryLimitMiB: 1024,
                 taskRole: iamEcsTaskRole,
                 executionRole: iamEcsTaskExecutionRole,
                 runtimePlatform: {
@@ -377,7 +379,10 @@ export class cfComputeDefinitionStack extends Construct {
                 }),
                 adjustmentType:
                     applicationautoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
-                scalingSteps: [{ change: 1, lower: 0 }],
+                scalingSteps: [
+                    { change: 1, lower: 0, upper: 50 },
+                    { change: 1, lower: 50 },
+                ],
                 cooldown: cdk.Duration.seconds(120),
             },
         );
@@ -398,7 +403,10 @@ export class cfComputeDefinitionStack extends Construct {
                 }),
                 adjustmentType:
                     applicationautoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
-                scalingSteps: [{ change: -1, upper: 0 }],
+                scalingSteps: [
+                    { change: -1, upper: -50 },
+                    { change: -1, lower: -50, upper: 0 },
+                ],
                 cooldown: cdk.Duration.seconds(300),
             },
         );
