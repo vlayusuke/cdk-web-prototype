@@ -58,6 +58,7 @@ export class cfStorageStack extends Construct {
     public readonly s3BucketAlbLogs: s3.Bucket;
     public readonly s3BucketAuroraLogs: s3.Bucket;
     public readonly s3BucketEcsLogs: s3.Bucket;
+    public readonly s3BucketEc2Logs: s3.Bucket;
     public readonly s3BucketElastiCacheLogs: s3.Bucket;
     public readonly s3BucketLambdaLogs: s3.Bucket;
     public readonly s3BucketAssets: s3.Bucket;
@@ -460,6 +461,45 @@ export class cfStorageStack extends Construct {
         });
 
         // ------------------------------------------------------------
+        // Amazon S3 Bucket for Amazon EC2 Logs Configuration
+        // ------------------------------------------------------------
+        this.s3BucketEc2Logs = new s3.Bucket(this, "s3BucketEc2Logs", {
+            bucketName: `${commonProps.projectName}-${commonProps.envName}-ec2-logs`,
+            versioned: true,
+            accessControl: s3.BucketAccessControl.PRIVATE,
+            encryptionKey: props.s3Key,
+            encryption: s3.BucketEncryption.KMS,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+            removalPolicy: cdk.RemovalPolicy.RETAIN,
+            enforceSSL: true,
+            blockedEncryptionTypes: [s3.BlockedEncryptionType.SSE_C],
+        });
+
+        cdk.Tags.of(this.s3BucketEc2Logs).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-s3-bucket-ec2-logs`,
+        );
+        cdk.Tags.of(this.s3BucketEc2Logs).add("ProvisionedBy", "AWS");
+
+        new s3deploy.BucketDeployment(this, "deployEc2BastionLogs", {
+            sources: [s3deploy.Source.asset("./")],
+            destinationBucket: this.s3BucketEc2Logs,
+            destinationKeyPrefix: "bastion-logs",
+        });
+
+        new s3deploy.BucketDeployment(this, "deployEc2BatchALogs", {
+            sources: [s3deploy.Source.asset("./")],
+            destinationBucket: this.s3BucketEc2Logs,
+            destinationKeyPrefix: "batch-a-logs",
+        });
+
+        new s3deploy.BucketDeployment(this, "deployEc2BatchCLogs", {
+            sources: [s3deploy.Source.asset("./")],
+            destinationBucket: this.s3BucketEc2Logs,
+            destinationKeyPrefix: "batch-c-logs",
+        });
+
+        // ------------------------------------------------------------
         // Amazon S3 Bucket for AWS Lambda Logs Configuration
         // ------------------------------------------------------------
         this.s3BucketLambdaLogs = new s3.Bucket(this, "s3BucketLambdaLogs", {
@@ -488,19 +528,23 @@ export class cfStorageStack extends Construct {
 
         new s3deploy.BucketDeployment(
             this,
-            "deployLambdaCwtLogErrorAlarmLogs",
+            "deployLambdaCloudWatchLogsAlertLogs",
             {
                 sources: [s3deploy.Source.asset("./")],
                 destinationBucket: this.s3BucketLambdaLogs,
-                destinationKeyPrefix: "cwt-log-error-alarm",
+                destinationKeyPrefix: "cloudwatch-logs-alert-logs",
             },
         );
 
-        new s3deploy.BucketDeployment(this, "deployLambdaCwtMetricsAlarmLogs", {
-            sources: [s3deploy.Source.asset("./")],
-            destinationBucket: this.s3BucketLambdaLogs,
-            destinationKeyPrefix: "cwt-metrics-alarm",
-        });
+        new s3deploy.BucketDeployment(
+            this,
+            "deployLambdaCloudWatchMetricsAlertLogs",
+            {
+                sources: [s3deploy.Source.asset("./")],
+                destinationBucket: this.s3BucketLambdaLogs,
+                destinationKeyPrefix: "cloudwatch-metrics-alert-logs",
+            },
+        );
 
         // ------------------------------------------------------------
         // Amazon S3 Bucket for Amazon Aurora Logs Configuration
