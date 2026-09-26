@@ -67,7 +67,7 @@ export class cfDatabaseStack extends Construct {
                     sid: "AuroraRDSAccess",
                     actions: ["rds-db:connect", "rds-data:ExecuteStatement"],
                     resources: [
-                        `arn:aws:rds-db:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:dbuser:*/*`,
+                        `arn:aws:rds-db:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:dbuser:*/*`,
                     ],
                 }),
             ],
@@ -107,7 +107,7 @@ export class cfDatabaseStack extends Construct {
                             "rds:DescribeDBClusters",
                         ],
                         resources: [
-                            `arn:aws:rds:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:db:*`,
+                            `arn:aws:rds:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:db:*`,
                         ],
                     }),
                 ],
@@ -154,8 +154,8 @@ export class cfDatabaseStack extends Construct {
                             "elasticache:DescribeCacheSubnetGroups",
                         ],
                         resources: [
-                            `arn:aws:elasticache:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:cluster:*`,
-                            `arn:aws:elasticache:${cdk.Stack.of(this).account}:${cdk.Stack.of(this).region}:subnet-group:*`,
+                            `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:cluster:*`,
+                            `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:subnet-group:*`,
                         ],
                     }),
                 ],
