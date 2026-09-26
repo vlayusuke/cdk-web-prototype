@@ -12,6 +12,10 @@ export interface pocProps {
     defaultGatewayCidr: string;
 }
 
+export interface vpcProps {
+    vpc: ec2.IVpc;
+}
+
 // ------------------------------------------------------------
 // [03] - Security group Frame Stack
 // ------------------------------------------------------------
@@ -30,12 +34,15 @@ export class cfSgFrameStack extends Construct {
     public readonly vpcEndPointKMSSecurityGroupFrame: ec2.SecurityGroup;
     public readonly vpcEndPointCloudWatchLogsSecurityGroupFrame: ec2.SecurityGroup;
 
-    constructor(scope: Construct, id: string, props: commonProps) {
+    constructor(
+        scope: Construct,
+        id: string,
+        props: commonProps,
+        vpcProps: vpcProps,
+    ) {
         super(scope, id);
 
-        this.vpc = ec2.Vpc.fromLookup(this, "Vpc", {
-            isDefault: true,
-        });
+        this.vpc = vpcProps.vpc;
 
         // ------------------------------------------------------------
         // Security group for ALB Configuration (Frame Only)
