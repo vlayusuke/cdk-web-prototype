@@ -1,8 +1,9 @@
 import type { aws_kms as kms } from "aws-cdk-lib";
 import * as cdk from "aws-cdk-lib";
 import {
+    aws_chatbot as chatbot,
+    aws_iam as iam,
     aws_sns as sns,
-    aws_sns_subscriptions as subscriptions,
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
 
@@ -12,8 +13,8 @@ export interface commonProps {
 }
 
 export interface pocProps {
-    monitoringNotificationEmail: string;
     monitoringSlackWorkspaceId: string;
+    monitoringSlackChannelId: string;
 }
 
 export interface kmsProps {
@@ -48,27 +49,8 @@ export class cfNotificationStack extends Construct {
                 displayName: "SNS Topic for CloudWatch Metrics Alarm",
                 enforceSSL: true,
                 masterKey: kmsProps.snsKeyArn,
-                signatureVersion: "sigv4",
+                signatureVersion: "2",
             },
-        );
-
-        this.snsTopicMetricsAlarm.addSubscription(
-            new subscriptions.UrlSubscription(
-                pocProps.monitoringSlackWorkspaceId,
-                {
-                    deliveryPolicy: {
-                        healthyRetryPolicy: {
-                            numRetries: 3,
-                            minDelayTarget: cdk.Duration.seconds(20),
-                            maxDelayTarget: cdk.Duration.seconds(20),
-                            numNoDelayRetries: 0,
-                            numMinDelayRetries: 0,
-                            numMaxDelayRetries: 0,
-                            backoffFunction: sns.BackoffFunction.LINEAR,
-                        },
-                    },
-                },
-            ),
         );
 
         cdk.Tags.of(this.snsTopicMetricsAlarm).add(
@@ -85,27 +67,8 @@ export class cfNotificationStack extends Construct {
             displayName: "SNS Topic for CloudWatch Logs Alarm",
             enforceSSL: true,
             masterKey: kmsProps.snsKeyArn,
-            signatureVersion: "sigv4",
+            signatureVersion: "2",
         });
-
-        this.snsTopicLogsAlarm.addSubscription(
-            new subscriptions.UrlSubscription(
-                pocProps.monitoringSlackWorkspaceId,
-                {
-                    deliveryPolicy: {
-                        healthyRetryPolicy: {
-                            numRetries: 3,
-                            minDelayTarget: cdk.Duration.seconds(20),
-                            maxDelayTarget: cdk.Duration.seconds(20),
-                            numNoDelayRetries: 0,
-                            numMinDelayRetries: 0,
-                            numMaxDelayRetries: 0,
-                            backoffFunction: sns.BackoffFunction.LINEAR,
-                        },
-                    },
-                },
-            ),
-        );
 
         cdk.Tags.of(this.snsTopicLogsAlarm).add(
             "Name",
@@ -124,27 +87,8 @@ export class cfNotificationStack extends Construct {
                 displayName: "SNS Topic for Event Notification",
                 enforceSSL: true,
                 masterKey: kmsProps.snsKeyArn,
-                signatureVersion: "sigv4",
+                signatureVersion: "2",
             },
-        );
-
-        this.snsTopicEventNotification.addSubscription(
-            new subscriptions.UrlSubscription(
-                pocProps.monitoringSlackWorkspaceId,
-                {
-                    deliveryPolicy: {
-                        healthyRetryPolicy: {
-                            numRetries: 3,
-                            minDelayTarget: cdk.Duration.seconds(20),
-                            maxDelayTarget: cdk.Duration.seconds(20),
-                            numNoDelayRetries: 0,
-                            numMinDelayRetries: 0,
-                            numMaxDelayRetries: 0,
-                            backoffFunction: sns.BackoffFunction.LINEAR,
-                        },
-                    },
-                },
-            ),
         );
 
         cdk.Tags.of(this.snsTopicEventNotification).add(
@@ -152,5 +96,26 @@ export class cfNotificationStack extends Construct {
             `${props.projectName}-${props.envName}-sns-event-notification`,
         );
         cdk.Tags.of(this.snsTopicEventNotification).add("ProvisionedBy", "AWS");
+
+        new chatbot.SlackChannelConfiguration(
+            this,
+            "SlackChannelConfiguration",
+            {
+                slackChannelConfigurationName: `${props.projectName}-${props.envName}-slack-channel`,
+                slackWorkspaceId: pocProps.monitoringSlackWorkspaceId,
+                slackChannelId: pocProps.monitoringSlackChannelId,
+                notificationTopics: [
+                    this.snsTopicMetricsAlarm,
+                    this.snsTopicLogsAlarm,
+                    this.snsTopicEventNotification,
+                ],
+                guardrailPolicies: [
+                    iam.ManagedPolicy.fromAwsManagedPolicyName(
+                        "CloudWatchReadOnlyAccess",
+                    ),
+                ],
+                loggingLevel: chatbot.LoggingLevel.ERROR,
+            },
+        );
     }
 }
