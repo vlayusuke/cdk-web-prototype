@@ -37,7 +37,7 @@ export class cfNetworkStack extends Construct {
         // ------------------------------------------------------------
         const Vpc = new ec2.Vpc(this, "Vpc", {
             ipAddresses: IpAddresses.cidr(props.vpcCidr),
-            maxAzs: 2,
+            availabilityZones: ["ap-northeast-1a", "ap-northeast-1c"],
             natGateways: 2,
 
             subnetConfiguration: [
