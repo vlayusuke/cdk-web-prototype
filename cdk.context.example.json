@@ -1,0 +1,9 @@
+{
+    "poc": {
+        "account": "123456789012",
+        "region": "ap-northeast-1",
+        "monitoringNotifyEmail": "replace-with-your-email@example.com",
+        "monitoringSlackWorkspaceId": "T00000000000",
+        "monitoringSlackChannelId": "C00000000000"
+    }
+}
