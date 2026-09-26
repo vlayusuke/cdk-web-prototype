@@ -12,6 +12,7 @@ export interface commonProps {
 export interface pocProps {
     vpcCidr: string;
     defaultGatewayCidr: string;
+    availabilityZones: [string, string];
 }
 
 export interface kmsProps {
@@ -37,7 +38,7 @@ export class cfNetworkStack extends Construct {
         // ------------------------------------------------------------
         const Vpc = new ec2.Vpc(this, "Vpc", {
             ipAddresses: IpAddresses.cidr(props.vpcCidr),
-            availabilityZones: ["ap-northeast-1a", "ap-northeast-1c"],
+            availabilityZones: props.availabilityZones,
             natGateways: 2,
 
             subnetConfiguration: [
