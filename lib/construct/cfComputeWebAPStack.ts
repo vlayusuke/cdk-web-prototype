@@ -15,6 +15,7 @@ export interface pocProps {
 export interface networkingProps {
     vpcId: string;
     subnetIds: string[];
+    availabilityZones: [string, string];
 }
 
 export interface sgProps {
@@ -156,7 +157,7 @@ export class cfComputeWebAPStack extends Construct {
                 machineImage: ec2.MachineImage.latestAmazonLinux2023(),
                 vpc: ec2.Vpc.fromVpcAttributes(this, "vpc", {
                     vpcId: networkingProps.vpcId,
-                    availabilityZones: ["ap-northeast-1a"],
+                    availabilityZones: [networkingProps.availabilityZones[0]],
                     publicSubnetIds: [networkingProps.subnetIds[0]],
                 }),
                 securityGroup: sgProps.bastionSecurityGroup,
