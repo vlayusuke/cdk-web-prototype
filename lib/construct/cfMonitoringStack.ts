@@ -59,8 +59,8 @@ export class cfMonitoringStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        ecsProps: ecsProps,
         commonProps: commonProps,
+        ecsProps: ecsProps,
     ) {
         super(scope, id);
 
