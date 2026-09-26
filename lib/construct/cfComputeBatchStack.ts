@@ -15,6 +15,7 @@ export interface pocProps {
 export interface networkingProps {
     vpcId: string;
     subnetIds: string[];
+    availabilityZones: [string, string];
 }
 
 export interface sgProps {
@@ -127,7 +128,7 @@ export class cfComputeBatchStack extends Construct {
                 machineImage: ec2.MachineImage.latestAmazonLinux2023(),
                 vpc: ec2.Vpc.fromVpcAttributes(this, "vpc", {
                     vpcId: networkingProps.vpcId,
-                    availabilityZones: ["ap-northeast-1a"],
+                    availabilityZones: [networkingProps.availabilityZones[0]],
                     publicSubnetIds: [networkingProps.subnetIds[0]],
                 }),
                 securityGroup: sgProps.batchSecurityGroup,
@@ -175,7 +176,7 @@ export class cfComputeBatchStack extends Construct {
                 machineImage: ec2.MachineImage.latestAmazonLinux2023(),
                 vpc: ec2.Vpc.fromVpcAttributes(this, "vpcAZc", {
                     vpcId: networkingProps.vpcId,
-                    availabilityZones: ["ap-northeast-1c"],
+                    availabilityZones: [networkingProps.availabilityZones[1]],
                     publicSubnetIds: [networkingProps.subnetIds[1]],
                 }),
                 securityGroup: sgProps.batchSecurityGroup,
