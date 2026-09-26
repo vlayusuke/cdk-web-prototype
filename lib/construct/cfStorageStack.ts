@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import * as cdk from "aws-cdk-lib";
 import { aws_ec2 as ec2, aws_ecr as ecr, aws_s3 as s3 } from "aws-cdk-lib";
 import type * as kms from "aws-cdk-lib/aws-kms";
@@ -61,7 +62,9 @@ export class cfStorageStack extends Construct {
     public readonly s3BucketEc2Logs: s3.Bucket;
     public readonly s3BucketElastiCacheLogs: s3.Bucket;
     public readonly s3BucketLambdaLogs: s3.Bucket;
+    public readonly s3BucketSnsLogs: s3.Bucket;
     public readonly s3BucketAssets: s3.Bucket;
+    public readonly s3BucketUploads: s3.Bucket;
 
     constructor(
         scope: Construct,
@@ -71,6 +74,19 @@ export class cfStorageStack extends Construct {
         commonProps: commonProps,
     ) {
         super(scope, id);
+
+        const repositoryAsset = s3deploy.Source.asset("./", {
+            exclude: [
+                ".cdk.staging",
+                ".cdk.staging/**",
+                "cdk.out",
+                "cdk.out/**",
+                ".git",
+                ".git/**",
+                "node_modules",
+                "node_modules/**",
+            ],
+        });
 
         // ------------------------------------------------------------
         // VPC Endpoint for Amazon ECR Docker Interface Configuration
@@ -280,6 +296,11 @@ export class cfStorageStack extends Construct {
         // ------------------------------------------------------------
         // Amazon ECR Repository for Web BaseImage Configuration
         // ------------------------------------------------------------
+        const lifecyclePolicyText = readFileSync(
+            join(__dirname, "../json/amazon-ecr-lifecycle-policy.json"),
+            "utf8",
+        );
+
         this.ecrRepositoryWebBaseImage = new ecr.Repository(
             this,
             "ecrRepositoryWebBaseImage",
@@ -298,10 +319,6 @@ export class cfStorageStack extends Construct {
         );
         cdk.Tags.of(this.ecrRepositoryWebBaseImage).add("ProvisionedBy", "AWS");
 
-        const lifecyclePolicyText = readFileSync(
-            "json/amazon-ecr-lifecycle-policy.json",
-            "utf8",
-        );
         const cfnRepositoryWebBaseImage = this.ecrRepositoryWebBaseImage.node
             .defaultChild as ecr.CfnRepository;
         cfnRepositoryWebBaseImage.lifecyclePolicy = {
@@ -329,14 +346,10 @@ export class cfStorageStack extends Construct {
         );
         cdk.Tags.of(this.ecrRepositoryAppBaseImage).add("ProvisionedBy", "AWS");
 
-        const lifecyclePolicyTextApp = readFileSync(
-            "json/amazon-ecr-lifecycle-policy.json",
-            "utf8",
-        );
         const cfnRepositoryAppBaseImage = this.ecrRepositoryAppBaseImage.node
             .defaultChild as ecr.CfnRepository;
         cfnRepositoryAppBaseImage.lifecyclePolicy = {
-            lifecyclePolicyText: lifecyclePolicyTextApp,
+            lifecyclePolicyText: lifecyclePolicyText,
         };
 
         // ------------------------------------------------------------
@@ -356,14 +369,10 @@ export class cfStorageStack extends Construct {
         );
         cdk.Tags.of(this.ecrRepositoryWeb).add("ProvisionedBy", "AWS");
 
-        const lifecyclePolicyTextWeb = readFileSync(
-            "json/amazon-ecr-lifecycle-policy.json",
-            "utf8",
-        );
         const cfnRepositoryWeb = this.ecrRepositoryWeb.node
             .defaultChild as ecr.CfnRepository;
         cfnRepositoryWeb.lifecyclePolicy = {
-            lifecyclePolicyText: lifecyclePolicyTextWeb,
+            lifecyclePolicyText: lifecyclePolicyText,
         };
 
         // ------------------------------------------------------------
@@ -383,14 +392,10 @@ export class cfStorageStack extends Construct {
         );
         cdk.Tags.of(this.ecrRepositoryApp).add("ProvisionedBy", "AWS");
 
-        const lifecyclePolicyTextAppConfig = readFileSync(
-            "json/amazon-ecr-lifecycle-policy.json",
-            "utf8",
-        );
         const cfnRepositoryApp = this.ecrRepositoryApp.node
             .defaultChild as ecr.CfnRepository;
         cfnRepositoryApp.lifecyclePolicy = {
-            lifecyclePolicyText: lifecyclePolicyTextAppConfig,
+            lifecyclePolicyText: lifecyclePolicyText,
         };
 
         // ------------------------------------------------------------
@@ -424,7 +429,6 @@ export class cfStorageStack extends Construct {
             encryptionKey: props.s3Key,
             encryption: s3.BucketEncryption.KMS,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-            autoDeleteObjects: true,
             removalPolicy: cdk.RemovalPolicy.RETAIN,
             enforceSSL: true,
             blockedEncryptionTypes: [s3.BlockedEncryptionType.SSE_C],
@@ -437,25 +441,25 @@ export class cfStorageStack extends Construct {
         cdk.Tags.of(this.s3BucketEcsLogs).add("ProvisionedBy", "AWS");
 
         new s3deploy.BucketDeployment(this, "deployNginxLogs", {
-            sources: [s3deploy.Source.asset("./")],
+            sources: [repositoryAsset],
             destinationBucket: this.s3BucketEcsLogs,
             destinationKeyPrefix: "nginx-logs",
         });
 
         new s3deploy.BucketDeployment(this, "deployAppLogs", {
-            sources: [s3deploy.Source.asset("./")],
+            sources: [repositoryAsset],
             destinationBucket: this.s3BucketEcsLogs,
             destinationKeyPrefix: "app-logs",
         });
 
         new s3deploy.BucketDeployment(this, "deployCronLogs", {
-            sources: [s3deploy.Source.asset("./")],
+            sources: [repositoryAsset],
             destinationBucket: this.s3BucketEcsLogs,
             destinationKeyPrefix: "cron-logs",
         });
 
         new s3deploy.BucketDeployment(this, "deployQueueLogs", {
-            sources: [s3deploy.Source.asset("./")],
+            sources: [repositoryAsset],
             destinationBucket: this.s3BucketEcsLogs,
             destinationKeyPrefix: "queue-logs",
         });
@@ -482,19 +486,19 @@ export class cfStorageStack extends Construct {
         cdk.Tags.of(this.s3BucketEc2Logs).add("ProvisionedBy", "AWS");
 
         new s3deploy.BucketDeployment(this, "deployEc2BastionLogs", {
-            sources: [s3deploy.Source.asset("./")],
+            sources: [repositoryAsset],
             destinationBucket: this.s3BucketEc2Logs,
             destinationKeyPrefix: "bastion-logs",
         });
 
         new s3deploy.BucketDeployment(this, "deployEc2BatchALogs", {
-            sources: [s3deploy.Source.asset("./")],
+            sources: [repositoryAsset],
             destinationBucket: this.s3BucketEc2Logs,
             destinationKeyPrefix: "batch-a-logs",
         });
 
         new s3deploy.BucketDeployment(this, "deployEc2BatchCLogs", {
-            sources: [s3deploy.Source.asset("./")],
+            sources: [repositoryAsset],
             destinationBucket: this.s3BucketEc2Logs,
             destinationKeyPrefix: "batch-c-logs",
         });
@@ -521,7 +525,7 @@ export class cfStorageStack extends Construct {
         cdk.Tags.of(this.s3BucketLambdaLogs).add("ProvisionedBy", "AWS");
 
         new s3deploy.BucketDeployment(this, "deployLambdaRdsControlLogs", {
-            sources: [s3deploy.Source.asset("./")],
+            sources: [repositoryAsset],
             destinationBucket: this.s3BucketLambdaLogs,
             destinationKeyPrefix: "rds-control",
         });
@@ -530,7 +534,7 @@ export class cfStorageStack extends Construct {
             this,
             "deployLambdaCloudWatchLogsAlertLogs",
             {
-                sources: [s3deploy.Source.asset("./")],
+                sources: [repositoryAsset],
                 destinationBucket: this.s3BucketLambdaLogs,
                 destinationKeyPrefix: "cloudwatch-logs-alert-logs",
             },
@@ -540,7 +544,7 @@ export class cfStorageStack extends Construct {
             this,
             "deployLambdaCloudWatchMetricsAlertLogs",
             {
-                sources: [s3deploy.Source.asset("./")],
+                sources: [repositoryAsset],
                 destinationBucket: this.s3BucketLambdaLogs,
                 destinationKeyPrefix: "cloudwatch-metrics-alert-logs",
             },
@@ -568,19 +572,19 @@ export class cfStorageStack extends Construct {
         cdk.Tags.of(this.s3BucketAuroraLogs).add("ProvisionedBy", "AWS");
 
         new s3deploy.BucketDeployment(this, "deployAuroraInstanceLogs", {
-            sources: [s3deploy.Source.asset("./")],
+            sources: [repositoryAsset],
             destinationBucket: this.s3BucketAuroraLogs,
             destinationKeyPrefix: "instance-logs",
         });
 
         new s3deploy.BucketDeployment(this, "deployAuroraPostgreSqlLogs", {
-            sources: [s3deploy.Source.asset("./")],
+            sources: [repositoryAsset],
             destinationBucket: this.s3BucketAuroraLogs,
             destinationKeyPrefix: "postgresql-logs",
         });
 
         new s3deploy.BucketDeployment(this, "deployAuroraIamAuthErrorLogs", {
-            sources: [s3deploy.Source.asset("./")],
+            sources: [repositoryAsset],
             destinationBucket: this.s3BucketAuroraLogs,
             destinationKeyPrefix: "iam-auth-error-logs",
         });
@@ -609,6 +613,27 @@ export class cfStorageStack extends Construct {
             `${commonProps.projectName}-${commonProps.envName}-s3-bucket-elasticache-logs`,
         );
         cdk.Tags.of(this.s3BucketElastiCacheLogs).add("ProvisionedBy", "AWS");
+
+        // ------------------------------------------------------------
+        // Amazon S3 Bucket for Amazon SNS Logs Configuration
+        // ------------------------------------------------------------
+        this.s3BucketSnsLogs = new s3.Bucket(this, "s3BucketSnsLogs", {
+            bucketName: `${commonProps.projectName}-${commonProps.envName}-sns-logs`,
+            versioned: true,
+            accessControl: s3.BucketAccessControl.PRIVATE,
+            encryptionKey: props.s3Key,
+            encryption: s3.BucketEncryption.KMS,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+            removalPolicy: cdk.RemovalPolicy.RETAIN,
+            enforceSSL: true,
+            blockedEncryptionTypes: [s3.BlockedEncryptionType.SSE_C],
+        });
+
+        cdk.Tags.of(this.s3BucketSnsLogs).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-s3-bucket-sns-logs`,
+        );
+        cdk.Tags.of(this.s3BucketSnsLogs).add("ProvisionedBy", "AWS");
 
         // ------------------------------------------------------------
         // Amazon S3 Bucket for Assets Configuration
@@ -646,13 +671,13 @@ export class cfStorageStack extends Construct {
         cdk.Tags.of(this.s3BucketAssets).add("ProvisionedBy", "AWS");
 
         new s3deploy.BucketDeployment(this, "deployAssets", {
-            sources: [s3deploy.Source.asset("./")],
+            sources: [repositoryAsset],
             destinationBucket: this.s3BucketAssets,
             destinationKeyPrefix: "assets",
         });
 
         new s3deploy.BucketDeployment(this, "deployPictures", {
-            sources: [s3deploy.Source.asset("./")],
+            sources: [repositoryAsset],
             destinationBucket: this.s3BucketAssets,
             destinationKeyPrefix: "pictures",
         });
