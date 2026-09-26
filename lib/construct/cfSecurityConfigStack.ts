@@ -75,7 +75,7 @@ export class cfSecurityConfigStack extends Construct {
                 "kms:GenerateDataKey",
                 "kms:DescribeKey",
             ],
-            resources: [this.applicationKey.keyArn],
+            resources: ["*"],
             principals: [
                 new iam.ServicePrincipal("ecs.amazonaws.com"),
                 new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
@@ -93,7 +93,7 @@ export class cfSecurityConfigStack extends Construct {
                 "kms:GenerateDataKey",
                 "kms:DescribeKey",
             ],
-            resources: [this.bastionKey.keyArn],
+            resources: ["*"],
             principals: [new iam.ServicePrincipal("ec2.amazonaws.com")],
         });
 
@@ -101,7 +101,7 @@ export class cfSecurityConfigStack extends Construct {
             sid: "AllowAccountAccess",
             effect: iam.Effect.ALLOW,
             actions: ["kms:*"],
-            resources: [this.applicationKey.keyArn],
+            resources: ["*"],
             principals: [new iam.AccountRootPrincipal()],
         });
 
@@ -136,7 +136,7 @@ export class cfSecurityConfigStack extends Construct {
                 "kms:GenerateDataKey",
                 "kms:DescribeKey",
             ],
-            resources: [this.ecrKey.keyArn],
+            resources: ["*"],
             principals: [new iam.ServicePrincipal("ecr.amazonaws.com")],
         });
 
@@ -144,7 +144,7 @@ export class cfSecurityConfigStack extends Construct {
             sid: "AllowAccountECRAccess",
             effect: iam.Effect.ALLOW,
             actions: ["kms:*"],
-            resources: [this.ecrKey.keyArn],
+            resources: ["*"],
             principals: [new iam.AccountRootPrincipal()],
         });
 
@@ -177,7 +177,7 @@ export class cfSecurityConfigStack extends Construct {
                 "kms:GenerateDataKey",
                 "kms:DescribeKey",
             ],
-            resources: [this.auroraKey.keyArn],
+            resources: ["*"],
             principals: [new iam.ServicePrincipal("rds.amazonaws.com")],
         });
 
@@ -185,7 +185,7 @@ export class cfSecurityConfigStack extends Construct {
             sid: "AllowAccountAuroraAccess",
             effect: iam.Effect.ALLOW,
             actions: ["kms:*"],
-            resources: [this.auroraKey.keyArn],
+            resources: ["*"],
             principals: [new iam.AccountRootPrincipal()],
         });
 
@@ -218,7 +218,7 @@ export class cfSecurityConfigStack extends Construct {
                 "kms:GenerateDataKey",
                 "kms:DescribeKey",
             ],
-            resources: [this.elasticacheKey.keyArn],
+            resources: ["*"],
             principals: [new iam.ServicePrincipal("elasticache.amazonaws.com")],
         });
 
@@ -226,7 +226,7 @@ export class cfSecurityConfigStack extends Construct {
             sid: "AllowAccountElasticacheAccess",
             effect: iam.Effect.ALLOW,
             actions: ["kms:*"],
-            resources: [this.elasticacheKey.keyArn],
+            resources: ["*"],
             principals: [new iam.AccountRootPrincipal()],
         });
 
@@ -261,7 +261,7 @@ export class cfSecurityConfigStack extends Construct {
                 "kms:GenerateDataKey",
                 "kms:DescribeKey",
             ],
-            resources: [this.s3Key.keyArn],
+            resources: ["*"],
             principals: [new iam.ServicePrincipal("s3.amazonaws.com")],
         });
 
@@ -269,7 +269,7 @@ export class cfSecurityConfigStack extends Construct {
             sid: "AllowAccountS3Access",
             effect: iam.Effect.ALLOW,
             actions: ["kms:*"],
-            resources: [this.s3Key.keyArn],
+            resources: ["*"],
             principals: [new iam.AccountRootPrincipal()],
         });
 
@@ -302,7 +302,7 @@ export class cfSecurityConfigStack extends Construct {
                 "kms:GenerateDataKey",
                 "kms:DescribeKey",
             ],
-            resources: [this.ebsKey.keyArn],
+            resources: ["*"],
             principals: [new iam.ServicePrincipal("ec2.amazonaws.com")],
         });
 
@@ -310,7 +310,7 @@ export class cfSecurityConfigStack extends Construct {
             sid: "AllowAccountEbsAccess",
             effect: iam.Effect.ALLOW,
             actions: ["kms:*"],
-            resources: [this.ebsKey.keyArn],
+            resources: ["*"],
             principals: [new iam.AccountRootPrincipal()],
         });
 
@@ -343,7 +343,7 @@ export class cfSecurityConfigStack extends Construct {
                 "kms:GenerateDataKey",
                 "kms:DescribeKey",
             ],
-            resources: [this.lambdaKey.keyArn],
+            resources: ["*"],
             principals: [new iam.ServicePrincipal("lambda.amazonaws.com")],
         });
 
@@ -351,7 +351,7 @@ export class cfSecurityConfigStack extends Construct {
             sid: "AllowAccountLambdaAccess",
             effect: iam.Effect.ALLOW,
             actions: ["kms:*"],
-            resources: [this.lambdaKey.keyArn],
+            resources: ["*"],
             principals: [new iam.AccountRootPrincipal()],
         });
 
@@ -384,7 +384,7 @@ export class cfSecurityConfigStack extends Construct {
                 "kms:GenerateDataKey",
                 "kms:DescribeKey",
             ],
-            resources: [this.eventBridgeKey.keyArn],
+            resources: ["*"],
             principals: [new iam.ServicePrincipal("events.amazonaws.com")],
         });
 
@@ -392,7 +392,7 @@ export class cfSecurityConfigStack extends Construct {
             sid: "AllowAccountEventBridgeAccess",
             effect: iam.Effect.ALLOW,
             actions: ["kms:*"],
-            resources: [this.eventBridgeKey.keyArn],
+            resources: ["*"],
             principals: [new iam.AccountRootPrincipal()],
         });
 
@@ -427,7 +427,7 @@ export class cfSecurityConfigStack extends Construct {
                 "kms:GenerateDataKey",
                 "kms:DescribeKey",
             ],
-            resources: [this.snsKey.keyArn],
+            resources: ["*"],
             principals: [new iam.ServicePrincipal("sns.amazonaws.com")],
         });
 
@@ -435,7 +435,7 @@ export class cfSecurityConfigStack extends Construct {
             sid: "AllowAccountSnsAccess",
             effect: iam.Effect.ALLOW,
             actions: ["kms:*"],
-            resources: [this.snsKey.keyArn],
+            resources: ["*"],
             principals: [new iam.AccountRootPrincipal()],
         });
 
@@ -468,7 +468,7 @@ export class cfSecurityConfigStack extends Construct {
                 "kms:GenerateDataKey",
                 "kms:DescribeKey",
             ],
-            resources: [this.codeCommitKey.keyArn],
+            resources: ["*"],
             principals: [new iam.ServicePrincipal("codecommit.amazonaws.com")],
         });
 
@@ -476,7 +476,7 @@ export class cfSecurityConfigStack extends Construct {
             sid: "AllowAccountCodeCommitAccess",
             effect: iam.Effect.ALLOW,
             actions: ["kms:*"],
-            resources: [this.codeCommitKey.keyArn],
+            resources: ["*"],
             principals: [new iam.AccountRootPrincipal()],
         });
 
