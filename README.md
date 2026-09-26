@@ -4,6 +4,16 @@
 
 また、標準的な3ステージ構成とすることを目指し、また、原則として1つのAWSアカウントに対して、1つの環境を構築することを前提としています。ただし、1つのAWSアカウントに対して3つの環境を構築することも可能なように柔軟性を持たせた設計とする予定です。
 
+## プロジェクトファイル群について
+
+このリポジトリを構成するプロジェクトファイル群は、
+
+```bash
+cdk init --language typescript
+```
+
+を実行して初期化を実施済みです。
+
 ## スタックの構成
 
 このプロトタイプで実装しているスタックの構成は以下の通りです。
@@ -28,11 +38,12 @@
 8. cfComputeBatchStack.ts
 9. cfComputeServerlessStack.ts
 10. cfSgRuleStack.ts
-11. cfDNSStack.ts
+11. cfDNSAndCDNStack.ts
 12. cfComputeDefinitionStack.ts
 13. cfNotificationStack.ts
 14. cfMonitoringStack.ts
 15. cfLoggingStack.ts
+16. cfCICDStack.ts
 
 ### `/lib/json`
 
