@@ -5,6 +5,7 @@ export interface commonParameter {
     nakedDomainName: string;
     auroraMaxConnections: number;
     lambdaConcurrentExecutions: number;
+    availabilityZones: [string, string];
 }
 
 // Parameters for common
@@ -14,4 +15,5 @@ export const commonParameter: commonParameter = {
     nakedDomainName: "example.com",
     auroraMaxConnections: 512,
     lambdaConcurrentExecutions: 1000,
+    availabilityZones: ["ap-northeast-1a", "ap-northeast-1c"],
 };
