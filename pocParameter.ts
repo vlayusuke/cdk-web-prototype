@@ -11,16 +11,45 @@ export interface PocParameter {
     defaultGatewayCidr: string;
 }
 
-// Parameters for PoC Information
-export const pocParameter: PocParameter = {
-    env: {
-        account: "634989770450",
-        region: "ap-northeast-1",
-    },
+export type PocParameterDefaults = Omit<
+    PocParameter,
+    | "monitoringNotifyEmail"
+    | "monitoringSlackWorkspaceId"
+    | "monitoringSlackChannelId"
+>;
+
+export interface PocContextParameter {
+    account?: string;
+    region?: string;
+    monitoringNotifyEmail?: string;
+    monitoringSlackWorkspaceId?: string;
+    monitoringSlackChannelId?: string;
+}
+
+export const pocParameter: PocParameterDefaults = {
     envName: "poc",
-    monitoringNotifyEmail: "vlayusuke@gmail.com",
     vpcCidr: "10.50.0.0/16",
     defaultGatewayCidr: "0.0.0.0/0",
-    monitoringSlackWorkspaceId: "T0B1D7KB0BD",
-    monitoringSlackChannelId: "C0C3PJY7MM4",
+};
+
+export const loadPocParameter = (context: unknown): PocParameter => {
+    const contextParameter = (context ?? {}) as PocContextParameter;
+    const requiredValue = (key: keyof PocContextParameter): string => {
+        const value = contextParameter[key];
+        if (typeof value !== "string" || value.trim() === "") {
+            throw new Error(`Missing required CDK context value: poc.${key}`);
+        }
+        return value;
+    };
+
+    return {
+        ...pocParameter,
+        env: {
+            account: contextParameter.account,
+            region: contextParameter.region ?? "ap-northeast-1",
+        },
+        monitoringNotifyEmail: requiredValue("monitoringNotifyEmail"),
+        monitoringSlackWorkspaceId: requiredValue("monitoringSlackWorkspaceId"),
+        monitoringSlackChannelId: requiredValue("monitoringSlackChannelId"),
+    };
 };
