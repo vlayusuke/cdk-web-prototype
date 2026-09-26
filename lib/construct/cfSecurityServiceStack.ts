@@ -1,5 +1,5 @@
 import * as cdk from "aws-cdk-lib";
-import { aws_iam as iam, aws_s3 as s3 } from "aws-cdk-lib";
+import { aws_iam as iam, aws_s3 as s3, aws_wafv2 as wafv2 } from "aws-cdk-lib";
 import type * as kms from "aws-cdk-lib/aws-kms";
 import { Construct } from "constructs";
 
@@ -21,6 +21,8 @@ export interface kmsProps {
 // [05] - Security Service Stack
 // ------------------------------------------------------------
 export class cfSecurityServiceStack extends Construct {
+    public readonly wafv2WebACL: wafv2.CfnWebACL;
+
     constructor(
         scope: Construct,
         id: string,
@@ -67,7 +69,7 @@ export class cfSecurityServiceStack extends Construct {
         // ------------------------------------------------------------
         // AWS WAFv2 Web ACLs Configuration
         // ------------------------------------------------------------
-        const wafv2WebACL = new cdk.aws_wafv2.CfnWebACL(this, "wafv2WebACL", {
+        this.wafv2WebACL = new wafv2.CfnWebACL(this, "wafv2WebACL", {
             name: "wafv2WebACL",
             scope: "CLOUDFRONT",
             defaultAction: { allow: {} },
@@ -198,7 +200,7 @@ export class cfSecurityServiceStack extends Construct {
             this,
             "wafv2LoggingConfiguration",
             {
-                resourceArn: wafv2WebACL.attrArn,
+                resourceArn: this.wafv2WebACL.attrArn,
                 logDestinationConfigs: [s3WAFv2LogsBucket.bucketArn],
             },
         );
