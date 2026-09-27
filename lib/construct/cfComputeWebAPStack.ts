@@ -14,7 +14,8 @@ export interface pocProps {
 
 export interface networkingProps {
     vpcId: string;
-    subnetIds: string[];
+    publicSubnetIds: string[];
+    publicSubnetRouteTableIds: string[];
     availabilityZones: [string, string];
     defaultGatewayCidr: string;
 }
@@ -159,7 +160,10 @@ export class cfComputeWebAPStack extends Construct {
                 vpc: ec2.Vpc.fromVpcAttributes(this, "vpc", {
                     vpcId: networkingProps.vpcId,
                     availabilityZones: [networkingProps.availabilityZones[0]],
-                    publicSubnetIds: [networkingProps.subnetIds[0]],
+                    publicSubnetIds: [networkingProps.publicSubnetIds[0]],
+                    publicSubnetRouteTableIds: [
+                        networkingProps.publicSubnetRouteTableIds[0],
+                    ],
                 }),
                 securityGroup: sgProps.bastionSecurityGroup,
                 instanceProfile: ec2IamInstanceProfileForBastion,

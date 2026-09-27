@@ -421,6 +421,8 @@ export class cfComputeDefinitionStack extends Construct {
                 cluster: ecsProps.ecsCluster,
                 taskDefinition: ecsCronTaskDefinition,
                 desiredCount: 1,
+                minHealthyPercent: 100,
+                maxHealthyPercent: 200,
                 platformVersion: ecs.FargatePlatformVersion.VERSION1_4,
                 capacityProviderStrategies: [
                     {
@@ -465,6 +467,8 @@ export class cfComputeDefinitionStack extends Construct {
                 cluster: ecsProps.ecsCluster,
                 taskDefinition: ecsQueueTaskDefinition,
                 desiredCount: 1,
+                minHealthyPercent: 100,
+                maxHealthyPercent: 200,
                 platformVersion: ecs.FargatePlatformVersion.VERSION1_4,
                 capacityProviderStrategies: [
                     {
