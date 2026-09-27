@@ -352,6 +352,11 @@ export class cfDNSAndCDNStack extends Construct {
             },
         );
 
+        cdk.Annotations.of(cdk.Stack.of(this)).acknowledgeWarning(
+            "@aws-cdk/aws-cloudfront-origins:wildcardKeyPolicyForOac",
+            "Keep the account-scoped CloudFront KMS grant to avoid a distribution-ID dependency cycle and a follow-up deployment.",
+        );
+
         // ------------------------------------------------------------
         // Amazon CloudFront Distribution Configuration
         // ------------------------------------------------------------
@@ -389,7 +394,10 @@ export class cfDNSAndCDNStack extends Construct {
                     "/uploads/*": {
                         origin: origins.S3BucketOrigin.withOriginAccessControl(
                             storageProps.assetsBucket,
-                            { originPath: "/pictures" },
+                            {
+                                originPath: "/pictures",
+                                originAccessControl: assetsOriginAccessControl,
+                            },
                         ),
                         allowedMethods:
                             cloudfront.AllowedMethods.ALLOW_GET_HEAD,
