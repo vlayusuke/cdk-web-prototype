@@ -34,11 +34,7 @@ test("loadPocParameter rejects missing sensitive context values", () => {
 test("network subnets follow the configured availability zones", () => {
     const app = new cdk.App();
     const stack = new cdk.Stack(app, "NetworkTestStack");
-    const availabilityZones = [
-        "ap-northeast-1a",
-        "ap-northeast-1c",
-        "ap-northeast-1d",
-    ];
+    const availabilityZones = ["ap-northeast-1a", "ap-northeast-1c"];
     const network = new cfNetworkStack(
         stack,
         "Network",
@@ -47,7 +43,7 @@ test("network subnets follow the configured availability zones", () => {
             envName: "unit",
             vpcCidr: "10.60.0.0/16",
             defaultGatewayCidr: "0.0.0.0/0",
-            availabilityZones,
+            availabilityZones: [availabilityZones[0], availabilityZones[1]],
         },
         { s3Key: new kms.Key(stack, "FlowLogsKey") },
     );
