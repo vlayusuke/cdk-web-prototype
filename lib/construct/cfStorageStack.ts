@@ -19,16 +19,13 @@ export interface pocProps {
 
 export interface networkingProps {
     vpcId: string;
-    privateSubnetA: string;
-    privateSubnetC: string;
+    privateSubnetIds: string[];
 }
 
 export interface sgProps {
     vpcEndPointS3SecurityGroup: ec2.SecurityGroup;
     vpcEndPointECRSecurityGroup: ec2.SecurityGroup;
     vpcEndPointSSMSecurityGroup: ec2.SecurityGroup;
-    vpcEndPointSSMEC2SecurityGroup: ec2.SecurityGroup;
-    vpcEndPointSSMEC2MessagesSecurityGroup: ec2.SecurityGroup;
     vpcEndPointKMSSecurityGroup: ec2.SecurityGroup;
     vpcEndPointCloudWatchLogsSecurityGroup: ec2.SecurityGroup;
 }
@@ -83,6 +80,7 @@ export class cfStorageStack extends Construct {
                 "cdk.out/**",
                 ".git",
                 ".git/**",
+                "cdk.context.json",
                 "node_modules",
                 "node_modules/**",
             ],
@@ -101,11 +99,11 @@ export class cfStorageStack extends Construct {
                 securityGroupIds: [
                     sgProps.vpcEndPointECRSecurityGroup.securityGroupId,
                 ],
-                subnetIds: [props.privateSubnetA, props.privateSubnetC],
+                subnetIds: props.privateSubnetIds,
                 ipAddressType: "ipv4",
                 privateDnsEnabled: true,
                 dnsOptions: {
-                    dnsRecordIpType: "IPv4",
+                    dnsRecordIpType: "ipv4",
                 },
             },
         );
@@ -129,11 +127,11 @@ export class cfStorageStack extends Construct {
                 securityGroupIds: [
                     sgProps.vpcEndPointECRSecurityGroup.securityGroupId,
                 ],
-                subnetIds: [props.privateSubnetA, props.privateSubnetC],
+                subnetIds: props.privateSubnetIds,
                 ipAddressType: "ipv4",
                 privateDnsEnabled: true,
                 dnsOptions: {
-                    dnsRecordIpType: "IPv4",
+                    dnsRecordIpType: "ipv4",
                 },
             },
         );
@@ -154,11 +152,11 @@ export class cfStorageStack extends Construct {
             securityGroupIds: [
                 sgProps.vpcEndPointKMSSecurityGroup.securityGroupId,
             ],
-            subnetIds: [props.privateSubnetA, props.privateSubnetC],
+            subnetIds: props.privateSubnetIds,
             ipAddressType: "ipv4",
             privateDnsEnabled: true,
             dnsOptions: {
-                dnsRecordIpType: "IPv4",
+                dnsRecordIpType: "ipv4",
             },
         });
 
@@ -176,13 +174,13 @@ export class cfStorageStack extends Construct {
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.ssm`,
             vpcEndpointType: "Interface",
             securityGroupIds: [
-                sgProps.vpcEndPointKMSSecurityGroup.securityGroupId,
+                sgProps.vpcEndPointSSMSecurityGroup.securityGroupId,
             ],
-            subnetIds: [props.privateSubnetA, props.privateSubnetC],
+            subnetIds: props.privateSubnetIds,
             ipAddressType: "ipv4",
             privateDnsEnabled: true,
             dnsOptions: {
-                dnsRecordIpType: "IPv4",
+                dnsRecordIpType: "ipv4",
             },
         });
 
@@ -203,13 +201,13 @@ export class cfStorageStack extends Construct {
                 serviceName: `com.amazonaws.${cdk.Aws.REGION}.ssm.ec2`,
                 vpcEndpointType: "Interface",
                 securityGroupIds: [
-                    sgProps.vpcEndPointSSMEC2SecurityGroup.securityGroupId,
+                    sgProps.vpcEndPointSSMSecurityGroup.securityGroupId,
                 ],
-                subnetIds: [props.privateSubnetA, props.privateSubnetC],
+                subnetIds: props.privateSubnetIds,
                 ipAddressType: "ipv4",
                 privateDnsEnabled: true,
                 dnsOptions: {
-                    dnsRecordIpType: "IPv4",
+                    dnsRecordIpType: "ipv4",
                 },
             },
         );
@@ -231,14 +229,13 @@ export class cfStorageStack extends Construct {
                 serviceName: `com.amazonaws.${cdk.Aws.REGION}.ec2messages`,
                 vpcEndpointType: "Interface",
                 securityGroupIds: [
-                    sgProps.vpcEndPointSSMEC2MessagesSecurityGroup
-                        .securityGroupId,
+                    sgProps.vpcEndPointSSMSecurityGroup.securityGroupId,
                 ],
-                subnetIds: [props.privateSubnetA, props.privateSubnetC],
+                subnetIds: props.privateSubnetIds,
                 ipAddressType: "ipv4",
                 privateDnsEnabled: true,
                 dnsOptions: {
-                    dnsRecordIpType: "IPv4",
+                    dnsRecordIpType: "ipv4",
                 },
             },
         );
@@ -263,11 +260,11 @@ export class cfStorageStack extends Construct {
                     sgProps.vpcEndPointCloudWatchLogsSecurityGroup
                         .securityGroupId,
                 ],
-                subnetIds: [props.privateSubnetA, props.privateSubnetC],
+                subnetIds: props.privateSubnetIds,
                 ipAddressType: "ipv4",
                 privateDnsEnabled: true,
                 dnsOptions: {
-                    dnsRecordIpType: "IPv4",
+                    dnsRecordIpType: "ipv4",
                 },
             },
         );
