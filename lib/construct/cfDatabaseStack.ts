@@ -25,6 +25,7 @@ export interface kmsProps {
 
 export interface networkingProps {
     subnetIds: string[];
+    availabilityZones: [string, string];
 }
 
 export interface sgProps {
@@ -178,7 +179,7 @@ export class cfDatabaseStack extends Construct {
             "AuroraSubnetGroup",
             {
                 dbSubnetGroupDescription: "Subnet group for Amazon Aurora",
-                subnetIds: [networkingProps.subnetIds[1]],
+                subnetIds: networkingProps.subnetIds,
             },
         );
 
@@ -218,7 +219,7 @@ export class cfDatabaseStack extends Construct {
                 { roleArn: auroraIamRole.roleArn },
                 { roleArn: auroraIamPeformanceInsightRole.roleArn },
             ],
-            availabilityZones: ["ap-northeast-1a", "ap-northeast-1c"],
+            availabilityZones: networkingProps.availabilityZones,
             dbSubnetGroupName: auroraSubnetGroup.ref,
             backupRetentionPeriod: 7,
             backtrackWindow: 86400,
