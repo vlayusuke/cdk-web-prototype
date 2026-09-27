@@ -1,7 +1,7 @@
 import * as cdk from "aws-cdk-lib/core";
 import type { Construct } from "constructs";
 import { commonParameter } from "../commonParameter";
-import { pocParameter } from "../pocParameter";
+import type { PocParameter } from "../pocParameter";
 import { cfCICDStack } from "./construct/cfCICDStack";
 import { cfComputeBatchStack } from "./construct/cfComputeBatchStack";
 import { cfComputeDefinitionStack } from "./construct/cfComputeDefinitionStack";
@@ -26,6 +26,10 @@ export interface commonProps {
 export interface pocProps {
     vpcCidr: string;
     defaultGatewayCidr: string;
+}
+
+export interface cfCdkWebPrototypeStackProps extends cdk.StackProps {
+    pocParameter: PocParameter;
 }
 
 /**
@@ -54,12 +58,17 @@ export interface pocProps {
  *  16. [16] cfCICDStack
  */
 export class cfCdkWebPrototypeStack extends cdk.Stack {
-    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    constructor(
+        scope: Construct,
+        id: string,
+        props: cfCdkWebPrototypeStackProps,
+    ) {
         super(scope, id, props);
 
+        const deploymentParameter = props.pocParameter;
         const commonProps = {
             ...commonParameter,
-            envName: pocParameter.envName,
+            envName: deploymentParameter.envName,
         };
 
         // ------------------------------------------------------------
@@ -79,8 +88,9 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             "networkStack",
             {
                 ...commonProps,
-                vpcCidr: pocParameter.vpcCidr,
-                defaultGatewayCidr: pocParameter.defaultGatewayCidr,
+                vpcCidr: deploymentParameter.vpcCidr,
+                defaultGatewayCidr: deploymentParameter.defaultGatewayCidr,
+                availabilityZones: commonParameter.availabilityZones,
             },
             {
                 s3Key: securityConfigStack.s3Key,
@@ -113,6 +123,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
                 subnetIds: networkStack.Vpc.privateSubnets.map(
                     (subnet) => subnet.subnetId,
                 ),
+                availabilityZones: commonParameter.availabilityZones,
             },
             {
                 auroraKey: securityConfigStack.auroraKey,
@@ -126,10 +137,10 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         const securityServiceStack = new cfSecurityServiceStack(
             this,
             "cfSecurityServiceStack",
+            commonProps,
             {
                 s3Key: securityConfigStack.s3Key,
             },
-            commonProps,
         );
 
         // ------------------------------------------------------------
@@ -140,8 +151,9 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             "cfStorageStack",
             {
                 vpcId: networkStack.Vpc.vpcId,
-                privateSubnetA: networkStack.Vpc.privateSubnets[0].subnetId,
-                privateSubnetC: networkStack.Vpc.privateSubnets[1].subnetId,
+                privateSubnetIds: networkStack.Vpc.privateSubnets.map(
+                    (subnet) => subnet.subnetId,
+                ),
                 ecrKey: securityConfigStack.ecrKey,
                 s3Key: securityConfigStack.s3Key,
             },
@@ -151,10 +163,6 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
                 vpcEndPointECRSecurityGroup:
                     sgFrameStack.vpcEndPointECRSecurityGroupFrame,
                 vpcEndPointSSMSecurityGroup:
-                    sgFrameStack.vpcEndPointSSMSecurityGroupFrame,
-                vpcEndPointSSMEC2SecurityGroup:
-                    sgFrameStack.vpcEndPointSSMSecurityGroupFrame,
-                vpcEndPointSSMEC2MessagesSecurityGroup:
                     sgFrameStack.vpcEndPointSSMSecurityGroupFrame,
                 vpcEndPointKMSSecurityGroup:
                     sgFrameStack.vpcEndPointKMSSecurityGroupFrame,
@@ -173,9 +181,11 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             {
                 vpcId: networkStack.Vpc.vpcId,
                 subnetIds: [
-                    networkStack.Vpc.privateSubnets[0].subnetId,
-                    networkStack.Vpc.privateSubnets[1].subnetId,
+                    ...networkStack.Vpc.privateSubnets.map(
+                        (subnet) => subnet.subnetId,
+                    ),
                 ],
+                availabilityZones: commonParameter.availabilityZones,
             },
             {
                 bastionSecurityGroup: sgFrameStack.bastionSecurityGroupFrame,
@@ -192,9 +202,11 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             {
                 vpcId: networkStack.Vpc.vpcId,
                 subnetIds: [
-                    networkStack.Vpc.privateSubnets[0].subnetId,
-                    networkStack.Vpc.privateSubnets[1].subnetId,
+                    ...networkStack.Vpc.privateSubnets.map(
+                        (subnet) => subnet.subnetId,
+                    ),
                 ],
+                availabilityZones: commonParameter.availabilityZones,
             },
             {
                 batchSecurityGroup: sgFrameStack.batchSecurityGroupFrame,
@@ -235,8 +247,8 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             commonProps,
             {
                 Vpc: networkStack.Vpc,
-                vpcCidr: pocParameter.vpcCidr,
-                defaultGatewayCidr: pocParameter.defaultGatewayCidr,
+                vpcCidr: deploymentParameter.vpcCidr,
+                defaultGatewayCidr: deploymentParameter.defaultGatewayCidr,
             },
             {
                 albSecurityGroup: sgFrameStack.albSecurityGroupFrame,
@@ -280,8 +292,9 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             commonProps,
             {
                 monitoringSlackWorkspaceId:
-                    pocParameter.monitoringSlackWorkspaceId,
-                monitoringSlackChannelId: pocParameter.monitoringSlackChannelId,
+                    deploymentParameter.monitoringSlackWorkspaceId,
+                monitoringSlackChannelId:
+                    deploymentParameter.monitoringSlackChannelId,
             },
             {
                 snsKeyArn: securityConfigStack.snsKey,
@@ -291,15 +304,9 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         // ------------------------------------------------------------
         // [14] - cfMonitoringStack
         // ------------------------------------------------------------
-        new cfMonitoringStack(
-            this,
-            "cfMonitoringStack",
-            {
-                ecsAppScalableTarget:
-                    computeDefinitionStack.ecsAppScalableTarget,
-            },
-            commonProps,
-        );
+        new cfMonitoringStack(this, "cfMonitoringStack", commonProps, {
+            ecsAppScalableTarget: computeDefinitionStack.ecsAppScalableTarget,
+        });
 
         // ------------------------------------------------------------
         // [15] - cfLoggingStack
