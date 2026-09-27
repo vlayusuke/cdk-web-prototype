@@ -16,6 +16,7 @@ export interface networkingProps {
     vpcId: string;
     subnetIds: string[];
     availabilityZones: [string, string];
+    defaultGatewayCidr: string;
 }
 
 export interface sgProps {

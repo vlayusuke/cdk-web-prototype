@@ -4,15 +4,39 @@
 
 また、標準的な3ステージ構成とすることを目指し、また、原則として1つのAWSアカウントに対して、1つの環境を構築することを前提としています。ただし、1つのAWSアカウントに対して3つの環境を構築することも可能なように柔軟性を持たせた設計とする予定です。
 
-## プロジェクトファイル群について
+## プロジェクトファイルについて
 
-このリポジトリを構成するプロジェクトファイル群は、
+このプロジェクトは、実装開始時に
 
 ```bash
 cdk init --language typescript
 ```
 
-を実行して初期化を実施済みです。
+コマンドを実行してプロジェクトの構築を行なっています。また
+
+```bash
+npx tsc --noEmit
+
+cdk synth
+```
+
+コマンドを実行して、 `.ts` ファイルの型チェックと、AWS CloudFormationスタックテンプレートの出力確認が正常に実行されることを確認しています。
+
+AWS アカウント ID、通知先メールアドレス、Slack ID などの環境固有値は、ルート直下の `cdk.context.json` の `poc` context に設定してください。このファイルは `.gitignore` 対象です。初回 checkout 後に次のキーを設定してから `cdk synth` または `cdk deploy` を実行してください。
+
+```json
+{
+    "poc": {
+        "account": "AWS_ACCOUNT_ID",
+        "region": "AWS_REGION",
+        "monitoringNotifyEmail": "NOTIFICATION_EMAIL",
+        "monitoringSlackWorkspaceId": "SLACK_WORKSPACE_ID",
+        "monitoringSlackChannelId": "SLACK_CHANNEL_ID"
+    }
+}
+```
+
+利用する Availability Zone は `commonParameter.ts` の `availabilityZones` で設定します。現在の Batch 構成では 2 AZ 以上が必要です。
 
 ## スタックの構成
 

@@ -168,6 +168,7 @@ export class cfStorageStack extends Construct {
 
         // ------------------------------------------------------------
         // VPC Endpoint for AWS Systems Manager Interface Configuration
+        // All SSM endpoints share the same HTTPS clients and TCP 443 policy.
         // ------------------------------------------------------------
         this.vpcEndpointSSM = new ec2.CfnVPCEndpoint(this, "vpcEndpointSSM", {
             vpcId: props.vpcId,
