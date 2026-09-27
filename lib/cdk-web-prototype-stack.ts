@@ -74,18 +74,12 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             throw new Error("At least two availability zones are required.");
         }
 
-        // ------------------------------------------------------------
-        // [01] - cfSecurityConfigStack
-        // ------------------------------------------------------------
         const securityConfigStack = new cfSecurityConfigStack(
             this,
             "cfSecurityConfigStack",
             commonProps,
         );
 
-        // ------------------------------------------------------------
-        // [02] - cfNetowrkStack
-        // ------------------------------------------------------------
         const networkStack = new cfNetworkStack(
             this,
             "networkStack",
@@ -95,14 +89,9 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
                 defaultGatewayCidr: deploymentParameter.defaultGatewayCidr,
                 availabilityZones: commonParameter.availabilityZones,
             },
-            {
-                s3Key: securityConfigStack.s3Key,
-            },
+            { s3Key: securityConfigStack.s3Key },
         );
 
-        // ------------------------------------------------------------
-        // [03] - cfSgFrameStack
-        // ------------------------------------------------------------
         const sgFrameStack = new cfSgFrameStack(
             this,
             "cfSgFrameStack",
@@ -110,9 +99,6 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             { vpc: networkStack.Vpc },
         );
 
-        // ------------------------------------------------------------
-        // [04] - cfDatabaseStack
-        // ------------------------------------------------------------
         new cfDatabaseStack(
             this,
             "cfDatabaseStack",
@@ -183,11 +169,12 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             "cfComputeWebAPStack",
             {
                 vpcId: networkStack.Vpc.vpcId,
-                subnetIds: [
-                    ...networkStack.Vpc.privateSubnets.map(
-                        (subnet) => subnet.subnetId,
-                    ),
-                ],
+                publicSubnetIds: networkStack.Vpc.publicSubnets.map(
+                    (subnet) => subnet.subnetId,
+                ),
+                publicSubnetRouteTableIds: networkStack.Vpc.publicSubnets.map(
+                    (subnet) => subnet.routeTable.routeTableId,
+                ),
                 availabilityZones: commonParameter.availabilityZones,
                 defaultGatewayCidr: deploymentParameter.defaultGatewayCidr,
             },
@@ -205,11 +192,12 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             "cfComputeBatchStack",
             {
                 vpcId: networkStack.Vpc.vpcId,
-                subnetIds: [
-                    ...networkStack.Vpc.privateSubnets.map(
-                        (subnet) => subnet.subnetId,
-                    ),
-                ],
+                publicSubnetIds: networkStack.Vpc.publicSubnets.map(
+                    (subnet) => subnet.subnetId,
+                ),
+                publicSubnetRouteTableIds: networkStack.Vpc.publicSubnets.map(
+                    (subnet) => subnet.routeTable.routeTableId,
+                ),
                 availabilityZones: commonParameter.availabilityZones,
             },
             {
