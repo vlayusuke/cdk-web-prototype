@@ -26,8 +26,8 @@ export class cfSecurityServiceStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        props: kmsProps,
         commonProps: commonProps,
+        props: kmsProps,
     ) {
         super(scope, id);
 
