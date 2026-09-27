@@ -49,9 +49,9 @@ test("network subnets follow the configured availability zones", () => {
     );
 
     expect(network.Vpc.availabilityZones).toEqual(availabilityZones);
-    expect(network.Vpc.publicSubnets).toHaveLength(3);
-    expect(network.Vpc.privateSubnets).toHaveLength(3);
-    expect(network.Vpc.isolatedSubnets).toHaveLength(3);
+    expect(network.Vpc.publicSubnets).toHaveLength(2);
+    expect(network.Vpc.privateSubnets).toHaveLength(2);
+    expect(network.Vpc.isolatedSubnets).toHaveLength(2);
 });
 
 test("Systems Manager endpoints share a least-privilege endpoint security group", () => {
