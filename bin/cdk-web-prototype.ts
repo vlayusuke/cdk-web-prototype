@@ -5,6 +5,7 @@ import { loadPocParameter } from "../pocParameter";
 
 const app = new cdk.App();
 const pocParameter = loadPocParameter(app.node.tryGetContext("poc"));
+
 new cfCdkWebPrototypeStack(app, "cfCdkWebPrototypeStack", {
     env: {
         account: process.env.CDK_DEFAULT_ACCOUNT ?? pocParameter.env?.account,

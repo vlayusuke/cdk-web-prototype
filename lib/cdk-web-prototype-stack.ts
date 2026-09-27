@@ -70,6 +70,9 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             ...commonParameter,
             envName: deploymentParameter.envName,
         };
+        if (commonParameter.availabilityZones.length < 2) {
+            throw new Error("At least two availability zones are required.");
+        }
 
         // ------------------------------------------------------------
         // [01] - cfSecurityConfigStack
@@ -186,6 +189,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
                     ),
                 ],
                 availabilityZones: commonParameter.availabilityZones,
+                defaultGatewayCidr: deploymentParameter.defaultGatewayCidr,
             },
             {
                 bastionSecurityGroup: sgFrameStack.bastionSecurityGroupFrame,
