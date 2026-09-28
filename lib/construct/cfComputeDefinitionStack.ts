@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { aws_kms as kms } from "aws-cdk-lib";
 import * as cdk from "aws-cdk-lib";
 import {
@@ -6,10 +8,127 @@ import {
     aws_ec2 as ec2,
     aws_ecs as ecs,
     aws_iam as iam,
+    aws_logs as logs,
+    aws_secretsmanager as secretsmanager,
     aws_ssm as ssm,
 } from "aws-cdk-lib";
 import type * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import { Construct } from "constructs";
+
+interface JsonContainerDefinition {
+    name: string;
+    image: string;
+    repositoryCredentials?: { credentialsParameter: string };
+    cpu?: number;
+    memoryReservation?: number;
+    essential?: boolean;
+    readonlyRootFilesystem?: boolean;
+    portMappings?: {
+        containerPort: number;
+        hostPort?: number;
+        protocol?: string;
+    }[];
+    environment?: { name: string; value: string }[];
+    logConfiguration?: {
+        logDriver: string;
+        options: Record<string, string>;
+    };
+    ulimits?: { softLimit: number; hardLimit: number; name: string }[];
+    entryPoint?: string[];
+    command?: string[];
+}
+
+const loadContainerDefinitions = (
+    fileName: string,
+    replacements: Record<string, string>,
+): JsonContainerDefinition[] => {
+    const replacePlaceholders = (value: unknown): unknown => {
+        if (typeof value === "string") {
+            return value.replace(
+                /\$\{([^}]+)\}/g,
+                (placeholder, name: string) =>
+                    replacements[name] ?? placeholder,
+            );
+        }
+        if (Array.isArray(value)) {
+            return value.map(replacePlaceholders);
+        }
+        if (value !== null && typeof value === "object") {
+            return Object.fromEntries(
+                Object.entries(value).map(([key, nestedValue]) => [
+                    key,
+                    replacePlaceholders(nestedValue),
+                ]),
+            );
+        }
+        return value;
+    };
+
+    return replacePlaceholders(
+        JSON.parse(readFileSync(join(__dirname, "../json", fileName), "utf8")),
+    ) as JsonContainerDefinition[];
+};
+
+const addJsonContainerDefinitions = (
+    scope: Construct,
+    taskDefinition: ecs.FargateTaskDefinition,
+    containerDefinitions: JsonContainerDefinition[],
+): void => {
+    for (const definition of containerDefinitions) {
+        const registryCredentials = definition.repositoryCredentials
+            ? secretsmanager.Secret.fromSecretCompleteArn(
+                  scope,
+                  `${definition.name}RegistryCredentials`,
+                  definition.repositoryCredentials.credentialsParameter,
+              )
+            : undefined;
+        registryCredentials?.grantRead(taskDefinition.obtainExecutionRole());
+        const logOptions = definition.logConfiguration?.options;
+        taskDefinition.addContainer(definition.name, {
+            image: ecs.ContainerImage.fromRegistry(definition.image, {
+                credentials: registryCredentials,
+            }),
+            cpu: definition.cpu,
+            memoryReservationMiB: definition.memoryReservation,
+            essential: definition.essential,
+            readonlyRootFilesystem: definition.readonlyRootFilesystem,
+            portMappings: definition.portMappings?.map((mapping) => ({
+                containerPort: mapping.containerPort,
+                hostPort: mapping.hostPort,
+                protocol:
+                    mapping.protocol?.toLowerCase() === "udp"
+                        ? ecs.Protocol.UDP
+                        : ecs.Protocol.TCP,
+            })),
+            environment: definition.environment?.reduce<Record<string, string>>(
+                (variables, variable) => {
+                    variables[variable.name] = variable.value;
+                    return variables;
+                },
+                {},
+            ),
+            logging:
+                definition.logConfiguration?.logDriver === "awslogs" &&
+                logOptions
+                    ? ecs.LogDriver.awsLogs({
+                          streamPrefix: logOptions["awslogs-stream-prefix"],
+                          logGroup: logs.LogGroup.fromLogGroupName(
+                              scope,
+                              `${definition.name}LogGroup`,
+                              logOptions["awslogs-group"],
+                          ),
+                      })
+                    : undefined,
+            ulimits: definition.ulimits?.map((ulimit) => ({
+                name: ulimit.name as ecs.UlimitName,
+                softLimit: ulimit.softLimit,
+                hardLimit: ulimit.hardLimit,
+            })),
+            entryPoint: definition.entryPoint,
+            command: definition.command,
+        });
+    }
+};
 
 export interface commonProps {
     projectName: string;
@@ -64,6 +183,25 @@ export class cfComputeDefinitionStack extends Construct {
         commonProps: commonProps,
     ) {
         super(scope, id);
+
+        const dockerRegistryCredentialsArn = new cdk.CfnParameter(
+            this,
+            "DockerRegistryCredentialsArn",
+            {
+                type: "String",
+                description:
+                    "Secrets Manager ARN for the container registry credentials",
+            },
+        );
+
+        const containerDefinitionReplacements: Record<string, string> = {
+            credentials_parameters_arn:
+                dockerRegistryCredentialsArn.valueAsString,
+            project: commonProps.projectName,
+            env: commonProps.envName,
+            region: cdk.Stack.of(this).region,
+            log_group_prefix: `/ecs/${commonProps.projectName}/${commonProps.envName}`,
+        };
 
         // ------------------------------------------------------------
         // AWS IAM for Amazon ECS Service Configuration
@@ -234,14 +372,14 @@ export class cfComputeDefinitionStack extends Construct {
         );
         cdk.Tags.of(ecsAppTaskDefinition).add("ProvisionedBy", "AWS");
 
-        ecsAppTaskDefinition.addContainer("app", {
-            image: ecs.ContainerImage.fromRegistry(
-                "json/amazon-ecs-task-definition-app.json",
+        addJsonContainerDefinitions(
+            this,
+            ecsAppTaskDefinition,
+            loadContainerDefinitions(
+                "amazon-ecs-task-definition-app.json",
+                containerDefinitionReplacements,
             ),
-            cpu: 512,
-            memoryReservationMiB: 1024,
-            portMappings: [{ containerPort: 80, protocol: ecs.Protocol.TCP }],
-        });
+        );
 
         // ------------------------------------------------------------
         // Amazon ECS Cron Task Definition Configuration
@@ -266,13 +404,14 @@ export class cfComputeDefinitionStack extends Construct {
         );
         cdk.Tags.of(ecsCronTaskDefinition).add("ProvisionedBy", "AWS");
 
-        ecsCronTaskDefinition.addContainer("cron", {
-            image: ecs.ContainerImage.fromRegistry(
-                "json/amazon-ecs-task-definition-cron.json",
+        addJsonContainerDefinitions(
+            this,
+            ecsCronTaskDefinition,
+            loadContainerDefinitions(
+                "amazon-ecs-task-definition-cron.json",
+                containerDefinitionReplacements,
             ),
-            cpu: 256,
-            memoryReservationMiB: 512,
-        });
+        );
 
         // ------------------------------------------------------------
         // Amazon ECS Queue Task Definition Configuration
@@ -297,13 +436,14 @@ export class cfComputeDefinitionStack extends Construct {
         );
         cdk.Tags.of(ecsQueueTaskDefinition).add("ProvisionedBy", "AWS");
 
-        ecsQueueTaskDefinition.addContainer("queue", {
-            image: ecs.ContainerImage.fromRegistry(
-                "json/amazon-ecs-task-definition-queue.json",
+        addJsonContainerDefinitions(
+            this,
+            ecsQueueTaskDefinition,
+            loadContainerDefinitions(
+                "amazon-ecs-task-definition-queue.json",
+                containerDefinitionReplacements,
             ),
-            cpu: 256,
-            memoryReservationMiB: 512,
-        });
+        );
 
         // ------------------------------------------------------------
         // Amazon ECS App Service Configuration
