@@ -6,6 +6,7 @@ import {
     aws_ec2 as ec2,
     aws_ecs as ecs,
     aws_iam as iam,
+    aws_ssm as ssm,
 } from "aws-cdk-lib";
 import type * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import { Construct } from "constructs";
@@ -46,6 +47,12 @@ export interface albProps {
 // ------------------------------------------------------------
 export class cfComputeDefinitionStack extends Construct {
     public readonly ecsAppScalableTarget: ecs.ScalableTaskCount;
+    public readonly ssmParameterStoreAppKey: ssm.StringParameter;
+    public readonly ssmParamenterStoreJwtSecret: ssm.StringParameter;
+    public readonly ssmParameterStoreAuroraWriterEndPoint: ssm.StringParameter;
+    public readonly ssmParameterStoreAuroraReaderEndPoint: ssm.StringParameter;
+    public readonly ssmParameterStoreElastiCacheWriterEndPoint: ssm.StringParameter;
+    public readonly ssmParameterStoreElastiCacheReaderEndPoint: ssm.StringParameter;
 
     constructor(
         scope: Construct,
@@ -502,5 +509,121 @@ export class cfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${commonProps.envName}-ecs-queue-service`,
         );
         cdk.Tags.of(ecsQueueServiceConfiguration).add("ProvisionedBy", "AWS");
+
+        // ------------------------------------------------------------
+        // AWS SSM Parameter Store for Application Configuration
+        // ------------------------------------------------------------
+        this.ssmParameterStoreAppKey = new ssm.StringParameter(
+            this,
+            "ssmParameterStoreAppKey",
+            {
+                parameterName: `/${commonProps.projectName}/${commonProps.envName}/app-key`,
+                description: `The parameter for ${commonProps.projectName}-${commonProps.envName} app key`,
+                stringValue: "PleaseChangeMe",
+            },
+        );
+
+        cdk.Tags.of(this.ssmParameterStoreAppKey).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-app-key`,
+        );
+        cdk.Tags.of(this.ssmParameterStoreAppKey).add("ProvisionedBy", "AWS");
+
+        this.ssmParamenterStoreJwtSecret = new ssm.StringParameter(
+            this,
+            "ssmParamenterStoreJwtSecret",
+            {
+                parameterName: `/${commonProps.projectName}/${commonProps.envName}/jwt-secret`,
+                description: `The parameter for ${commonProps.projectName}-${commonProps.envName} jwt secret`,
+                stringValue: "PleaseChangeMe",
+            },
+        );
+
+        cdk.Tags.of(this.ssmParamenterStoreJwtSecret).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-jwt-secret`,
+        );
+        cdk.Tags.of(this.ssmParamenterStoreJwtSecret).add(
+            "ProvisionedBy",
+            "AWS",
+        );
+
+        this.ssmParameterStoreAuroraWriterEndPoint = new ssm.StringParameter(
+            this,
+            "ssmParameterStoreAuroraWriterEndPoint",
+            {
+                parameterName: `/${commonProps.projectName}/${commonProps.envName}/aurora-writer-endpoint`,
+                description: `The parameter for ${commonProps.projectName}-${commonProps.envName} aurora writer endpoint`,
+                stringValue: "PleaseChangeMe",
+            },
+        );
+
+        cdk.Tags.of(this.ssmParameterStoreAuroraWriterEndPoint).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-aurora-writer-endpoint`,
+        );
+        cdk.Tags.of(this.ssmParameterStoreAuroraWriterEndPoint).add(
+            "ProvisionedBy",
+            "AWS",
+        );
+
+        this.ssmParameterStoreAuroraReaderEndPoint = new ssm.StringParameter(
+            this,
+            "ssmParameterStoreAuroraReaderEndPoint",
+            {
+                parameterName: `/${commonProps.projectName}/${commonProps.envName}/aurora-reader-endpoint`,
+                description: `The parameter for ${commonProps.projectName}-${commonProps.envName} aurora reader endpoint`,
+                stringValue: "PleaseChangeMe",
+            },
+        );
+
+        cdk.Tags.of(this.ssmParameterStoreAuroraReaderEndPoint).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-aurora-reader-endpoint`,
+        );
+        cdk.Tags.of(this.ssmParameterStoreAuroraReaderEndPoint).add(
+            "ProvisionedBy",
+            "AWS",
+        );
+
+        this.ssmParameterStoreElastiCacheWriterEndPoint =
+            new ssm.StringParameter(
+                this,
+                "ssmParameterStoreElastiCacheWriterEndPoint",
+                {
+                    parameterName: `/${commonProps.projectName}/${commonProps.envName}/elasticache-writer-endpoint`,
+                    description: `The parameter for ${commonProps.projectName}-${commonProps.envName} elasticache writer endpoint`,
+                    stringValue: "PleaseChangeMe",
+                },
+            );
+
+        cdk.Tags.of(this.ssmParameterStoreElastiCacheWriterEndPoint).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-elasticache-writer-endpoint`,
+        );
+        cdk.Tags.of(this.ssmParameterStoreElastiCacheWriterEndPoint).add(
+            "ProvisionedBy",
+            "AWS",
+        );
+
+        this.ssmParameterStoreElastiCacheReaderEndPoint =
+            new ssm.StringParameter(
+                this,
+                "ssmParameterStoreElastiCacheReaderEndPoint",
+                {
+                    parameterName: `/${commonProps.projectName}/${commonProps.envName}/elasticache-reader-endpoint`,
+                    description: `The parameter for ${commonProps.projectName}-${commonProps.envName} elasticache reader endpoint`,
+                    stringValue: "PleaseChangeMe",
+                },
+            );
+
+        cdk.Tags.of(this.ssmParameterStoreElastiCacheReaderEndPoint).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-elasticache-reader-endpoint`,
+        );
+        cdk.Tags.of(this.ssmParameterStoreElastiCacheReaderEndPoint).add(
+            "ProvisionedBy",
+            "AWS",
+        );
     }
 }
