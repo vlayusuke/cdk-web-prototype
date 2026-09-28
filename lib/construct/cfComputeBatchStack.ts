@@ -126,7 +126,9 @@ export class cfComputeBatchStack extends Construct {
             {
                 instanceName: `${commonProps.projectName}-${commonProps.envName}-ec2-instance-batch-az-a`,
                 instanceType: new ec2.InstanceType("t4g.small"),
-                machineImage: ec2.MachineImage.latestAmazonLinux2023(),
+                machineImage: ec2.MachineImage.latestAmazonLinux2023({
+                    cpuType: ec2.AmazonLinuxCpuType.ARM_64,
+                }),
                 vpc: ec2.Vpc.fromVpcAttributes(this, "vpc", {
                     vpcId: networkingProps.vpcId,
                     availabilityZones: [networkingProps.availabilityZones[0]],
@@ -140,6 +142,7 @@ export class cfComputeBatchStack extends Construct {
                 disableApiTermination: true,
                 detailedMonitoring: true,
                 allowAllIpv6Outbound: false,
+                propagateTagsToVolumeOnCreation: true,
                 ssmSessionPermissions: true,
                 keyPair: batchKeyPair,
                 creditSpecification: ec2.CpuCredits.STANDARD,
@@ -148,14 +151,18 @@ export class cfComputeBatchStack extends Construct {
                         mappingEnabled: true,
                         deviceName: "/dev/xvda",
                         volume: ec2.BlockDeviceVolume.ebs(8, {
+                            volumeType: ec2.EbsDeviceVolumeType.GP3,
                             encrypted: true,
+                            deleteOnTermination: false,
                         }),
                     },
                     {
                         mappingEnabled: true,
                         deviceName: "/dev/xvdb",
                         volume: ec2.BlockDeviceVolume.ebs(256, {
+                            volumeType: ec2.EbsDeviceVolumeType.GP3,
                             encrypted: true,
+                            deleteOnTermination: false,
                         }),
                     },
                 ],
@@ -177,7 +184,9 @@ export class cfComputeBatchStack extends Construct {
             {
                 instanceName: `${commonProps.projectName}-${commonProps.envName}-ec2-instance-batch-az-c`,
                 instanceType: new ec2.InstanceType("t4g.small"),
-                machineImage: ec2.MachineImage.latestAmazonLinux2023(),
+                machineImage: ec2.MachineImage.latestAmazonLinux2023({
+                    cpuType: ec2.AmazonLinuxCpuType.ARM_64,
+                }),
                 vpc: ec2.Vpc.fromVpcAttributes(this, "vpcAZc", {
                     vpcId: networkingProps.vpcId,
                     availabilityZones: [networkingProps.availabilityZones[1]],
@@ -191,6 +200,7 @@ export class cfComputeBatchStack extends Construct {
                 disableApiTermination: true,
                 detailedMonitoring: true,
                 allowAllIpv6Outbound: false,
+                propagateTagsToVolumeOnCreation: true,
                 ssmSessionPermissions: true,
                 keyPair: batchKeyPair,
                 creditSpecification: ec2.CpuCredits.STANDARD,
@@ -199,14 +209,18 @@ export class cfComputeBatchStack extends Construct {
                         mappingEnabled: true,
                         deviceName: "/dev/xvda",
                         volume: ec2.BlockDeviceVolume.ebs(8, {
+                            volumeType: ec2.EbsDeviceVolumeType.GP3,
                             encrypted: true,
+                            deleteOnTermination: false,
                         }),
                     },
                     {
                         mappingEnabled: true,
                         deviceName: "/dev/xvdb",
                         volume: ec2.BlockDeviceVolume.ebs(256, {
+                            volumeType: ec2.EbsDeviceVolumeType.GP3,
                             encrypted: true,
+                            deleteOnTermination: false,
                         }),
                     },
                 ],
