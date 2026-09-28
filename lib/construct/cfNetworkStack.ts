@@ -62,7 +62,10 @@ export class cfNetworkStack extends Construct {
 
         this.Vpc = Vpc;
 
-        cdk.Tags.of(Vpc).add("Name", "Vpc");
+        cdk.Tags.of(Vpc).add(
+            "Name",
+            `${props.projectName}-${props.envName}-vpc`,
+        );
         cdk.Tags.of(Vpc).add("ProvisionedBy", "AWS");
 
         for (const [index, subnet] of Vpc.publicSubnets.entries()) {
@@ -70,6 +73,7 @@ export class cfNetworkStack extends Construct {
             const routeTable = subnet.node.findChild(
                 "RouteTable",
             ) as ec2.CfnRouteTable;
+
             cdk.Tags.of(routeTable).add(
                 "Name",
                 `${props.projectName}-${props.envName}-pubsub-route-table-az-${zoneSuffix}`,
@@ -82,6 +86,7 @@ export class cfNetworkStack extends Construct {
             const routeTable = subnet.node.findChild(
                 "RouteTable",
             ) as ec2.CfnRouteTable;
+
             cdk.Tags.of(routeTable).add(
                 "Name",
                 `${props.projectName}-${props.envName}-prvsub-route-table-az-${zoneSuffix}`,
@@ -94,6 +99,7 @@ export class cfNetworkStack extends Construct {
             const routeTable = subnet.node.findChild(
                 "RouteTable",
             ) as ec2.CfnRouteTable;
+
             cdk.Tags.of(routeTable).add(
                 "Name",
                 `${props.projectName}-${props.envName}-protsub-route-table-az-${zoneSuffix}`,
@@ -159,11 +165,13 @@ export class cfNetworkStack extends Construct {
                     ).attrAllocationId,
                 },
             );
+
             cdk.Tags.of(natGateway).add(
                 "Name",
                 `${props.projectName}-${props.envName}-nat-gateway-az-${zoneSuffix}`,
             );
             cdk.Tags.of(natGateway).add("ProvisionedBy", "AWS");
+
             return natGateway;
         });
 
@@ -225,6 +233,7 @@ export class cfNetworkStack extends Construct {
         });
 
         const cfnVPVFlowLog = Vpc.node.findChild("FlowLogs") as ec2.CfnFlowLog;
+
         cdk.Tags.of(cfnVPVFlowLog).add(
             "Name",
             `${props.projectName}-${props.envName}-vpc-flow-log`,
