@@ -20,6 +20,7 @@ export interface pocProps {
 export interface networkingProps {
     vpcId: string;
     privateSubnetIds: string[];
+    privateSubnetRouteTableIds: string[];
 }
 
 export interface sgProps {
@@ -31,6 +32,7 @@ export interface sgProps {
 }
 
 export interface kmsProps {
+    applicationKey: kms.IKey;
     ecrKey: kms.IKey;
     s3Key: kms.IKey;
 }
@@ -72,6 +74,9 @@ export class cfStorageStack extends Construct {
     ) {
         super(scope, id);
 
+        // ------------------------------------------------------------
+        // Declaring Amazon ECR Repositories Assets Configuration
+        // ------------------------------------------------------------
         const repositoryAsset = s3deploy.Source.asset("./", {
             exclude: [
                 ".cdk.staging",
@@ -87,6 +92,188 @@ export class cfStorageStack extends Construct {
         });
 
         // ------------------------------------------------------------
+        // Declaring VPC Endpoint Policy Configuration
+        // ------------------------------------------------------------
+        const ecrRepositoryArns = [
+            "web-baseimage",
+            "app-baseimage",
+            "web",
+            "app",
+        ].map(
+            (repositoryName) =>
+                `arn:aws:ecr:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:repository/${repositoryName}`,
+        );
+        const ecrEndpointPolicy = {
+            Version: "2012-10-17",
+            Statement: [
+                {
+                    Effect: "Allow",
+                    Principal: "*",
+                    Action: "ecr:GetAuthorizationToken",
+                    Resource: "*",
+                },
+                {
+                    Effect: "Allow",
+                    Principal: "*",
+                    Action: [
+                        "ecr:BatchCheckLayerAvailability",
+                        "ecr:BatchGetImage",
+                        "ecr:GetDownloadUrlForLayer",
+                    ],
+                    Resource: ecrRepositoryArns,
+                },
+            ],
+        };
+
+        const applicationBucketArns = [
+            "alb-logs",
+            "aurora-logs",
+            "ecs-logs",
+            "ec2-logs",
+            "elasticache-logs",
+            "lambda-logs",
+            "sns-logs",
+            "assets",
+            "uploads",
+        ].map(
+            (suffix) =>
+                `arn:aws:s3:::${commonProps.projectName}-${commonProps.envName}-${suffix}`,
+        );
+
+        const s3EndpointPolicy = {
+            Version: "2012-10-17",
+            Statement: [
+                {
+                    Sid: "AllowEcrImageLayerDownloads",
+                    Effect: "Allow",
+                    Principal: "*",
+                    Action: "s3:GetObject",
+                    Resource: `arn:aws:s3:::prod-${cdk.Aws.REGION}-starport-layer-bucket/*`,
+                },
+                {
+                    Sid: "AllowProjectBucketListing",
+                    Effect: "Allow",
+                    Principal: "*",
+                    Action: ["s3:ListBucket", "s3:ListBucketMultipartUploads"],
+                    Resource: applicationBucketArns,
+                },
+                {
+                    Sid: "AllowProjectBucketObjectAccess",
+                    Effect: "Allow",
+                    Principal: "*",
+                    Action: [
+                        "s3:AbortMultipartUpload",
+                        "s3:GetObject",
+                        "s3:ListMultipartUploadParts",
+                        "s3:PutObject",
+                    ],
+                    Resource: applicationBucketArns.map(
+                        (bucketArn) => `${bucketArn}/*`,
+                    ),
+                },
+            ],
+        };
+
+        const kmsEndpointPolicy = {
+            Version: "2012-10-17",
+            Statement: [
+                {
+                    Effect: "Allow",
+                    Principal: "*",
+                    Action: [
+                        "kms:Decrypt",
+                        "kms:DescribeKey",
+                        "kms:Encrypt",
+                        "kms:GenerateDataKey",
+                    ],
+                    Resource: props.applicationKey.keyArn,
+                },
+            ],
+        };
+
+        const ssmEndpointPolicy = {
+            Version: "2012-10-17",
+            Statement: [
+                {
+                    Effect: "Allow",
+                    Principal: "*",
+                    Action: [
+                        "ssm:DescribeAssociation",
+                        "ssm:DescribeDocument",
+                        "ssm:DescribeInstanceInformation",
+                        "ssm:GetDeployablePatchSnapshotForInstance",
+                        "ssm:GetDocument",
+                        "ssm:GetManifest",
+                        "ssm:GetParameter",
+                        "ssm:GetParameters",
+                        "ssm:GetParametersByPath",
+                        "ssm:ListAssociations",
+                        "ssm:ListInstanceAssociations",
+                        "ssm:PutComplianceItems",
+                        "ssm:PutInventory",
+                        "ssm:PutConfigurePackageResult",
+                        "ssm:SendCommand",
+                        "ssm:StartSession",
+                        "ssm:TerminateSession",
+                        "ssm:ResumeSession",
+                        "ssm:UpdateAssociationStatus",
+                        "ssm:UpdateInstanceAssociationStatus",
+                        "ssm:UpdateInstanceInformation",
+                    ],
+                    Resource: "*",
+                },
+            ],
+        };
+
+        const ssmMessagesEndpointPolicy = {
+            Version: "2012-10-17",
+            Statement: [
+                {
+                    Effect: "Allow",
+                    Principal: "*",
+                    Action: [
+                        "ssmmessages:CreateControlChannel",
+                        "ssmmessages:CreateDataChannel",
+                        "ssmmessages:OpenControlChannel",
+                        "ssmmessages:OpenDataChannel",
+                    ],
+                    Resource: "*",
+                },
+            ],
+        };
+
+        const ec2MessagesEndpointPolicy = {
+            Version: "2012-10-17",
+            Statement: [
+                {
+                    Effect: "Allow",
+                    Principal: "*",
+                    Action: [
+                        "ec2messages:AcknowledgeMessage",
+                        "ec2messages:DeleteMessage",
+                        "ec2messages:FailMessage",
+                        "ec2messages:GetEndpoint",
+                        "ec2messages:GetMessages",
+                        "ec2messages:SendReply",
+                    ],
+                    Resource: "*",
+                },
+            ],
+        };
+
+        const cloudWatchLogsEndpointPolicy = {
+            Version: "2012-10-17",
+            Statement: [
+                {
+                    Effect: "Allow",
+                    Principal: "*",
+                    Action: ["logs:CreateLogStream", "logs:PutLogEvents"],
+                    Resource: `arn:aws:logs:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:log-group:/ecs/${commonProps.projectName}/${commonProps.envName}*:*`,
+                },
+            ],
+        };
+
+        // ------------------------------------------------------------
         // VPC Endpoint for Amazon ECR Docker Interface Configuration
         // ------------------------------------------------------------
         this.vpcEndpointECRDocker = new ec2.CfnVPCEndpoint(
@@ -96,6 +283,7 @@ export class cfStorageStack extends Construct {
                 vpcId: props.vpcId,
                 serviceName: `com.amazonaws.${cdk.Aws.REGION}.ecr.dkr`,
                 vpcEndpointType: "Interface",
+                policyDocument: ecrEndpointPolicy,
                 securityGroupIds: [
                     sgProps.vpcEndPointECRSecurityGroup.securityGroupId,
                 ],
@@ -124,6 +312,7 @@ export class cfStorageStack extends Construct {
                 vpcId: props.vpcId,
                 serviceName: `com.amazonaws.${cdk.Aws.REGION}.ecr.api`,
                 vpcEndpointType: "Interface",
+                policyDocument: ecrEndpointPolicy,
                 securityGroupIds: [
                     sgProps.vpcEndPointECRSecurityGroup.securityGroupId,
                 ],
@@ -149,6 +338,7 @@ export class cfStorageStack extends Construct {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.kms`,
             vpcEndpointType: "Interface",
+            policyDocument: kmsEndpointPolicy,
             securityGroupIds: [
                 sgProps.vpcEndPointKMSSecurityGroup.securityGroupId,
             ],
@@ -174,6 +364,7 @@ export class cfStorageStack extends Construct {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.ssm`,
             vpcEndpointType: "Interface",
+            policyDocument: ssmEndpointPolicy,
             securityGroupIds: [
                 sgProps.vpcEndPointSSMSecurityGroup.securityGroupId,
             ],
@@ -192,15 +383,16 @@ export class cfStorageStack extends Construct {
         cdk.Tags.of(this.vpcEndpointSSM).add("ProvisionedBy", "AWS");
 
         // ------------------------------------------------------------
-        // VPC Endpoint for AWS Systems Manager EC2 Interface Configuration
+        // VPC Endpoint for AWS Systems Manager Messages Interface Configuration
         // ------------------------------------------------------------
         this.vpcEndpointSSMEC2 = new ec2.CfnVPCEndpoint(
             this,
             "vpcEndpointSSMEC2",
             {
                 vpcId: props.vpcId,
-                serviceName: `com.amazonaws.${cdk.Aws.REGION}.ssm.ec2`,
+                serviceName: `com.amazonaws.${cdk.Aws.REGION}.ssmmessages`,
                 vpcEndpointType: "Interface",
+                policyDocument: ssmMessagesEndpointPolicy,
                 securityGroupIds: [
                     sgProps.vpcEndPointSSMSecurityGroup.securityGroupId,
                 ],
@@ -215,7 +407,7 @@ export class cfStorageStack extends Construct {
 
         cdk.Tags.of(this.vpcEndpointSSMEC2).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-vpcendpoint-ssm-ec2`,
+            `${commonProps.projectName}-${commonProps.envName}-vpcendpoint-ssm-messages`,
         );
         cdk.Tags.of(this.vpcEndpointSSMEC2).add("ProvisionedBy", "AWS");
 
@@ -229,6 +421,7 @@ export class cfStorageStack extends Construct {
                 vpcId: props.vpcId,
                 serviceName: `com.amazonaws.${cdk.Aws.REGION}.ec2messages`,
                 vpcEndpointType: "Interface",
+                policyDocument: ec2MessagesEndpointPolicy,
                 securityGroupIds: [
                     sgProps.vpcEndPointSSMSecurityGroup.securityGroupId,
                 ],
@@ -257,6 +450,7 @@ export class cfStorageStack extends Construct {
                 vpcId: props.vpcId,
                 serviceName: `com.amazonaws.${cdk.Aws.REGION}.logs`,
                 vpcEndpointType: "Interface",
+                policyDocument: cloudWatchLogsEndpointPolicy,
                 securityGroupIds: [
                     sgProps.vpcEndPointCloudWatchLogsSecurityGroup
                         .securityGroupId,
@@ -283,6 +477,8 @@ export class cfStorageStack extends Construct {
             vpcId: props.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.s3`,
             vpcEndpointType: "Gateway",
+            routeTableIds: props.privateSubnetRouteTableIds,
+            policyDocument: s3EndpointPolicy,
         });
 
         cdk.Tags.of(this.vpcEndpointS3).add(
