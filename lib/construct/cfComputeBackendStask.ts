@@ -24,9 +24,9 @@ export interface sgProps {
 }
 
 // ------------------------------------------------------------
-// [08] - Compute Batch Stack
+// [08] - Compute Backend Stack
 // ------------------------------------------------------------
-export class cfComputeBatchStack extends Construct {
+export class cfComputeBackendStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
