@@ -3,7 +3,7 @@ import type { Construct } from "constructs";
 import { commonParameter } from "../commonParameter";
 import type { PocParameter } from "../pocParameter";
 import { cfCICDStack } from "./construct/cfCICDStack";
-import { cfComputeBatchStack } from "./construct/cfComputeBatchStack";
+import { cfComputeBackendStack } from "./construct/cfComputeBackendStack";
 import { cfComputeDefinitionStack } from "./construct/cfComputeDefinitionStack";
 import { cfComputeWebAPStack } from "./construct/cfComputeWebAPStack";
 import { cfDatabaseStack } from "./construct/cfDatabaseStack";
@@ -47,7 +47,7 @@ export interface cfCdkWebPrototypeStackProps extends cdk.StackProps {
  *   5. [05] cfSecurityServiceStack
  *   6. [06] cfStorageStack
  *   7. [07] cfComputeWebAPStack
- *   8. [08] cfComputeBatchStack
+ *   8. [08] cfComputeBackendStack
  *   9. [09] cfComputeServerlessStack
  *  10. [10] cfSgRuleStack
  *  11. [11] cfDNSAndCDNStack
@@ -185,11 +185,11 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [08] - cfComputeBatchStack
+        // [08] - cfComputeBackendStack
         // ------------------------------------------------------------
-        new cfComputeBatchStack(
+        new cfComputeBackendStack(
             this,
-            "cfComputeBatchStack",
+            "cfComputeBackendStack",
             {
                 vpcId: networkStack.Vpc.vpcId,
                 publicSubnetIds: networkStack.Vpc.publicSubnets.map(
