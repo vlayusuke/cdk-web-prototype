@@ -59,7 +59,7 @@ AWSアカウント、通知先メールアドレス、Slack IDなどの環境固
 5. cfSecurityServiceStack.ts
 6. cfStorageStack.ts
 7. cfComputeWebAPStack.ts
-8. cfComputeBatchStack.ts
+8. cfComputeBackendStack.ts
 9. cfComputeServerlessStack.ts
 10. cfSgRuleStack.ts
 11. cfDNSAndCDNStack.ts
