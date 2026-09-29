@@ -1,6 +1,6 @@
 # cdk-web-prototype
 
-このプロトタイプは、Amazon Web ServicesとAWS CDKをフレームワークとして用いたTypeScriptを使用した、Web3レイヤー構成による、Webアプリケーション向けのリソースを構築するために使用するものです。AWS Fargateを用いたコンテナを用いてWebアプリケーションを構築することを想定しています。
+このプロジェクトは、Amazon Web ServicesとAWS CDKをフレームワークとして用いたTypeScriptを使用した、Web3レイヤー構成による、Webアプリケーション向けのリソースを構築するために使用するものです。AWS Fargateを用いたコンテナを用いてWebアプリケーションを構築することを想定しています。
 
 また、標準的な3ステージ構成とすることを目指し、また、原則として1つのAWSアカウントに対して、1つの環境を構築することを前提としています。ただし、1つのAWSアカウントに対して3つの環境を構築することも可能なように柔軟性を持たせた設計とする予定です。
 
@@ -12,7 +12,7 @@
 cdk init --language typescript
 ```
 
-コマンドを実行してプロジェクトの構築を行なっています。また
+コマンドを実行してプロジェクトの構築を行なっています。また、
 
 ```bash
 npx tsc --noEmit
@@ -22,7 +22,7 @@ cdk synth
 
 コマンドを実行して、 `.ts` ファイルの型チェックと、AWS CloudFormationスタックテンプレートの出力確認が正常に実行されることを確認しています。
 
-AWS アカウント ID、通知先メールアドレス、Slack ID などの環境固有値は、ルート直下の `cdk.context.json` の `poc` context に設定してください。このファイルは `.gitignore` 対象です。初回 checkout 後に次のキーを設定してから `cdk synth` または `cdk deploy` を実行してください。
+AWSアカウント、通知先メールアドレス、Slack IDなどの環境固有値は、ルート直下の `cdk.context.json` の `poc` contextに設定してください。このファイルは `.gitignore` 対象です。初回checkout後に次のキーを設定してから `cdk synth` または `cdk deploy` を実行してください。
 
 ```json
 {
@@ -36,11 +36,11 @@ AWS アカウント ID、通知先メールアドレス、Slack ID などの環�
 }
 ```
 
-利用する Availability Zone は `commonParameter.ts` の `availabilityZones` で設定します。現在の Batch 構成では 2 AZ 以上が必要です。
+利用するAvailability Zoneは `commonParameter.ts` の `availabilityZones` で設定します。現在の Batch構成では2AZ以上が必要な設定となっています。
 
 ## スタックの構成
 
-このプロトタイプで実装しているスタックの構成は以下の通りです。
+このプロジェクトで実装しているスタックの構成は以下の通りです。
 
 ### `/bin`
 
@@ -84,7 +84,7 @@ AWS アカウント ID、通知先メールアドレス、Slack ID などの環�
 
 ## 開発プラットフォームのバージョン
 
-このプロトタイプの開発プラットフォームを構成するフレームワークや開発言語のバージョン情報は以下の通りです。
+このプロジェクトの開発プラットフォームを構成するフレームワークや開発言語のバージョン情報は以下の通りです。
 
 ### フレームワーク
 
@@ -104,8 +104,8 @@ AWS アカウント ID、通知先メールアドレス、Slack ID などの環�
 
 ## リリース履歴
 
-このプロトタイプのリリース履歴は、[Releases](https://github.com/vlayusuke/cdk-web-prototype/releases)を参照してください。
+このプロジェクトのリリース履歴は、[Releases](https://github.com/vlayusuke/cdk-web-prototype/releases)を参照してください。
 
 ## ライセンス
 
-このプロトタイプは、MIT LICENSEのもとでライセンスされています。詳細は、[LICENSE](./LICENSE)を参照してください。
+このプロジェクトは、MIT LICENSEのもとでライセンスされています。詳細は、[LICENSE](./LICENSE)を参照してください。
