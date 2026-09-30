@@ -102,6 +102,10 @@ test("Systems Manager endpoints share a least-privilege endpoint security group"
             privateSubnetIds: vpc.isolatedSubnets.map(
                 (subnet) => subnet.subnetId,
             ),
+            privateSubnetRouteTableIds: vpc.isolatedSubnets.map(
+                (subnet) => subnet.routeTable.routeTableId,
+            ),
+            applicationKey: new kms.Key(stack, "ApplicationKey"),
             ecrKey: new kms.Key(stack, "EcrKey"),
             s3Key: new kms.Key(stack, "S3Key"),
         },
@@ -134,7 +138,13 @@ test("Systems Manager endpoints share a least-privilege endpoint security group"
         expect(endpoint.Properties.IpAddressType).toBe("ipv4");
         expect(endpoint.Properties.DnsOptions.DnsRecordIpType).toBe("ipv4");
         expect(endpoint.Properties.SubnetIds).toHaveLength(2);
+        expect(endpoint.Properties.PolicyDocument.Statement).toBeDefined();
     }
+
+    const s3Endpoint =
+        endpointResources[stack.getLogicalId(storage.vpcEndpointS3)];
+    expect(s3Endpoint.Properties.RouteTableIds).toHaveLength(2);
+    expect(s3Endpoint.Properties.PolicyDocument.Statement).toBeDefined();
 
     const sharedSecurityGroupId = stack.resolve(
         securityGroups.vpcEndPointSSMSecurityGroupFrame.securityGroupId,
