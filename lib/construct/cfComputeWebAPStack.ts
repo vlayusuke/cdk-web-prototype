@@ -52,21 +52,6 @@ export class cfComputeWebAPStack extends Construct {
             },
         );
 
-        ec2IamRoleForBastion.addManagedPolicy(
-            iam.ManagedPolicy.fromAwsManagedPolicyName(
-                "AmazonSSMManagedInstanceCore",
-            ),
-        );
-        ec2IamRoleForBastion.addToPolicy(
-            new iam.PolicyStatement({
-                sid: "SSMAccess",
-                actions: ["ssm:StartSession", "ssm:SendCommand"],
-                resources: [
-                    `arn:aws:ssm:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:document/AWS-StartSession`,
-                ],
-            }),
-        );
-
         cdk.Tags.of(ec2IamRoleForBastion).add(
             "Name",
             `${commonProps.projectName}-${commonProps.envName}-iam-role-for-bastion`,
@@ -79,7 +64,16 @@ export class cfComputeWebAPStack extends Construct {
             {
                 statements: [
                     new iam.PolicyStatement({
+                        sid: "SSMAccess",
+                        effect: iam.Effect.ALLOW,
+                        actions: ["ssm:StartSession", "ssm:SendCommand"],
+                        resources: [
+                            `arn:aws:ssm:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:document/AWS-StartSession`,
+                        ],
+                    }),
+                    new iam.PolicyStatement({
                         sid: "S3Access",
+                        effect: iam.Effect.ALLOW,
                         actions: [
                             "s3:ListBucket",
                             "s3:GetObject",
@@ -98,6 +92,12 @@ export class cfComputeWebAPStack extends Construct {
         cdk.Tags.of(ec2IamPolicyForBastion).add("ProvisionedBy", "AWS");
 
         ec2IamPolicyForBastion.attachToRole(ec2IamRoleForBastion);
+
+        ec2IamRoleForBastion.addManagedPolicy(
+            iam.ManagedPolicy.fromAwsManagedPolicyName(
+                "AmazonSSMManagedInstanceCore",
+            ),
+        );
 
         const ec2IamInstanceProfileForBastion = new iam.InstanceProfile(
             this,
