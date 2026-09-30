@@ -5,6 +5,7 @@ import type { PocParameter } from "../pocParameter";
 import { cfCICDStack } from "./construct/cfCICDStack";
 import { cfComputeBackendStack } from "./construct/cfComputeBackendStack";
 import { cfComputeDefinitionStack } from "./construct/cfComputeDefinitionStack";
+import { cfComputeServerlessStack } from "./construct/cfComputeServerlessStack";
 import { cfComputeWebAPStack } from "./construct/cfComputeWebAPStack";
 import { cfDatabaseStack } from "./construct/cfDatabaseStack";
 import { cfDNSAndCDNStack } from "./construct/cfDNSAndCDNStack";
@@ -26,6 +27,7 @@ export interface commonProps {
 export interface pocProps {
     vpcCidr: string;
     defaultGatewayCidr: string;
+    slackHookUrl: string;
 }
 
 export interface cfCdkWebPrototypeStackProps extends cdk.StackProps {
@@ -48,13 +50,13 @@ export interface cfCdkWebPrototypeStackProps extends cdk.StackProps {
  *   6. [06] cfStorageStack
  *   7. [07] cfComputeWebAPStack
  *   8. [08] cfComputeBackendStack
- *   9. [09] cfComputeServerlessStack
- *  10. [10] cfSgRuleStack
- *  11. [11] cfDNSAndCDNStack
- *  12. [12] cfComputeDefinitionStack
- *  13. [13] cfNotificationStack
- *  14. [14] cfMonitoringStack
- *  15. [15] cfLoggingStack
+ *   9. [09] cfSgRuleStack
+ *  10. [10] cfDNSAndCDNStack
+ *  11. [11] cfComputeDefinitionStack
+ *  12. [12] cfNotificationStack
+ *  13. [13] cfMonitoringStack
+ *  14. [14] cfLoggingStack
+ *  15. [15] cfComputeServerlessStack
  *  16. [16] cfCICDStack
  */
 export class cfCdkWebPrototypeStack extends cdk.Stack {
@@ -211,7 +213,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [10] - cfSgRuleStack
+        // [09] - cfSgRuleStack
         // ------------------------------------------------------------
         new cfSgRuleStack(this, "cfSgRuleStack", {
             albSecurityGroupFrame: sgFrameStack.albSecurityGroupFrame,
@@ -235,7 +237,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         });
 
         // ------------------------------------------------------------
-        // [11] - cfDNSAndCDNStack
+        // [10] - cfDNSAndCDNStack
         // ------------------------------------------------------------
         const dnsAndCDNStack = new cfDNSAndCDNStack(
             this,
@@ -259,7 +261,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [12] - cfComputeDefinitionStack
+        // [11] - cfComputeDefinitionStack
         // ------------------------------------------------------------
         const computeDefinitionStack = new cfComputeDefinitionStack(
             this,
@@ -280,7 +282,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [13] - cfNotificationStack
+        // [12] - cfNotificationStack
         // ------------------------------------------------------------
         new cfNotificationStack(
             this,
@@ -298,16 +300,31 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [14] - cfMonitoringStack
+        // [13] - cfMonitoringStack
         // ------------------------------------------------------------
         new cfMonitoringStack(this, "cfMonitoringStack", commonProps, {
             ecsAppScalableTarget: computeDefinitionStack.ecsAppScalableTarget,
         });
 
         // ------------------------------------------------------------
-        // [15] - cfLoggingStack
+        // [14] - cfLoggingStack
         // ------------------------------------------------------------
         new cfLoggingStack(this, "cfLoggingStack", commonProps);
+
+        // ------------------------------------------------------------
+        // [15] - cfComputeBackendStack
+        // ------------------------------------------------------------
+        new cfComputeServerlessStack(
+            this,
+            "cfComputeServerlessStack",
+            {
+                lambdaKey: securityConfigStack.lambdaKey,
+            },
+            commonProps,
+            {
+                slackHookUrl: deploymentParameter.slackHookUrl,
+            },
+        );
 
         // ------------------------------------------------------------
         // [16] - cfCICDStack
