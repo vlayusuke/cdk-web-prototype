@@ -9,6 +9,7 @@ export interface PocParameter {
     monitoringSlackChannelId: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
+    slackHookUrl: string;
 }
 
 export type PocParameterDefaults = Omit<
@@ -16,6 +17,7 @@ export type PocParameterDefaults = Omit<
     | "monitoringNotifyEmail"
     | "monitoringSlackWorkspaceId"
     | "monitoringSlackChannelId"
+    | "slackHookUrl"
 >;
 
 export interface PocContextParameter {
@@ -24,6 +26,7 @@ export interface PocContextParameter {
     monitoringNotifyEmail?: string;
     monitoringSlackWorkspaceId?: string;
     monitoringSlackChannelId?: string;
+    slackHookUrl?: string;
 }
 
 export const pocParameter: PocParameterDefaults = {
@@ -51,5 +54,6 @@ export const loadPocParameter = (context: unknown): PocParameter => {
         monitoringNotifyEmail: requiredValue("monitoringNotifyEmail"),
         monitoringSlackWorkspaceId: requiredValue("monitoringSlackWorkspaceId"),
         monitoringSlackChannelId: requiredValue("monitoringSlackChannelId"),
+        slackHookUrl: requiredValue("slackHookUrl"),
     };
 };
