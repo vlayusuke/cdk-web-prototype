@@ -143,6 +143,10 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
                 privateSubnetIds: networkStack.Vpc.privateSubnets.map(
                     (subnet) => subnet.subnetId,
                 ),
+                privateSubnetRouteTableIds: networkStack.Vpc.privateSubnets.map(
+                    (subnet) => subnet.routeTable.routeTableId,
+                ),
+                applicationKey: securityConfigStack.applicationKey,
                 ecrKey: securityConfigStack.ecrKey,
                 s3Key: securityConfigStack.s3Key,
             },
