@@ -19,7 +19,7 @@ export interface ecsProps {
 }
 
 // ------------------------------------------------------------
-// [14] - cfMonitoringStack
+// [13] - cfMonitoringStack
 // ------------------------------------------------------------
 export class cfMonitoringStack extends Construct {
     private readonly cpuUtilizationHighAlarmEcsApp: cloudwatch.Alarm;

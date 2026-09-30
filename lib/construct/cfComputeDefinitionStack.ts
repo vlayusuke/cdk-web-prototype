@@ -162,7 +162,7 @@ export interface albProps {
 }
 
 // ------------------------------------------------------------
-// [12] - Compute Definition Stack
+// [11] - Compute Definition Stack
 // ------------------------------------------------------------
 export class cfComputeDefinitionStack extends Construct {
     public readonly ecsAppScalableTarget: ecs.ScalableTaskCount;

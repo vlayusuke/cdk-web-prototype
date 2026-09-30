@@ -8,7 +8,7 @@ export interface commonProps {
 }
 
 // ------------------------------------------------------------
-// [15] - cfLoggingStack
+// [14] - cfLoggingStack
 // ------------------------------------------------------------
 export class cfLoggingStack extends Construct {
     public readonly logGroupNginxEcsApp: logs.LogGroup;

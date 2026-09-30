@@ -22,7 +22,7 @@ export interface kmsProps {
 }
 
 // ------------------------------------------------------------
-// [13] - Notification Configuration Stack
+// [12] - Notification Configuration Stack
 // ------------------------------------------------------------
 export class cfNotificationStack extends Construct {
     public readonly snsTopicMetricsAlarm: sns.Topic;

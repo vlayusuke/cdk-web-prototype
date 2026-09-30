@@ -43,7 +43,7 @@ export interface storageProps {
 }
 
 // ------------------------------------------------------------
-// [11] - DNS And CDN Stack
+// [10] - DNS And CDN Stack
 // ------------------------------------------------------------
 export class cfDNSAndCDNStack extends Construct {
     public readonly route53PublicHostedZone: route53.PublicHostedZone;
