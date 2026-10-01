@@ -66,6 +66,7 @@ export class cfDatabaseStack extends Construct {
             statements: [
                 new iam.PolicyStatement({
                     sid: "AuroraRDSAccess",
+                    effect: iam.Effect.ALLOW,
                     actions: ["rds-db:connect", "rds-data:ExecuteStatement"],
                     resources: [
                         `arn:aws:rds-db:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:dbuser:*/*`,
@@ -103,6 +104,7 @@ export class cfDatabaseStack extends Construct {
                 statements: [
                     new iam.PolicyStatement({
                         sid: "AuroraPerformanceInsightAccess",
+                        effect: iam.Effect.ALLOW,
                         actions: [
                             "rds:DescribeDBInstances",
                             "rds:DescribeDBClusters",
@@ -150,6 +152,7 @@ export class cfDatabaseStack extends Construct {
                 statements: [
                     new iam.PolicyStatement({
                         sid: "ElasticacheAccess",
+                        effect: iam.Effect.ALLOW,
                         actions: [
                             "elasticache:DescribeCacheClusters",
                             "elasticache:DescribeCacheSubnetGroups",
