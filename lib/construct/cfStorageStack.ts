@@ -103,6 +103,7 @@ export class cfStorageStack extends Construct {
             (repositoryName) =>
                 `arn:aws:ecr:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:repository/${repositoryName}`,
         );
+
         const ecrEndpointPolicy = {
             Version: "2012-10-17",
             Statement: [
