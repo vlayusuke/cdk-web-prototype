@@ -234,11 +234,13 @@ export class cfComputeDefinitionStack extends Construct {
                 statements: [
                     new iam.PolicyStatement({
                         sid: "PassRole",
+                        effect: iam.Effect.ALLOW,
                         actions: ["iam:PassRole"],
                         resources: [iamEcsTaskExecutionRole.roleArn],
                     }),
                     new iam.PolicyStatement({
                         sid: "GetKeyAndSecrets",
+                        effect: iam.Effect.ALLOW,
                         actions: [
                             "kms:Decrypt",
                             "ssm:GetParameters",
@@ -251,19 +253,19 @@ export class cfComputeDefinitionStack extends Construct {
             },
         );
 
+        cdk.Tags.of(iamEcsTaskExectionPolicy).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-execution-policy`,
+        );
+        cdk.Tags.of(iamEcsTaskExectionPolicy).add("ProvisionedBy", "AWS");
+
         iamEcsTaskExecutionRole.addManagedPolicy(
             iam.ManagedPolicy.fromAwsManagedPolicyName(
                 "service-role/AmazonECSTaskExecutionRolePolicy",
             ),
         );
 
-        iamEcsTaskExecutionRole.attachInlinePolicy(iamEcsTaskExectionPolicy);
-
-        cdk.Tags.of(iamEcsTaskExectionPolicy).add(
-            "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-execution-policy`,
-        );
-        cdk.Tags.of(iamEcsTaskExectionPolicy).add("ProvisionedBy", "AWS");
+        iamEcsTaskExectionPolicy.attachToRole(iamEcsTaskExecutionRole);
 
         // ------------------------------------------------------------
         // AWS IAM for Amazon ECS Task Configuration
@@ -292,6 +294,7 @@ export class cfComputeDefinitionStack extends Construct {
                 statements: [
                     new iam.PolicyStatement({
                         sid: "PassRole",
+                        effect: iam.Effect.ALLOW,
                         actions: ["iam:PassRole"],
                         resources: [
                             iamEcsTaskRole.roleArn,
@@ -300,6 +303,7 @@ export class cfComputeDefinitionStack extends Construct {
                     }),
                     new iam.PolicyStatement({
                         sid: "ECSAccess",
+                        effect: iam.Effect.ALLOW,
                         actions: [
                             "ecs:RunTask",
                             "ecs:ListTaskDefinitions",
@@ -309,6 +313,7 @@ export class cfComputeDefinitionStack extends Construct {
                     }),
                     new iam.PolicyStatement({
                         sid: "AuroraAccess",
+                        effect: iam.Effect.ALLOW,
                         actions: [
                             "rds-db:connect",
                             "rds-data:ExecuteStatement",
@@ -319,6 +324,7 @@ export class cfComputeDefinitionStack extends Construct {
                     }),
                     new iam.PolicyStatement({
                         sid: "ElastiCacheConnect",
+                        effect: iam.Effect.ALLOW,
                         actions: ["elasticache:Connect"],
                         resources: [
                             `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:replicationgroup:*`,
@@ -327,6 +333,7 @@ export class cfComputeDefinitionStack extends Construct {
                     }),
                     new iam.PolicyStatement({
                         sid: "AllowECSExec",
+                        effect: iam.Effect.ALLOW,
                         actions: [
                             "ssmmessages:CreateControlChannel",
                             "ssmmessages:CreateDataChannel",
@@ -339,13 +346,13 @@ export class cfComputeDefinitionStack extends Construct {
             },
         );
 
-        iamEcsTaskRole.attachInlinePolicy(iamEcsTaskPolicy);
-
         cdk.Tags.of(iamEcsTaskPolicy).add(
             "Name",
             `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-policy`,
         );
         cdk.Tags.of(iamEcsTaskPolicy).add("ProvisionedBy", "AWS");
+
+        iamEcsTaskRole.attachInlinePolicy(iamEcsTaskPolicy);
 
         // ------------------------------------------------------------
         // Amazon ECS App Task Definition Configuration
