@@ -204,6 +204,14 @@ export class cfComputeDefinitionStack extends Construct {
         };
 
         // ------------------------------------------------------------
+        // OpenID Connect Provider for GitHub Actions Configuration
+        // ------------------------------------------------------------
+        const oidcProvider = new iam.OidcProviderNative(this, "oidcProvider", {
+            url: "https://token.actions.githubusercontent.com",
+            clientIds: ["sts.amazonaws.com"],
+        });
+
+        // ------------------------------------------------------------
         // AWS IAM for Amazon ECS Service Configuration
         // ------------------------------------------------------------
         const iamEcsTaskExecutionRole = new iam.Role(
