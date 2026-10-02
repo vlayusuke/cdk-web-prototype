@@ -1,7 +1,7 @@
 import type { Environment } from "aws-cdk-lib";
 
-// Parameters for PoC Application
-export interface PocParameter {
+// Parameters for Production Application
+export interface PrdParameter {
     env?: Environment;
     envName: string;
     monitoringNotifyEmail: string;
@@ -12,15 +12,15 @@ export interface PocParameter {
     slackHookUrl: string;
 }
 
-export type PocParameterDefaults = Omit<
-    PocParameter,
+export type PrdParameterDefaults = Omit<
+    PrdParameter,
     | "monitoringNotifyEmail"
     | "monitoringSlackWorkspaceId"
     | "monitoringSlackChannelId"
     | "slackHookUrl"
 >;
 
-export interface PocContextParameter {
+export interface PrdContextParameter {
     account?: string;
     region?: string;
     monitoringNotifyEmail?: string;
@@ -29,24 +29,24 @@ export interface PocContextParameter {
     slackHookUrl?: string;
 }
 
-export const pocParameter: PocParameterDefaults = {
-    envName: "poc",
+export const prdParameter: PrdParameterDefaults = {
+    envName: "prd",
     vpcCidr: "10.50.0.0/16",
     defaultGatewayCidr: "0.0.0.0/0",
 };
 
-export const loadPocParameter = (context: unknown): PocParameter => {
-    const contextParameter = (context ?? {}) as PocContextParameter;
-    const requiredValue = (key: keyof PocContextParameter): string => {
+export const loadPrdParameter = (context: unknown): PrdParameter => {
+    const contextParameter = (context ?? {}) as PrdContextParameter;
+    const requiredValue = (key: keyof PrdContextParameter): string => {
         const value = contextParameter[key];
         if (typeof value !== "string" || value.trim() === "") {
-            throw new Error(`Missing required CDK context value: poc.${key}`);
+            throw new Error(`Missing required CDK context value: prd.${key}`);
         }
         return value;
     };
 
     return {
-        ...pocParameter,
+        ...prdParameter,
         env: {
             account: contextParameter.account,
             region: contextParameter.region ?? "ap-northeast-1",
