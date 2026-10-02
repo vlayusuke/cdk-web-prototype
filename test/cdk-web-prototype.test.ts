@@ -2,20 +2,25 @@ import * as cdk from "aws-cdk-lib";
 import { Template } from "aws-cdk-lib/assertions";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as kms from "aws-cdk-lib/aws-kms";
+import { loadPrdParameter } from "../config/prdParameter";
+import { loadStgParameter } from "../config/stgParameter";
 import { cfNetworkStack } from "../lib/construct/cfNetworkStack";
 import { cfSgFrameStack } from "../lib/construct/cfSgFrameStack";
 import { cfSgRuleStack } from "../lib/construct/cfSgRuleStack";
 import { cfStorageStack } from "../lib/construct/cfStorageStack";
-import { loadPocParameter } from "../pocParameter";
 
-test("loadPocParameter reads deployment values from CDK context", () => {
+test.each([
+    ["prd", loadPrdParameter],
+    ["stg", loadStgParameter],
+])("%s parameter loader reads deployment values from CDK context", (_env, loadParameter) => {
     expect(
-        loadPocParameter({
+        loadParameter({
             account: "123456789012",
             region: "ap-northeast-1",
             monitoringNotifyEmail: "alerts@example.com",
             monitoringSlackWorkspaceId: "T1234567890",
             monitoringSlackChannelId: "C1234567890",
+            slackHookUrl: "https://hooks.slack.com/services/test",
         }),
     ).toMatchObject({
         env: { account: "123456789012", region: "ap-northeast-1" },
@@ -25,9 +30,12 @@ test("loadPocParameter reads deployment values from CDK context", () => {
     });
 });
 
-test("loadPocParameter rejects missing sensitive context values", () => {
-    expect(() => loadPocParameter({})).toThrow(
-        "Missing required CDK context value: poc.monitoringNotifyEmail",
+test.each([
+    ["prd", loadPrdParameter],
+    ["stg", loadStgParameter],
+])("%s parameter loader rejects missing required context values", (env, loadParameter) => {
+    expect(() => loadParameter({})).toThrow(
+        `Missing required CDK context value: ${env}.monitoringNotifyEmail`,
     );
 });
 
