@@ -22,21 +22,30 @@ cdk synth
 
 コマンドを実行して、 `.ts` ファイルの型チェックと、AWS CloudFormationスタックテンプレートの出力確認が正常に実行されることを確認しています。
 
-AWSアカウント、通知先メールアドレス、Slack IDなどの環境固有値は、ルート直下の `cdk.context.json` の `poc` contextに設定してください。このファイルは `.gitignore` 対象です。初回checkout後に次のキーを設定してから `cdk synth` または `cdk deploy` を実行してください。
+ProductionとStagingの環境固有値は、ルート直下の `cdk.context.json` の `prd` および `stg` contextに設定してください。このファイルは `.gitignore` 対象です。初回checkout後、[`cdk.context.example.json`](./cdk.context.example.json) を参考に両方の環境を設定してください。共通パラメータと環境別の既定値は `config/commonParameter.ts`、`config/prdParameter.ts`、`config/stgParameter.ts` にあります。
 
 ```json
 {
-    "poc": {
-        "account": "AWS_ACCOUNT_ID",
-        "region": "AWS_REGION",
-        "monitoringNotifyEmail": "NOTIFICATION_EMAIL",
-        "monitoringSlackWorkspaceId": "SLACK_WORKSPACE_ID",
-        "monitoringSlackChannelId": "SLACK_CHANNEL_ID"
+    "prd": {
+        "account": "PRODUCTION_AWS_ACCOUNT_ID",
+        "region": "ap-northeast-1",
+        "monitoringNotifyEmail": "PRODUCTION_NOTIFICATION_EMAIL",
+        "monitoringSlackWorkspaceId": "PRODUCTION_SLACK_WORKSPACE_ID",
+        "monitoringSlackChannelId": "PRODUCTION_SLACK_CHANNEL_ID",
+        "slackHookUrl": "PRODUCTION_SLACK_HOOK_URL"
+    },
+    "stg": {
+        "account": "STAGING_AWS_ACCOUNT_ID",
+        "region": "ap-northeast-1",
+        "monitoringNotifyEmail": "STAGING_NOTIFICATION_EMAIL",
+        "monitoringSlackWorkspaceId": "STAGING_SLACK_WORKSPACE_ID",
+        "monitoringSlackChannelId": "STAGING_SLACK_CHANNEL_ID",
+        "slackHookUrl": "STAGING_SLACK_HOOK_URL"
     }
 }
 ```
 
-利用するAvailability Zoneは `commonParameter.ts` の `availabilityZones` で設定します。現在の Batch構成では2AZ以上が必要な設定となっています。
+`cdk synth` は `cfCdkWebPrototypeStack-prd` と `cfCdkWebPrototypeStack-stg` の2スタックを別々のCloudFormationテンプレートとして `cdk.out` に出力します。単独の環境を合成・デプロイする場合はスタックIDを指定してください（例: `cdk synth cfCdkWebPrototypeStack-prd`）。利用するAvailability Zoneは `config/commonParameter.ts` の `availabilityZones` で設定します。現在の Batch構成では2AZ以上が必要な設定となっています。
 
 ## スタックの構成
 
