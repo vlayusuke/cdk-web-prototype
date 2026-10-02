@@ -1,5 +1,9 @@
 import * as cdk from "aws-cdk-lib";
-import { aws_logs as logs } from "aws-cdk-lib";
+import {
+    aws_logs as logs,
+    aws_logs_destinations as logsDestinations,
+} from "aws-cdk-lib";
+import type * as lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
 export interface commonProps {
@@ -439,5 +443,35 @@ export class cfLoggingStack extends Construct {
             logGroup: this.logGroupSns,
             logStreamName: `/sns/${commonProps.projectName}/${commonProps.envName}`,
         });
+    }
+
+    // ------------------------------------------------------------
+    // Amazon CloudWatch Logs Subscription Filter Configuration
+    // ------------------------------------------------------------
+    public addCloudWatchLogsAlertSubscription(
+        lambdaFunction: lambda.IFunction,
+    ): void {
+        const destination = new logsDestinations.LambdaDestination(
+            lambdaFunction,
+        );
+
+        const sourceLogGroups: Record<string, logs.ILogGroup> = {
+            NginxEcsApp: this.logGroupNginxEcsApp,
+            AppEcsApp: this.logGroupAppEcsApp,
+            EcsCron: this.logGroupEcsCron,
+            EcsQueue: this.logGroupEcsQueue,
+            AuroraInstance: this.logGroupAuroraInstance,
+            AuroraPostgresql: this.logGroupAuroraPostgresql,
+            AuroraIamDbAuthError: this.logGroupAuroraIamDbAuthError,
+            ElastiCache: this.logGroupElastiCache,
+        };
+
+        for (const [name, logGroup] of Object.entries(sourceLogGroups)) {
+            new logs.SubscriptionFilter(this, `SubscriptionFilter${name}`, {
+                logGroup,
+                destination,
+                filterPattern: logs.FilterPattern.allEvents(),
+            });
+        }
     }
 }
