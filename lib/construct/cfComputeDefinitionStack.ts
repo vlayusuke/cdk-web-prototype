@@ -211,6 +211,64 @@ export class cfComputeDefinitionStack extends Construct {
             clientIds: ["sts.amazonaws.com"],
         });
 
+        cdk.Tags.of(oidcProvider).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-oidc-provider`,
+        );
+        cdk.Tags.of(oidcProvider).add("ProvisionedBy", "AWS");
+
+        // ------------------------------------------------------------
+        // AWS IAM for GitHub Actions Deployment Configuration
+        // ------------------------------------------------------------
+        const iamGithubActionsRole = new iam.Role(
+            this,
+            "iamGithubActionsRole",
+            {
+                roleName: `${commonProps.projectName}-${commonProps.envName}-iam-github-actions-role`,
+                description: "IAM role for GitHub Actions deployment",
+                assumedBy: new iam.WebIdentityPrincipal(
+                    oidcProvider.openIdConnectProviderArn,
+                    {
+                        StringEquals: {
+                            "token.actions.githubusercontent.com:aud":
+                                "sts.amazonaws.com",
+                        },
+                    },
+                ),
+            },
+        );
+
+        cdk.Tags.of(iamGithubActionsRole).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-iam-github-actions-role`,
+        );
+        cdk.Tags.of(iamGithubActionsRole).add("ProvisionedBy", "AWS");
+
+        const iamGithubActionsPolicy = new iam.Policy(
+            this,
+            "iamGithubActionsPolicy",
+            {
+                policyName: `${commonProps.projectName}-${commonProps.envName}-iam-github-actions-policy`,
+                roles: [iamGithubActionsRole],
+                statements: [
+                    new iam.PolicyStatement({
+                        sid: "PassRole",
+                        effect: iam.Effect.ALLOW,
+                        actions: ["iam:PassRole"],
+                        resources: [iamGithubActionsRole.roleArn],
+                    }),
+                ],
+            },
+        );
+
+        cdk.Tags.of(iamGithubActionsPolicy).add(
+            "Name",
+            `${commonProps.projectName}-${commonProps.envName}-iam-github-actions-policy`,
+        );
+        cdk.Tags.of(iamGithubActionsPolicy).add("ProvisionedBy", "AWS");
+
+        iamGithubActionsPolicy.attachToRole(iamGithubActionsRole);
+
         // ------------------------------------------------------------
         // AWS IAM for Amazon ECS Service Configuration
         // ------------------------------------------------------------
