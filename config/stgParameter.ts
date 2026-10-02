@@ -30,6 +30,10 @@ export interface StgContextParameter {
 }
 
 export const stgParameter: StgParameterDefaults = {
+    env: {
+        account: "634989770450",
+        region: "ap-northeast-1",
+    },
     envName: "stg",
     vpcCidr: "10.60.0.0/16",
     defaultGatewayCidr: "0.0.0.0/0",
