@@ -1,15 +1,11 @@
 {
 	"prd": {
-		"account": "123456789012",
-		"region": "ap-northeast-1",
 		"monitoringNotifyEmail": "production-alerts@example.com",
 		"monitoringSlackWorkspaceId": "T00000000000",
 		"monitoringSlackChannelId": "C00000000000",
 		"slackHookUrl": "https://hooks.slack.com/services/REPLACE/ME"
 	},
 	"stg": {
-		"account": "123456789012",
-		"region": "ap-northeast-1",
 		"monitoringNotifyEmail": "staging-alerts@example.com",
 		"monitoringSlackWorkspaceId": "T00000000000",
 		"monitoringSlackChannelId": "C00000000000",
