@@ -9,19 +9,17 @@ const prdParameter = loadPrdParameter(app.node.tryGetContext("prd"));
 const stgParameter = loadStgParameter(app.node.tryGetContext("stg"));
 
 for (const deploymentParameter of [prdParameter, stgParameter]) {
-	new cfCdkWebPrototypeStack(
-		app,
-		`cfCdkWebPrototypeStack-${deploymentParameter.envName}`,
-		{
-			env: {
-				account:
-					deploymentParameter.env?.account ?? process.env.CDK_DEFAULT_ACCOUNT,
-				region:
-					deploymentParameter.env?.region ?? process.env.CDK_DEFAULT_REGION,
-			},
-			deploymentParameter,
+    new cfCdkWebPrototypeStack(
+        app,
+        `cfCdkWebPrototypeStack-${deploymentParameter.envName}`,
+        {
+            env: {
+                account: deploymentParameter.env?.account,
+                region: deploymentParameter.env?.region,
+            },
+            deploymentParameter,
 
-			/* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
-		},
-	);
+            /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+        },
+    );
 }
