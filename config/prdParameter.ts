@@ -30,6 +30,10 @@ export interface PrdContextParameter {
 }
 
 export const prdParameter: PrdParameterDefaults = {
+    env: {
+        account: "634989770450",
+        region: "ap-northeast-1",
+    },
     envName: "prd",
     vpcCidr: "10.50.0.0/16",
     defaultGatewayCidr: "0.0.0.0/0",
