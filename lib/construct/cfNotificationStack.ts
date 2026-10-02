@@ -4,7 +4,9 @@ import {
     aws_chatbot as chatbot,
     aws_iam as iam,
     aws_sns as sns,
+    aws_sns_subscriptions as snsSubscriptions,
 } from "aws-cdk-lib";
+import type * as lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
 export interface commonProps {
@@ -116,6 +118,18 @@ export class cfNotificationStack extends Construct {
                 ],
                 loggingLevel: chatbot.LoggingLevel.ERROR,
             },
+        );
+    }
+
+    // ------------------------------------------------------------
+    // Amazon SNS Subscription Configuration
+    // (grants Amazon SNS permission to invoke the Lambda function)
+    // ------------------------------------------------------------
+    public addEventNotificationSubscription(
+        lambdaFunction: lambda.IFunction,
+    ): void {
+        this.snsTopicEventNotification.addSubscription(
+            new snsSubscriptions.LambdaSubscription(lambdaFunction),
         );
     }
 }
