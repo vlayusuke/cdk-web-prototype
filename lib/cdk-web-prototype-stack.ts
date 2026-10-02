@@ -1,7 +1,8 @@
 import * as cdk from "aws-cdk-lib/core";
 import type { Construct } from "constructs";
-import { commonParameter } from "../commonParameter";
-import type { PocParameter } from "../pocParameter";
+import { commonParameter } from "../config/commonParameter";
+import type { PrdParameter } from "../config/prdParameter";
+import type { StgParameter } from "../config/stgParameter";
 import { cfCICDStack } from "./construct/cfCICDStack";
 import { cfComputeBackendStack } from "./construct/cfComputeBackendStack";
 import { cfComputeDefinitionStack } from "./construct/cfComputeDefinitionStack";
@@ -31,7 +32,7 @@ export interface pocProps {
 }
 
 export interface cfCdkWebPrototypeStackProps extends cdk.StackProps {
-    pocParameter: PocParameter;
+    deploymentParameter: PrdParameter | StgParameter;
 }
 
 /**
@@ -67,7 +68,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
     ) {
         super(scope, id, props);
 
-        const deploymentParameter = props.pocParameter;
+        const deploymentParameter = props.deploymentParameter;
         const commonProps = {
             ...commonParameter,
             envName: deploymentParameter.envName,
@@ -284,7 +285,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         // ------------------------------------------------------------
         // [12] - cfNotificationStack
         // ------------------------------------------------------------
-        new cfNotificationStack(
+        const notificationStack = new cfNotificationStack(
             this,
             "cfNotificationStack",
             commonProps,
@@ -309,12 +310,16 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         // ------------------------------------------------------------
         // [14] - cfLoggingStack
         // ------------------------------------------------------------
-        new cfLoggingStack(this, "cfLoggingStack", commonProps);
+        const loggingStack = new cfLoggingStack(
+            this,
+            "cfLoggingStack",
+            commonProps,
+        );
 
         // ------------------------------------------------------------
         // [15] - cfComputeBackendStack
         // ------------------------------------------------------------
-        new cfComputeServerlessStack(
+        const computeServerlessStack = new cfComputeServerlessStack(
             this,
             "cfComputeServerlessStack",
             {
@@ -324,6 +329,12 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             {
                 slackHookUrl: deploymentParameter.slackHookUrl,
             },
+        );
+        loggingStack.addCloudWatchLogsAlertSubscription(
+            computeServerlessStack.lambdaCloudWatchLogsAlert,
+        );
+        notificationStack.addEventNotificationSubscription(
+            computeServerlessStack.lambdaCloudWatchMetricsAlert,
         );
 
         // ------------------------------------------------------------
