@@ -387,6 +387,7 @@ export class cfComputeDefinitionStack extends Construct {
                             "rds-data:ExecuteStatement",
                         ],
                         resources: [
+                            `arn:aws:rds:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:db:*`,
                             `arn:aws:rds-db:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:dbuser:*/*`,
                         ],
                     }),
