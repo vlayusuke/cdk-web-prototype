@@ -18,7 +18,7 @@ export interface commonProps {
     nakedDomainName: string;
 }
 
-export interface pocProps {
+export interface envProps {
     Vpc: ec2.IVpc;
     vpcCidr: string;
     defaultGatewayCidr: string;
@@ -60,7 +60,7 @@ export class cfDNSAndCDNStack extends Construct {
         scope: Construct,
         id: string,
         props: commonProps,
-        pocProps: pocProps,
+        envProps: envProps,
         sgProps: sgProps,
         storageProps: storageProps,
         wafProps: wafProps,
@@ -132,7 +132,7 @@ export class cfDNSAndCDNStack extends Construct {
             this,
             "albExternal",
             {
-                vpc: pocProps.Vpc,
+                vpc: envProps.Vpc,
                 vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
                 securityGroup: sgProps.albSecurityGroup,
                 internetFacing: true,
@@ -222,7 +222,7 @@ export class cfDNSAndCDNStack extends Construct {
             "albExternalTargetGroup",
             {
                 targetType: elbv2.TargetType.IP,
-                vpc: pocProps.Vpc,
+                vpc: envProps.Vpc,
                 port: 80,
                 protocol: elbv2.ApplicationProtocol.HTTP,
                 loadBalancingAlgorithmType:
