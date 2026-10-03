@@ -375,7 +375,9 @@ export class cfComputeDefinitionStack extends Construct {
                             "ecs:ListTaskDefinitions",
                             "ecs:DescribeServices",
                         ],
-                        resources: ["*"],
+                        resources: [
+                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task/*`,
+                        ],
                     }),
                     new iam.PolicyStatement({
                         sid: "AuroraAccess",
@@ -406,7 +408,9 @@ export class cfComputeDefinitionStack extends Construct {
                             "ssmmessages:OpenControlChannel",
                             "ssmmessages:OpenDataChannel",
                         ],
-                        resources: ["*"],
+                        resources: [
+                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task/*`,
+                        ],
                     }),
                 ],
             },
@@ -418,7 +422,7 @@ export class cfComputeDefinitionStack extends Construct {
         );
         cdk.Tags.of(iamEcsTaskPolicy).add("ProvisionedBy", "AWS");
 
-        iamEcsTaskRole.attachInlinePolicy(iamEcsTaskPolicy);
+        iamEcsTaskPolicy.attachToRole(iamEcsTaskRole);
 
         // ------------------------------------------------------------
         // Amazon ECS App Task Definition Configuration
@@ -627,7 +631,7 @@ export class cfComputeDefinitionStack extends Construct {
                     { change: -1, upper: -50 },
                     { change: -1, lower: -50, upper: 0 },
                 ],
-                cooldown: cdk.Duration.seconds(300),
+                cooldown: cdk.Duration.seconds(600),
             },
         );
 
