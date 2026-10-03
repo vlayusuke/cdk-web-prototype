@@ -14,7 +14,7 @@ export interface commonProps {
     envName: string;
 }
 
-export interface pocProps {
+export interface envProps {
     slackHookUrl: string;
 }
 
@@ -34,7 +34,7 @@ export class cfComputeServerlessStack extends Construct {
         id: string,
         kmsProps: kmsProps,
         commonProps: commonProps,
-        pocProps: pocProps,
+        envProps: envProps,
     ) {
         super(scope, id);
 
@@ -222,7 +222,7 @@ export class cfComputeServerlessStack extends Construct {
                 role: iamLambdaCloudWatchLogsAlertRole,
                 environmentEncryption: kmsProps.lambdaKey,
                 environment: {
-                    hookUrl: pocProps.slackHookUrl,
+                    hookUrl: envProps.slackHookUrl,
                 },
             },
         );
@@ -263,7 +263,7 @@ export class cfComputeServerlessStack extends Construct {
                 role: iamLambdaCloudWatchMetricsAlertRole,
                 environmentEncryption: kmsProps.lambdaKey,
                 environment: {
-                    hookUrl: pocProps.slackHookUrl,
+                    hookUrl: envProps.slackHookUrl,
                     target_region: cdk.Aws.REGION,
                 },
             },
@@ -302,7 +302,7 @@ export class cfComputeServerlessStack extends Construct {
             role: iamLambdaRdsControlRole,
             environmentEncryption: kmsProps.lambdaKey,
             environment: {
-                hookUrl: pocProps.slackHookUrl,
+                hookUrl: envProps.slackHookUrl,
             },
         });
 
