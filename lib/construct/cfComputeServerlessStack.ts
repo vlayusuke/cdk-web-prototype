@@ -227,6 +227,14 @@ export class cfComputeServerlessStack extends Construct {
             },
         );
 
+        this.lambdaCloudWatchLogsAlert.addPermission(
+            "AllowExecutionFromCloudWatch",
+            {
+                principal: new iam.ServicePrincipal("logs.amazonaws.com"),
+                action: "lambda:InvokeFunction",
+            },
+        );
+
         this.lambdaCloudWatchLogsAlert = lambdaCloudWatchLogsAlert;
 
         cdk.Tags.of(lambdaCloudWatchLogsAlert).add(
@@ -261,6 +269,14 @@ export class cfComputeServerlessStack extends Construct {
             },
         );
 
+        this.lambdaCloudWatchMetricsAlert.addPermission(
+            "AllowExecutionFromCloudWatch",
+            {
+                principal: new iam.ServicePrincipal("logs.amazonaws.com"),
+                action: "lambda:InvokeFunction",
+            },
+        );
+
         this.lambdaCloudWatchMetricsAlert = lambdaCloudWatchMetricsAlert;
 
         cdk.Tags.of(lambdaCloudWatchMetricsAlert).add(
@@ -288,6 +304,11 @@ export class cfComputeServerlessStack extends Construct {
             environment: {
                 hookUrl: pocProps.slackHookUrl,
             },
+        });
+
+        lambdaRdsControl.addPermission("AllowExecutionFromCloudWatch", {
+            principal: new iam.ServicePrincipal("logs.amazonaws.com"),
+            action: "lambda:InvokeFunction",
         });
 
         cdk.Tags.of(lambdaRdsControl).add(
