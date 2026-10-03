@@ -9,7 +9,7 @@ export interface commonProps {
     envName: string;
 }
 
-export interface pocProps {
+export interface envProps {
     vpcCidr: string;
     defaultGatewayCidr: string;
     availabilityZones: [string, string];
@@ -28,7 +28,7 @@ export class cfNetworkStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        props: commonProps & pocProps,
+        props: commonProps & envProps,
         kmsProps: kmsProps,
     ) {
         super(scope, id);
