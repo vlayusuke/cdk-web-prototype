@@ -126,9 +126,9 @@ export class cfDatabaseStack extends Construct {
             "AWS",
         );
 
-        auroraIamRole.attachInlinePolicy(auroraIamPolicy);
-        auroraIamPeformanceInsightRole.attachInlinePolicy(
-            auroraIamPeformanceInsightPolicy,
+        auroraIamPolicy.attachToRole(auroraIamRole);
+        auroraIamPeformanceInsightPolicy.attachToRole(
+            auroraIamPeformanceInsightRole,
         );
 
         // ------------------------------------------------------------
@@ -172,7 +172,7 @@ export class cfDatabaseStack extends Construct {
         );
         cdk.Tags.of(elasticacheIamPolicy).add("ProvisionedBy", "AWS");
 
-        elasticacheIamRole.attachInlinePolicy(elasticacheIamPolicy);
+        elasticacheIamPolicy.attachToRole(elasticacheIamRole);
 
         // ------------------------------------------------------------
         // Amazon Aurora Subnet Group Configuration
