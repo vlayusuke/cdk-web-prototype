@@ -12,7 +12,7 @@ export interface commonProps {
     nakedDomainName: string;
 }
 
-export interface pocProps {
+export interface envProps {
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
