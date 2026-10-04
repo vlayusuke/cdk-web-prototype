@@ -25,7 +25,7 @@ export interface commonProps {
     envName: string;
 }
 
-export interface pocProps {
+export interface envProps {
     vpcCidr: string;
     defaultGatewayCidr: string;
     slackHookUrl: string;
