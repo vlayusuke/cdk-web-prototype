@@ -14,7 +14,7 @@ export interface commonProps {
     envName: string;
 }
 
-export interface pocProps {
+export interface envProps {
     monitoringSlackWorkspaceId: string;
     monitoringSlackChannelId: string;
 }
@@ -35,7 +35,7 @@ export class cfNotificationStack extends Construct {
         scope: Construct,
         id: string,
         props: commonProps,
-        pocProps: pocProps,
+        envProps: envProps,
         kmsProps: kmsProps,
     ) {
         super(scope, id);
@@ -104,8 +104,8 @@ export class cfNotificationStack extends Construct {
             "SlackChannelConfiguration",
             {
                 slackChannelConfigurationName: `${props.projectName}-${props.envName}-slack-channel`,
-                slackWorkspaceId: pocProps.monitoringSlackWorkspaceId,
-                slackChannelId: pocProps.monitoringSlackChannelId,
+                slackWorkspaceId: envProps.monitoringSlackWorkspaceId,
+                slackChannelId: envProps.monitoringSlackChannelId,
                 notificationTopics: [
                     this.snsTopicMetricsAlarm,
                     this.snsTopicLogsAlarm,
