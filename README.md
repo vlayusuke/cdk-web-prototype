@@ -22,30 +22,40 @@ cdk synth
 
 コマンドを実行して、 `.ts` ファイルの型チェックと、AWS CloudFormationスタックテンプレートの出力確認が正常に実行されることを確認しています。
 
-ProductionとStagingの環境固有値は、ルート直下の `cdk.context.json` の `prd` および `stg` contextに設定してください。このファイルは `.gitignore` 対象です。初回checkout後、[`cdk.context.example.json`](./cdk.context.example.json) を参考に両方の環境を設定してください。共通パラメータと環境別の既定値は `config/commonParameter.ts`、`config/prdParameter.ts`、`config/stgParameter.ts` にあります。
+環境固有値は、ルート直下の `cdk.context.json` の `prd` 、 `stg` 及び `dev` contextに設定してください。このファイルは `.gitignore` 対象です。初回checkout後、[`cdk.context.example.json`](./cdk.context.example.json) を参考に両方の環境を設定してください。共通パラメータと環境別の既定値は `config/commonParameter.ts`、`config/prdParameter.ts`、`config/stgParameter.ts` にあります。
 
 ```json
 {
     "prd": {
-        "account": "PRODUCTION_AWS_ACCOUNT_ID",
-        "region": "ap-northeast-1",
         "monitoringNotifyEmail": "PRODUCTION_NOTIFICATION_EMAIL",
         "monitoringSlackWorkspaceId": "PRODUCTION_SLACK_WORKSPACE_ID",
         "monitoringSlackChannelId": "PRODUCTION_SLACK_CHANNEL_ID",
         "slackHookUrl": "PRODUCTION_SLACK_HOOK_URL"
     },
     "stg": {
-        "account": "STAGING_AWS_ACCOUNT_ID",
-        "region": "ap-northeast-1",
         "monitoringNotifyEmail": "STAGING_NOTIFICATION_EMAIL",
         "monitoringSlackWorkspaceId": "STAGING_SLACK_WORKSPACE_ID",
         "monitoringSlackChannelId": "STAGING_SLACK_CHANNEL_ID",
         "slackHookUrl": "STAGING_SLACK_HOOK_URL"
+    },
+    "dev": {
+        "monitoringNotifyEmail": "DEVELOP_NOTIFICATION_EMAIL",
+        "monitoringSlackWorkspaceId": "DEVELOP_SLACK_WORKSPACE_ID",
+        "monitoringSlackChannelId": "DEVELOP_SLACK_CHANNEL_ID",
+        "slackHookUrl": "DEVELOP_SLACK_HOOK_URL"
     }
 }
 ```
 
-`cdk synth` は `cfCdkWebPrototypeStack-prd` と `cfCdkWebPrototypeStack-stg` の2スタックを別々のCloudFormationテンプレートとして `cdk.out` に出力します。単独の環境を合成・デプロイする場合はスタックIDを指定してください（例: `cdk synth cfCdkWebPrototypeStack-prd`）。利用するAvailability Zoneは `config/commonParameter.ts` の `availabilityZones` で設定します。現在の Batch構成では2AZ以上が必要な設定となっています。
+`cdk synth` は `cfCdkWebPrototypeStack-prd` 、 `cfCdkWebPrototypeStack-stg` 及び `cfCdkWebPrototypeStack-dev` の3つのスタックを別々のCloudFormationテンプレートとして `cdk.out` に出力します。単独の環境を合成・デプロイする場合はスタックIDを指定してください（例: `cdk synth cfCdkWebPrototypeStack-prd`）。利用するAvailability Zoneは `config/commonParameter.ts` の `availabilityZones` で設定します。現在の Batch構成では2AZ以上が必要な設定となっています。
+
+なお、 `cdk.context.json` は、以下のコマンドを入力することによりファイルの内容をクリアすることが可能な揮発性のファイルのため、取り扱いには十分nに注意してください。
+
+```bash
+cdk context --clear
+```
+
+参考: <https://docs.aws.amazon.com/ja_jp/cdk/v2/guide/context.html>
 
 ## スタックの構成
 
