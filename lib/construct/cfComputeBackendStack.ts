@@ -4,10 +4,10 @@ import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
-    envName: string;
 }
 
 export interface envProps {
+    envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
@@ -33,6 +33,7 @@ export class cfComputeBackendStack extends Construct {
         networkingProps: networkingProps,
         sgProps: sgProps,
         commonProps: commonProps,
+        envProps: envProps,
     ) {
         super(scope, id);
 
@@ -47,7 +48,7 @@ export class cfComputeBackendStack extends Construct {
 
         cdk.Tags.of(ec2IamRoleForBatch).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-role-for-batch`,
+            `${commonProps.projectName}-${envProps.envName}-iam-role-for-batch`,
         );
         cdk.Tags.of(ec2IamRoleForBatch).add("ProvisionedBy", "AWS");
 
@@ -82,7 +83,7 @@ export class cfComputeBackendStack extends Construct {
 
         cdk.Tags.of(ec2IamPolicyForBatch).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-policy-for-batch`,
+            `${commonProps.projectName}-${envProps.envName}-iam-policy-for-batch`,
         );
         cdk.Tags.of(ec2IamPolicyForBatch).add("ProvisionedBy", "AWS");
 
@@ -105,7 +106,7 @@ export class cfComputeBackendStack extends Construct {
 
         cdk.Tags.of(ec2IamInstanceProfileForBatch).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-instance-profile-for-batch`,
+            `${commonProps.projectName}-${envProps.envName}-iam-instance-profile-for-batch`,
         );
         cdk.Tags.of(ec2IamInstanceProfileForBatch).add("ProvisionedBy", "AWS");
 
@@ -113,7 +114,7 @@ export class cfComputeBackendStack extends Construct {
         // Amazon EC2 Batch Key Pair Configuration
         // ------------------------------------------------------------
         const batchKeyPair = new ec2.KeyPair(this, "batchKeyPair", {
-            keyPairName: `${commonProps.projectName}-${commonProps.envName}-batch-key-pair`,
+            keyPairName: `${commonProps.projectName}-${envProps.envName}-batch-key-pair`,
             type: ec2.KeyPairType.ED25519,
             format: ec2.KeyPairFormat.PEM,
         });
@@ -125,7 +126,7 @@ export class cfComputeBackendStack extends Construct {
             this,
             "ec2InstanceBatchAZa",
             {
-                instanceName: `${commonProps.projectName}-${commonProps.envName}-ec2-instance-batch-az-a`,
+                instanceName: `${commonProps.projectName}-${envProps.envName}-ec2-instance-batch-az-a`,
                 instanceType: new ec2.InstanceType("t4g.small"),
                 machineImage: ec2.MachineImage.latestAmazonLinux2023({
                     cpuType: ec2.AmazonLinuxCpuType.ARM_64,
@@ -172,7 +173,7 @@ export class cfComputeBackendStack extends Construct {
 
         cdk.Tags.of(ec2InstanceBatchAZa).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-ec2-instance-batch-az-a`,
+            `${commonProps.projectName}-${envProps.envName}-ec2-instance-batch-az-c`,
         );
         cdk.Tags.of(ec2InstanceBatchAZa).add("ProvisionedBy", "AWS");
 
@@ -183,7 +184,7 @@ export class cfComputeBackendStack extends Construct {
             this,
             "ec2InstanceBatchAZc",
             {
-                instanceName: `${commonProps.projectName}-${commonProps.envName}-ec2-instance-batch-az-c`,
+                instanceName: `${commonProps.projectName}-${envProps.envName}-ec2-instance-batch-az-c`,
                 instanceType: new ec2.InstanceType("t4g.small"),
                 machineImage: ec2.MachineImage.latestAmazonLinux2023({
                     cpuType: ec2.AmazonLinuxCpuType.ARM_64,
@@ -230,7 +231,7 @@ export class cfComputeBackendStack extends Construct {
 
         cdk.Tags.of(ec2InstanceBatchAZc).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-ec2-instance-batch-az-c`,
+            `${commonProps.projectName}-${envProps.envName}-ec2-instance-batch-az-c`,
         );
         cdk.Tags.of(ec2InstanceBatchAZc).add("ProvisionedBy", "AWS");
 
@@ -243,7 +244,7 @@ export class cfComputeBackendStack extends Construct {
 
         cdk.Tags.of(batchEipAZa).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-batch-eip-az-a`,
+            `${commonProps.projectName}-${envProps.envName}-batch-eip-az-a`,
         );
         cdk.Tags.of(batchEipAZa).add("ProvisionedBy", "AWS");
 
@@ -261,7 +262,7 @@ export class cfComputeBackendStack extends Construct {
 
         cdk.Tags.of(batchEipAZc).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-batch-eip-az-c`,
+            `${commonProps.projectName}-${envProps.envName}-batch-eip-az-c`,
         );
         cdk.Tags.of(batchEipAZc).add("ProvisionedBy", "AWS");
 
