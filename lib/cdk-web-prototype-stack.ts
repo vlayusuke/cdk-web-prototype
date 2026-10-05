@@ -74,6 +74,12 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             ...commonParameter,
             envName: deploymentParameter.envName,
         };
+        const envProps = {
+            envName: deploymentParameter.envName,
+            vpcCidr: deploymentParameter.vpcCidr,
+            defaultGatewayCidr: deploymentParameter.defaultGatewayCidr,
+            slackHookUrl: deploymentParameter.slackHookUrl,
+        };
         if (commonParameter.availabilityZones.length < 2) {
             throw new Error("At least two availability zones are required.");
         }
@@ -81,7 +87,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         const securityConfigStack = new cfSecurityConfigStack(
             this,
             "cfSecurityConfigStack",
-            commonProps,
+            { ...commonProps, ...envProps },
         );
 
         const networkStack = new cfNetworkStack(
@@ -89,8 +95,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             "networkStack",
             {
                 ...commonProps,
-                vpcCidr: deploymentParameter.vpcCidr,
-                defaultGatewayCidr: deploymentParameter.defaultGatewayCidr,
+                ...envProps,
                 availabilityZones: commonParameter.availabilityZones,
             },
             { s3Key: securityConfigStack.s3Key },
@@ -99,7 +104,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         const sgFrameStack = new cfSgFrameStack(
             this,
             "cfSgFrameStack",
-            commonProps,
+            { ...commonProps, ...envProps },
             { vpc: networkStack.Vpc },
         );
 
@@ -107,6 +112,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             this,
             "cfDatabaseStack",
             commonProps,
+            envProps,
             {
                 auroraSecurityGroup: sgFrameStack.auroraSecurityGroupFrame,
                 elasticacheSecurityGroup:
@@ -131,6 +137,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             this,
             "cfSecurityServiceStack",
             commonProps,
+            envProps,
             {
                 s3Key: securityConfigStack.s3Key,
             },
@@ -167,6 +174,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
                     sgFrameStack.vpcEndPointCloudWatchLogsSecurityGroupFrame,
             },
             commonProps,
+            envProps,
         );
 
         // ------------------------------------------------------------
@@ -256,9 +264,8 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             "cfDNSAndCDNStack",
             commonProps,
             {
+                ...envProps,
                 Vpc: networkStack.Vpc,
-                vpcCidr: deploymentParameter.vpcCidr,
-                defaultGatewayCidr: deploymentParameter.defaultGatewayCidr,
             },
             {
                 albSecurityGroup: sgFrameStack.albSecurityGroupFrame,
@@ -290,15 +297,8 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             {
                 applicationKey: securityConfigStack.applicationKey,
             },
-            {
-                projectName: commonParameter.projectName,
-                dashboardName: commonParameter.dashboardName,
-            },
-            {
-                envName: deploymentParameter.envName,
-                vpcCidr: deploymentParameter.vpcCidr,
-                defaultGatewayCidr: deploymentParameter.defaultGatewayCidr,
-            },
+            commonProps,
+            envProps,
         );
 
         // ------------------------------------------------------------
@@ -308,6 +308,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             this,
             "cfNotificationStack",
             commonProps,
+            envProps,
             {
                 monitoringSlackWorkspaceId:
                     deploymentParameter.monitoringSlackWorkspaceId,
@@ -322,9 +323,16 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         // ------------------------------------------------------------
         // [13] - cfMonitoringStack
         // ------------------------------------------------------------
-        new cfMonitoringStack(this, "cfMonitoringStack", commonProps, {
-            ecsAppScalableTarget: computeDefinitionStack.ecsAppScalableTarget,
-        });
+        new cfMonitoringStack(
+            this,
+            "cfMonitoringStack",
+            commonProps,
+            envProps,
+            {
+                ecsAppScalableTarget:
+                    computeDefinitionStack.ecsAppScalableTarget,
+            },
+        );
 
         // ------------------------------------------------------------
         // [14] - cfLoggingStack
@@ -333,6 +341,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             this,
             "cfLoggingStack",
             commonProps,
+            envProps,
         );
 
         // ------------------------------------------------------------
@@ -345,12 +354,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
                 lambdaKey: securityConfigStack.lambdaKey,
             },
             commonProps,
-            {
-                envName: deploymentParameter.envName,
-                slackHookUrl: this.node.tryGetContext(
-                    deploymentParameter.envName,
-                ).slackHookUrl,
-            },
+            envProps,
         );
         loggingStack.addCloudWatchLogsAlertSubscription(
             computeServerlessStack.lambdaCloudWatchLogsAlert,
@@ -362,7 +366,7 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
         // ------------------------------------------------------------
         // [16] - cfCICDStack
         // ------------------------------------------------------------
-        new cfCICDStack(this, "cfCICDStack", commonProps, {
+        new cfCICDStack(this, "cfCICDStack", commonProps, envProps, {
             codeCommitKey: securityConfigStack.codeCommitKey,
         });
     }
