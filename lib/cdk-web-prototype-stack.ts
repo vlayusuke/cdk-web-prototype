@@ -22,10 +22,11 @@ import { cfStorageStack } from "./construct/cfStorageStack";
 
 export interface commonProps {
     projectName: string;
-    envName: string;
+    dashboardName: string;
 }
 
 export interface envProps {
+    envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
     slackHookUrl: string;
@@ -189,6 +190,11 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
                 bastionSecurityGroup: sgFrameStack.bastionSecurityGroupFrame,
             },
             commonProps,
+            {
+                envName: deploymentParameter.envName,
+                vpcCidr: deploymentParameter.vpcCidr,
+                defaultGatewayCidr: deploymentParameter.defaultGatewayCidr,
+            },
         );
 
         // ------------------------------------------------------------
@@ -211,6 +217,11 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
                 batchSecurityGroup: sgFrameStack.batchSecurityGroupFrame,
             },
             commonProps,
+            {
+                envName: deploymentParameter.envName,
+                vpcCidr: deploymentParameter.vpcCidr,
+                defaultGatewayCidr: deploymentParameter.defaultGatewayCidr,
+            },
         );
 
         // ------------------------------------------------------------
@@ -279,7 +290,15 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             {
                 applicationKey: securityConfigStack.applicationKey,
             },
-            commonProps,
+            {
+                projectName: commonParameter.projectName,
+                dashboardName: commonParameter.dashboardName,
+            },
+            {
+                envName: deploymentParameter.envName,
+                vpcCidr: deploymentParameter.vpcCidr,
+                defaultGatewayCidr: deploymentParameter.defaultGatewayCidr,
+            },
         );
 
         // ------------------------------------------------------------
@@ -327,7 +346,10 @@ export class cfCdkWebPrototypeStack extends cdk.Stack {
             },
             commonProps,
             {
-                slackHookUrl: deploymentParameter.slackHookUrl,
+                envName: deploymentParameter.envName,
+                slackHookUrl: this.node.tryGetContext(
+                    deploymentParameter.envName,
+                ).slackHookUrl,
             },
         );
         loggingStack.addCloudWatchLogsAlertSubscription(
