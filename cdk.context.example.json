@@ -10,5 +10,11 @@
 		"monitoringSlackWorkspaceId": "T00000000000",
 		"monitoringSlackChannelId": "C00000000000",
 		"slackHookUrl": "https://hooks.slack.com/services/REPLACE/ME"
+	},
+	"dev": {
+		"monitoringNotifyEmail": "development-alerts@example.com",
+		"monitoringSlackWorkspaceId": "T00000000000",
+		"monitoringSlackChannelId": "C00000000000",
+		"slackHookUrl": "https://hooks.slack.com/services/REPLACE/ME"
 	}
 }
