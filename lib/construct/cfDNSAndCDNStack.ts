@@ -16,6 +16,13 @@ export interface commonProps {
     projectName: string;
     envName: string;
     nakedDomainName: string;
+    dashboardName: string;
+}
+
+export interface envProps {
+    envName: string;
+    vpcCidr: string;
+    defaultGatewayCidr: string;
 }
 
 export interface envProps {
@@ -59,7 +66,7 @@ export class cfDNSAndCDNStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        props: commonProps,
+        commonProps: commonProps,
         envProps: envProps,
         sgProps: sgProps,
         storageProps: storageProps,
@@ -74,14 +81,14 @@ export class cfDNSAndCDNStack extends Construct {
             this,
             "route53PublicHostedZone",
             {
-                zoneName: `${props.envName}.${props.nakedDomainName}`,
-                comment: `Public Hosted Zone for ${props.projectName} - ${props.envName} environment`,
+                zoneName: `${commonProps.envName}.${commonProps.nakedDomainName}`,
+                comment: `Public Hosted Zone for ${commonProps.projectName} - ${envProps.envName} environment`,
             },
         );
 
         cdk.Tags.of(this.route53PublicHostedZone).add(
             "Name",
-            `${props.projectName}-${props.envName}-r53-pub-host-zone`,
+            `${commonProps.projectName}-${envProps.envName}-r53-pub-host-zone`,
         );
         cdk.Tags.of(this.route53PublicHostedZone).add("ProvisionedBy", "AWS");
 
@@ -92,7 +99,7 @@ export class cfDNSAndCDNStack extends Construct {
             this,
             "acmCertificateALB",
             {
-                domainName: `${props.envName}.${props.nakedDomainName}`,
+                domainName: `${envProps.envName}.${commonProps.nakedDomainName}`,
                 validation: acm.CertificateValidation.fromDns(
                     this.route53PublicHostedZone,
                 ),
@@ -101,7 +108,7 @@ export class cfDNSAndCDNStack extends Construct {
 
         cdk.Tags.of(this.acmCertificateALB).add(
             "Name",
-            `${props.projectName}-${props.envName}-acm-certificate`,
+            `${commonProps.projectName}-${envProps.envName}-acm-certificate`,
         );
         cdk.Tags.of(this.acmCertificateALB).add("ProvisionedBy", "AWS");
 
@@ -112,7 +119,7 @@ export class cfDNSAndCDNStack extends Construct {
             this,
             "acmCertificateCloudFront",
             {
-                domainName: `${props.envName}.${props.nakedDomainName}`,
+                domainName: `${envProps.envName}.${commonProps.nakedDomainName}`,
                 validation: acm.CertificateValidation.fromDns(
                     this.route53PublicHostedZone,
                 ),
@@ -121,7 +128,7 @@ export class cfDNSAndCDNStack extends Construct {
 
         cdk.Tags.of(this.acmCertificateCloudFront).add(
             "Name",
-            `${props.projectName}-${props.envName}-acm-certificate-cloudfront`,
+            `${commonProps.projectName}-${envProps.envName}-acm-certificate-cloudfront`,
         );
         cdk.Tags.of(this.acmCertificateCloudFront).add("ProvisionedBy", "AWS");
 
@@ -144,7 +151,7 @@ export class cfDNSAndCDNStack extends Construct {
 
         cdk.Tags.of(this.albExternal).add(
             "Name",
-            `${props.projectName}-${props.envName}-alb-external`,
+            `${commonProps.projectName}-${envProps.envName}-alb-external`,
         );
         cdk.Tags.of(this.albExternal).add("ProvisionedBy", "AWS");
 
@@ -153,7 +160,7 @@ export class cfDNSAndCDNStack extends Construct {
         // ------------------------------------------------------------
         this.route53ARecord = new route53.ARecord(this, "route53ARecord", {
             zone: this.route53PublicHostedZone,
-            recordName: `${props.envName}.${props.nakedDomainName}`,
+            recordName: `${envProps.envName}.${commonProps.nakedDomainName}`,
             target: route53.RecordTarget.fromAlias(
                 new route53_targets.LoadBalancerTarget(this.albExternal),
             ),
@@ -161,7 +168,7 @@ export class cfDNSAndCDNStack extends Construct {
 
         cdk.Tags.of(this.route53ARecord).add(
             "Name",
-            `${props.projectName}-${props.envName}-r53-a-record`,
+            `${commonProps.projectName}-${envProps.envName}-r53-a-record`,
         );
         cdk.Tags.of(this.route53ARecord).add("ProvisionedBy", "AWS");
 
@@ -173,7 +180,7 @@ export class cfDNSAndCDNStack extends Construct {
             "route53AAAARecord",
             {
                 zone: this.route53PublicHostedZone,
-                recordName: `${props.envName}.${props.nakedDomainName}`,
+                recordName: `${envProps.envName}.${commonProps.nakedDomainName}`,
                 target: route53.RecordTarget.fromAlias(
                     new route53_targets.LoadBalancerTarget(this.albExternal),
                 ),
@@ -182,7 +189,7 @@ export class cfDNSAndCDNStack extends Construct {
 
         cdk.Tags.of(this.route53AAAARecord).add(
             "Name",
-            `${props.projectName}-${props.envName}-r53-aaaa-record`,
+            `${commonProps.projectName}-${envProps.envName}-r53-aaaa-record`,
         );
         cdk.Tags.of(this.route53AAAARecord).add("ProvisionedBy", "AWS");
 
@@ -210,7 +217,7 @@ export class cfDNSAndCDNStack extends Construct {
 
         cdk.Tags.of(this.albExternalListener).add(
             "Name",
-            `${props.projectName}-${props.envName}-alb-external-listener`,
+            `${commonProps.projectName}-${envProps.envName}-alb-external-listener`,
         );
         cdk.Tags.of(this.albExternalListener).add("ProvisionedBy", "AWS");
 
@@ -242,7 +249,7 @@ export class cfDNSAndCDNStack extends Construct {
 
         cdk.Tags.of(this.albExternalTargetGroup).add(
             "Name",
-            `${props.projectName}-${props.envName}-alb-external-target-group`,
+            `${commonProps.projectName}-${envProps.envName}-alb-external-target-group`,
         );
         cdk.Tags.of(this.albExternalTargetGroup).add("ProvisionedBy", "AWS");
 
@@ -257,7 +264,7 @@ export class cfDNSAndCDNStack extends Construct {
                 priority: 1,
                 conditions: [
                     elbv2.ListenerCondition.hostHeaders([
-                        `${props.envName}.${props.nakedDomainName}`,
+                        `${envProps.envName}.${commonProps.nakedDomainName}`,
                     ]),
                 ],
                 action: elbv2.ListenerAction.forward([
@@ -268,7 +275,7 @@ export class cfDNSAndCDNStack extends Construct {
 
         cdk.Tags.of(albExternalListenerRule).add(
             "Name",
-            `${props.projectName}-${props.envName}-alb-external-listener-rule`,
+            `${commonProps.projectName}-${envProps.envName}-alb-external-listener-rule`,
         );
         cdk.Tags.of(albExternalListenerRule).add("ProvisionedBy", "AWS");
 
@@ -281,13 +288,13 @@ export class cfDNSAndCDNStack extends Construct {
                     priority: 2,
                     conditions: [
                         elbv2.ListenerCondition.hostHeaders([
-                            `www.${props.envName}.${props.nakedDomainName}`,
+                            `www.${envProps.envName}.${commonProps.nakedDomainName}`,
                         ]),
                     ],
                     action: elbv2.ListenerAction.redirect({
                         protocol: "HTTPS",
                         port: "443",
-                        host: `${props.envName}.${props.nakedDomainName}`,
+                        host: `${envProps.envName}.${commonProps.nakedDomainName}`,
                         query: "",
                         permanent: true,
                     }),
@@ -296,7 +303,7 @@ export class cfDNSAndCDNStack extends Construct {
 
         cdk.Tags.of(albExternalListenerRuleRedirect).add(
             "Name",
-            `${props.projectName}-${props.envName}-alb-external-listener-rule-redirect`,
+            `${commonProps.projectName}-${envProps.envName}-alb-external-listener-rule-redirect`,
         );
         cdk.Tags.of(albExternalListenerRuleRedirect).add(
             "ProvisionedBy",
@@ -308,8 +315,8 @@ export class cfDNSAndCDNStack extends Construct {
                 this,
                 "cloudFrontResponseHeadersPolicy",
                 {
-                    responseHeadersPolicyName: `${props.projectName}-${props.envName}-cft-response-header-policy`,
-                    comment: `Amazon CloudFront Response Headers Policy for ${props.projectName}-${props.envName}`,
+                    responseHeadersPolicyName: `${commonProps.projectName}-${envProps.envName}-cft-response-header-policy`,
+                    comment: `Amazon CloudFront Response Headers Policy for ${commonProps.projectName}-${envProps.envName}`,
                     securityHeadersBehavior: {
                         contentTypeOptions: { override: true },
                         frameOptions: {
@@ -329,8 +336,8 @@ export class cfDNSAndCDNStack extends Construct {
             this,
             "cloudFrontCachePolicy",
             {
-                cachePolicyName: `${props.projectName}-${props.envName}-cft-cache-policy`,
-                comment: `Amazon CloudFront Cache Policy for ${props.projectName}-${props.envName}`,
+                cachePolicyName: `${commonProps.projectName}-${envProps.envName}-cft-cache-policy`,
+                comment: `Amazon CloudFront Cache Policy for ${commonProps.projectName}-${envProps.envName}`,
                 defaultTtl: cdk.Duration.seconds(86400),
                 maxTtl: cdk.Duration.seconds(259200),
                 minTtl: cdk.Duration.seconds(0),
@@ -346,8 +353,8 @@ export class cfDNSAndCDNStack extends Construct {
             this,
             "assetsOriginAccessControl",
             {
-                originAccessControlName: `${props.projectName}-${props.envName}-cft-oac-assets`,
-                description: `Origin Access Control for ${props.projectName}-${props.envName} assets`,
+                originAccessControlName: `${commonProps.projectName}-${envProps.envName}-cft-oac-assets`,
+                description: `Origin Access Control for ${commonProps.projectName}-${envProps.envName} assets`,
                 signing: cloudfront.Signing.SIGV4_ALWAYS,
             },
         );
@@ -364,8 +371,10 @@ export class cfDNSAndCDNStack extends Construct {
             this,
             "cloudFrontDistribution",
             {
-                domainNames: [`${props.envName}.${props.nakedDomainName}`],
-                comment: `CloudFront distribution for ${props.envName}.${props.nakedDomainName}`,
+                domainNames: [
+                    `${envProps.envName}.${commonProps.nakedDomainName}`,
+                ],
+                comment: `CloudFront distribution for ${envProps.envName}.${commonProps.nakedDomainName}`,
                 certificate: this.acmCertificateCloudFront,
                 enabled: true,
                 enableIpv6: true,
@@ -440,7 +449,7 @@ export class cfDNSAndCDNStack extends Construct {
 
         cdk.Tags.of(this.cloudFrontDistribution).add(
             "Name",
-            `${props.projectName}-${props.envName}-cloudfront-distribution`,
+            `${commonProps.projectName}-${envProps.envName}-cloudfront-distribution`,
         );
         cdk.Tags.of(this.cloudFrontDistribution).add("ProvisionedBy", "AWS");
     }
