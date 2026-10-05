@@ -11,10 +11,10 @@ import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
-    envName: string;
 }
 
 export interface envProps {
+    envName: string;
     slackHookUrl: string;
 }
 
@@ -45,7 +45,7 @@ export class cfComputeServerlessStack extends Construct {
             this,
             "iamLambdaCloudWatchLogsAlertRole",
             {
-                roleName: `${commonProps.projectName}-${commonProps.envName}-lambda-cloudwatch-logs-alert-role`,
+                roleName: `${commonProps.projectName}-${envProps.envName}-lambda-cloudwatch-logs-alert-role`,
                 description: `IAM role for Lambda functions (cloudwatch-log-alert) in the ${commonProps.projectName} project`,
                 assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
             },
@@ -53,7 +53,7 @@ export class cfComputeServerlessStack extends Construct {
 
         cdk.Tags.of(iamLambdaCloudWatchLogsAlertRole).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-lambda-role`,
+            `${commonProps.projectName}-${envProps.envName}-iam-lambda-role`,
         );
         cdk.Tags.of(iamLambdaCloudWatchLogsAlertRole).add(
             "ProvisionedBy",
@@ -64,7 +64,7 @@ export class cfComputeServerlessStack extends Construct {
             this,
             "iamLambdaCloudWatchLogsAlertPolicy",
             {
-                policyName: `${commonProps.projectName}-${commonProps.envName}-LambdaPolicy`,
+                policyName: `${commonProps.projectName}-${envProps.envName}-LambdaPolicy`,
                 roles: [iamLambdaCloudWatchLogsAlertRole],
                 statements: [
                     new iam.PolicyStatement({
@@ -105,7 +105,7 @@ export class cfComputeServerlessStack extends Construct {
 
         cdk.Tags.of(lambdaPolicy).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-lambda-policy`,
+            `${commonProps.projectName}-${envProps.envName}-iam-lambda-policy`,
         );
         cdk.Tags.of(lambdaPolicy).add("ProvisionedBy", "AWS");
 
@@ -116,7 +116,7 @@ export class cfComputeServerlessStack extends Construct {
             this,
             "iamLambdaCloudWatchMetricsAlertRole",
             {
-                roleName: `${commonProps.projectName}-${commonProps.envName}-lambda-cloudwatch-metrics-alert-role`,
+                roleName: `${commonProps.projectName}-${envProps.envName}-lambda-cloudwatch-metrics-alert-role`,
                 description: `IAM role for Lambda functions (cloudwatch-metrics-alert) in the ${commonProps.projectName} project`,
                 assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
             },
@@ -124,7 +124,7 @@ export class cfComputeServerlessStack extends Construct {
 
         cdk.Tags.of(iamLambdaCloudWatchMetricsAlertRole).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-lambda-cloudwatch-metrics-alert-role`,
+            `${commonProps.projectName}-${envProps.envName}-iam-lambda-cloudwatch-metrics-alert-role`,
         );
         cdk.Tags.of(iamLambdaCloudWatchMetricsAlertRole).add(
             "ProvisionedBy",
@@ -135,7 +135,7 @@ export class cfComputeServerlessStack extends Construct {
             this,
             "lambdaCloudWatchMetricsAlertPolicy",
             {
-                policyName: `${commonProps.projectName}-${commonProps.envName}-lambda-cloudwatch-metrics-alert-policy`,
+                policyName: `${commonProps.projectName}-${envProps.envName}-lambda-cloudwatch-metrics-alert-policy`,
                 roles: [iamLambdaCloudWatchMetricsAlertRole],
                 statements: [
                     new iam.PolicyStatement({
@@ -150,7 +150,7 @@ export class cfComputeServerlessStack extends Construct {
 
         cdk.Tags.of(lambdaCloudWatchMetricsAlertPolicy).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-lambda-cloudwatch-metrics-alert-policy`,
+            `${commonProps.projectName}-${envProps.envName}-lambda-cloudwatch-metrics-alert-policy`,
         );
         cdk.Tags.of(lambdaCloudWatchMetricsAlertPolicy).add(
             "ProvisionedBy",
@@ -164,7 +164,7 @@ export class cfComputeServerlessStack extends Construct {
             this,
             "iamLambdaRdsControlRole",
             {
-                roleName: `${commonProps.projectName}-${commonProps.envName}-lambda-rds-control-role`,
+                roleName: `${commonProps.projectName}-${envProps.envName}-lambda-rds-control-role`,
                 description: `IAM role for Lambda functions (rds-control) in the ${commonProps.projectName} project`,
                 assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
             },
@@ -172,7 +172,7 @@ export class cfComputeServerlessStack extends Construct {
 
         cdk.Tags.of(iamLambdaRdsControlRole).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-lambda-rds-control-role`,
+            `${commonProps.projectName}-${envProps.envName}-iam-lambda-rds-control-role`,
         );
         cdk.Tags.of(iamLambdaRdsControlRole).add("ProvisionedBy", "AWS");
 
@@ -180,7 +180,7 @@ export class cfComputeServerlessStack extends Construct {
             this,
             "lambdaRdsControlPolicy",
             {
-                policyName: `${commonProps.projectName}-${commonProps.envName}-lambda-rds-control-policy`,
+                policyName: `${commonProps.projectName}-${envProps.envName}-lambda-rds-control-policy`,
                 roles: [iamLambdaRdsControlRole],
                 statements: [
                     new iam.PolicyStatement({
@@ -198,7 +198,7 @@ export class cfComputeServerlessStack extends Construct {
 
         cdk.Tags.of(lambdaRdsControlPolicy).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-lambda-rds-control-policy`,
+            `${commonProps.projectName}-${envProps.envName}-lambda-rds-control-policy`,
         );
         cdk.Tags.of(lambdaRdsControlPolicy).add("ProvisionedBy", "AWS");
 
@@ -209,7 +209,7 @@ export class cfComputeServerlessStack extends Construct {
             this,
             "lambdaCloudWatchLogsAlert",
             {
-                functionName: `${commonProps.projectName}-${commonProps.envName}-cloudwatch-log-alert`,
+                functionName: `${commonProps.projectName}-${envProps.envName}-cloudwatch-log-alert`,
                 description: `Lambda function (cloudwatch-log-alert) in the ${commonProps.projectName} project`,
                 code: lambda.Code.fromAsset(
                     join(__dirname, "../lambda/cloudwatch-logs-alert"),
@@ -226,6 +226,7 @@ export class cfComputeServerlessStack extends Construct {
                 },
             },
         );
+        this.lambdaCloudWatchLogsAlert = lambdaCloudWatchLogsAlert;
 
         this.lambdaCloudWatchLogsAlert.addPermission(
             "AllowExecutionFromCloudWatch",
@@ -235,11 +236,9 @@ export class cfComputeServerlessStack extends Construct {
             },
         );
 
-        this.lambdaCloudWatchLogsAlert = lambdaCloudWatchLogsAlert;
-
         cdk.Tags.of(lambdaCloudWatchLogsAlert).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-cloudwatch-log-alert`,
+            `${commonProps.projectName}-${envProps.envName}-cloudwatch-log-alert`,
         );
         cdk.Tags.of(lambdaCloudWatchLogsAlert).add("ProvisionedBy", "AWS");
 
@@ -250,7 +249,7 @@ export class cfComputeServerlessStack extends Construct {
             this,
             "lambdaCloudWatchMetricsAlert",
             {
-                functionName: `${commonProps.projectName}-${commonProps.envName}-cloudwatch-metrics-alert`,
+                functionName: `${commonProps.projectName}-${envProps.envName}-cloudwatch-metrics-alert`,
                 description: `Lambda function (cloudwatch-metrics-alert) in the ${commonProps.projectName} project`,
                 code: lambda.Code.fromAsset(
                     join(__dirname, "../lambda/cloudwatch-metrics-alert"),
@@ -268,6 +267,7 @@ export class cfComputeServerlessStack extends Construct {
                 },
             },
         );
+        this.lambdaCloudWatchMetricsAlert = lambdaCloudWatchMetricsAlert;
 
         this.lambdaCloudWatchMetricsAlert.addPermission(
             "AllowExecutionFromCloudWatch",
@@ -277,11 +277,9 @@ export class cfComputeServerlessStack extends Construct {
             },
         );
 
-        this.lambdaCloudWatchMetricsAlert = lambdaCloudWatchMetricsAlert;
-
         cdk.Tags.of(lambdaCloudWatchMetricsAlert).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-cloudwatch-metrics-alert`,
+            `${commonProps.projectName}-${envProps.envName}-cloudwatch-metrics-alert`,
         );
         cdk.Tags.of(lambdaCloudWatchMetricsAlert).add("ProvisionedBy", "AWS");
 
@@ -289,7 +287,7 @@ export class cfComputeServerlessStack extends Construct {
         // AWS Lambda (rds-control) Configuration
         // ------------------------------------------------------------
         const lambdaRdsControl = new lambda.Function(this, "lambdaRdsControl", {
-            functionName: `${commonProps.projectName}-${commonProps.envName}-rds-control`,
+            functionName: `${commonProps.projectName}-${envProps.envName}-rds-control`,
             description: `Lambda function (rds-control) in the ${commonProps.projectName} project`,
             code: lambda.Code.fromAsset(
                 join(__dirname, "../lambda/rds-control"),
@@ -313,7 +311,7 @@ export class cfComputeServerlessStack extends Construct {
 
         cdk.Tags.of(lambdaRdsControl).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-rds-control`,
+            `${commonProps.projectName}-${envProps.envName}-rds-control`,
         );
         cdk.Tags.of(lambdaRdsControl).add("ProvisionedBy", "AWS");
 
@@ -324,7 +322,7 @@ export class cfComputeServerlessStack extends Construct {
             this,
             "RdsControlStartRule",
             {
-                ruleName: `${commonProps.projectName}-${commonProps.envName}-rds-control-start`,
+                ruleName: `${commonProps.projectName}-${envProps.envName}-rds-control-start`,
                 description:
                     "Starts Aurora clusters tagged AutoStop at 09:00 JST (00:00 UTC) on weekdays",
                 schedule: events.Schedule.expression("cron(0 0 ? * MON-FRI *)"),
@@ -339,12 +337,12 @@ export class cfComputeServerlessStack extends Construct {
 
         cdk.Tags.of(rdsControlStartRule).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-rds-control-start`,
+            `${commonProps.projectName}-${envProps.envName}-rds-control-start`,
         );
         cdk.Tags.of(rdsControlStartRule).add("ProvisionedBy", "AWS");
 
         const rdsControlStopRule = new events.Rule(this, "RdsControlStopRule", {
-            ruleName: `${commonProps.projectName}-${commonProps.envName}-rds-control-stop`,
+            ruleName: `${commonProps.projectName}-${envProps.envName}-rds-control-stop`,
             description:
                 "Stops Aurora clusters tagged AutoStop at 18:00 JST (09:00 UTC) on weekdays",
             schedule: events.Schedule.expression("cron(0 9 ? * MON-FRI *)"),
@@ -358,7 +356,7 @@ export class cfComputeServerlessStack extends Construct {
 
         cdk.Tags.of(rdsControlStopRule).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-rds-control-stop`,
+            `${commonProps.projectName}-${envProps.envName}-rds-control-stop`,
         );
         cdk.Tags.of(rdsControlStopRule).add("ProvisionedBy", "AWS");
     }
