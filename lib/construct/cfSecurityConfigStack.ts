@@ -8,10 +8,11 @@ import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
-    envName: string;
+    dashboardName: string;
 }
 
 export interface envProps {
+    envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
@@ -33,7 +34,7 @@ export class cfSecurityConfigStack extends Construct {
     public readonly codeCommitKey: kms.IKey;
     public readonly postgresqlSecret: secretsmanager.ISecret;
 
-    constructor(scope: Construct, id: string, props: commonProps) {
+    constructor(scope: Construct, id: string, props: commonProps & envProps) {
         super(scope, id);
 
         // ------------------------------------------------------------
