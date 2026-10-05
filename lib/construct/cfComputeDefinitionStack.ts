@@ -132,10 +132,11 @@ const addJsonContainerDefinitions = (
 
 export interface commonProps {
     projectName: string;
-    envName: string;
+    dashboardName: string;
 }
 
 export interface envProps {
+    envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
@@ -181,6 +182,7 @@ export class cfComputeDefinitionStack extends Construct {
         ecsProps: ecsProps,
         kmsProps: kmsProps,
         commonProps: commonProps,
+        envProps: envProps,
     ) {
         super(scope, id);
 
@@ -198,9 +200,9 @@ export class cfComputeDefinitionStack extends Construct {
             credentials_parameters_arn:
                 dockerRegistryCredentialsArn.valueAsString,
             project: commonProps.projectName,
-            env: commonProps.envName,
+            env: envProps.envName,
             region: cdk.Stack.of(this).region,
-            log_group_prefix: `/ecs/${commonProps.projectName}/${commonProps.envName}`,
+            log_group_prefix: `/ecs/${commonProps.projectName}/${envProps.envName}`,
         };
 
         // ------------------------------------------------------------
@@ -213,7 +215,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         cdk.Tags.of(oidcProvider).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-oidc-provider`,
+            `${commonProps.projectName}-${envProps.envName}-oidc-provider`,
         );
         cdk.Tags.of(oidcProvider).add("ProvisionedBy", "AWS");
 
@@ -224,23 +226,50 @@ export class cfComputeDefinitionStack extends Construct {
             this,
             "iamGithubActionsRole",
             {
-                roleName: `${commonProps.projectName}-${commonProps.envName}-iam-github-actions-role`,
+                roleName: `${commonProps.projectName}-${envProps.envName}-iam-github-actions-role`,
                 description: "IAM role for GitHub Actions deployment",
                 assumedBy: new iam.WebIdentityPrincipal(
                     oidcProvider.openIdConnectProviderArn,
                     {
-                        StringEquals: {
-                            "token.actions.githubusercontent.com:aud":
-                                "sts.amazonaws.com",
+                        StringLike: {
+                            "token.actions.githubusercontent.com:sub": [
+                                `repo:${commonProps.dashboardName}:ref:refs/heads/main`,
+                                `repo:${commonProps.dashboardName}:ref:refs/heads/*`,
+                            ],
                         },
                     },
                 ),
             },
         );
 
+        const assumeRolePolicy = iamGithubActionsRole.assumeRolePolicy;
+
+        assumeRolePolicy?.addStatements(
+            new iam.PolicyStatement({
+                sid: "OIDCFederateRef",
+                effect: iam.Effect.ALLOW,
+                actions: ["sts:AssumeRoleWithWebIdentity"],
+                principals: [
+                    new iam.FederatedPrincipal(
+                        oidcProvider.openIdConnectProviderArn,
+                        {},
+                        "sts:AssumeRoleWithWebIdentity",
+                    ),
+                ],
+                conditions: {
+                    StringLike: {
+                        "token.actions.githubusercontent.com:sub": [
+                            `repo:${commonProps.dashboardName}:ref:refs/heads/main`,
+                            `repo:${commonProps.dashboardName}:ref:refs/heads/*`,
+                        ],
+                    },
+                },
+            }),
+        );
+
         cdk.Tags.of(iamGithubActionsRole).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-github-actions-role`,
+            `${commonProps.projectName}-${envProps.envName}-iam-github-actions-role`,
         );
         cdk.Tags.of(iamGithubActionsRole).add("ProvisionedBy", "AWS");
 
@@ -248,7 +277,7 @@ export class cfComputeDefinitionStack extends Construct {
             this,
             "iamGithubActionsPolicy",
             {
-                policyName: `${commonProps.projectName}-${commonProps.envName}-iam-github-actions-policy`,
+                policyName: `${commonProps.projectName}-${envProps.envName}-iam-github-actions-policy`,
                 roles: [iamGithubActionsRole],
                 statements: [
                     new iam.PolicyStatement({
@@ -263,7 +292,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         cdk.Tags.of(iamGithubActionsPolicy).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-github-actions-policy`,
+            `${commonProps.projectName}-${envProps.envName}-iam-github-actions-policy`,
         );
         cdk.Tags.of(iamGithubActionsPolicy).add("ProvisionedBy", "AWS");
 
@@ -276,7 +305,7 @@ export class cfComputeDefinitionStack extends Construct {
             this,
             "iamEcsTaskExecutionRole",
             {
-                roleName: `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-execution-role`,
+                roleName: `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-execution-role`,
                 description: "IAM role for ECS task execution",
                 assumedBy: new iam.CompositePrincipal(
                     new iam.ServicePrincipal("ecs.amazonaws.com"),
@@ -287,7 +316,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         cdk.Tags.of(iamEcsTaskExecutionRole).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-execution-role`,
+            `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-execution-role`,
         );
         cdk.Tags.of(iamEcsTaskExecutionRole).add("ProvisionedBy", "AWS");
 
@@ -295,7 +324,7 @@ export class cfComputeDefinitionStack extends Construct {
             this,
             "iamEcsTaskExectionPolicy",
             {
-                policyName: `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-execution-policy`,
+                policyName: `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-execution-policy`,
                 roles: [iamEcsTaskExecutionRole],
                 statements: [
                     new iam.PolicyStatement({
@@ -321,7 +350,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         cdk.Tags.of(iamEcsTaskExectionPolicy).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-execution-policy`,
+            `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-execution-policy`,
         );
         cdk.Tags.of(iamEcsTaskExectionPolicy).add("ProvisionedBy", "AWS");
 
@@ -337,7 +366,7 @@ export class cfComputeDefinitionStack extends Construct {
         // AWS IAM for Amazon ECS Task Configuration
         // ------------------------------------------------------------
         const iamEcsTaskRole = new iam.Role(this, "iamEcsTaskRole", {
-            roleName: `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-role`,
+            roleName: `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-role`,
             description: "IAM role for ECS task",
             assumedBy: new iam.CompositePrincipal(
                 new iam.ServicePrincipal("ecs.amazonaws.com"),
@@ -348,15 +377,15 @@ export class cfComputeDefinitionStack extends Construct {
 
         cdk.Tags.of(iamEcsTaskRole).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-role`,
+            `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-role`,
         );
         cdk.Tags.of(iamEcsTaskRole).add("ProvisionedBy", "AWS");
 
         const iamEcsTaskPolicy = new iam.Policy(
             this,
-            `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-policy`,
+            `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-policy`,
             {
-                policyName: `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-policy`,
+                policyName: `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-policy`,
                 statements: [
                     new iam.PolicyStatement({
                         sid: "PassRole",
@@ -419,7 +448,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         cdk.Tags.of(iamEcsTaskPolicy).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-iam-ecs-task-policy`,
+            `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-policy`,
         );
         cdk.Tags.of(iamEcsTaskPolicy).add("ProvisionedBy", "AWS");
 
@@ -446,7 +475,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         cdk.Tags.of(ecsAppTaskDefinition).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-ecs-app-task-definition`,
+            `${commonProps.projectName}-${envProps.envName}-ecs-app-task-definition`,
         );
         cdk.Tags.of(ecsAppTaskDefinition).add("ProvisionedBy", "AWS");
 
@@ -478,7 +507,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         cdk.Tags.of(ecsCronTaskDefinition).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-ecs-cron-task-definition`,
+            `${commonProps.projectName}-${envProps.envName}-ecs-cron-task-definition`,
         );
         cdk.Tags.of(ecsCronTaskDefinition).add("ProvisionedBy", "AWS");
 
@@ -510,7 +539,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         cdk.Tags.of(ecsQueueTaskDefinition).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-ecs-queue-task-definition`,
+            `${commonProps.projectName}-${envProps.envName}-ecs-queue-task-definition`,
         );
         cdk.Tags.of(ecsQueueTaskDefinition).add("ProvisionedBy", "AWS");
 
@@ -573,7 +602,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         cdk.Tags.of(ecsAppService).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-ecs-app-service`,
+            `${commonProps.projectName}-${envProps.envName}-ecs-app-service`,
         );
         cdk.Tags.of(ecsAppService).add("ProvisionedBy", "AWS");
 
@@ -584,7 +613,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         cdk.Tags.of(this.ecsAppScalableTarget).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-ecs-app-autoscaling-target`,
+            `${commonProps.projectName}-${envProps.envName}-ecs-app-autoscaling-target`,
         );
         cdk.Tags.of(this.ecsAppScalableTarget).add("ProvisionedBy", "AWS");
 
@@ -678,7 +707,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         cdk.Tags.of(ecsCronServiceConfiguration).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-ecs-cron-service`,
+            `${commonProps.projectName}-${envProps.envName}-ecs-cron-service`,
         );
         cdk.Tags.of(ecsCronServiceConfiguration).add("ProvisionedBy", "AWS");
 
@@ -724,7 +753,7 @@ export class cfComputeDefinitionStack extends Construct {
 
         cdk.Tags.of(ecsQueueServiceConfiguration).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-ecs-queue-service`,
+            `${commonProps.projectName}-${envProps.envName}-ecs-queue-service`,
         );
         cdk.Tags.of(ecsQueueServiceConfiguration).add("ProvisionedBy", "AWS");
 
@@ -735,15 +764,15 @@ export class cfComputeDefinitionStack extends Construct {
             this,
             "ssmParameterStoreAppKey",
             {
-                parameterName: `/${commonProps.projectName}/${commonProps.envName}/app-key`,
-                description: `The parameter for ${commonProps.projectName}-${commonProps.envName} app key`,
+                parameterName: `/${commonProps.projectName}/${envProps.envName}/app-key`,
+                description: `The parameter for ${commonProps.projectName}-${envProps.envName} app key`,
                 stringValue: "PleaseChangeMe",
             },
         );
 
         cdk.Tags.of(this.ssmParameterStoreAppKey).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-app-key`,
+            `${commonProps.projectName}-${envProps.envName}-app-key`,
         );
         cdk.Tags.of(this.ssmParameterStoreAppKey).add("ProvisionedBy", "AWS");
 
@@ -751,15 +780,15 @@ export class cfComputeDefinitionStack extends Construct {
             this,
             "ssmParamenterStoreJwtSecret",
             {
-                parameterName: `/${commonProps.projectName}/${commonProps.envName}/jwt-secret`,
-                description: `The parameter for ${commonProps.projectName}-${commonProps.envName} jwt secret`,
+                parameterName: `/${commonProps.projectName}/${envProps.envName}/jwt-secret`,
+                description: `The parameter for ${commonProps.projectName}-${envProps.envName} jwt secret`,
                 stringValue: "PleaseChangeMe",
             },
         );
 
         cdk.Tags.of(this.ssmParamenterStoreJwtSecret).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-jwt-secret`,
+            `${commonProps.projectName}-${envProps.envName}-jwt-secret`,
         );
         cdk.Tags.of(this.ssmParamenterStoreJwtSecret).add(
             "ProvisionedBy",
@@ -770,15 +799,15 @@ export class cfComputeDefinitionStack extends Construct {
             this,
             "ssmParameterStoreAuroraWriterEndPoint",
             {
-                parameterName: `/${commonProps.projectName}/${commonProps.envName}/aurora-writer-endpoint`,
-                description: `The parameter for ${commonProps.projectName}-${commonProps.envName} aurora writer endpoint`,
+                parameterName: `/${commonProps.projectName}/${envProps.envName}/aurora-writer-endpoint`,
+                description: `The parameter for ${commonProps.projectName}-${envProps.envName} aurora writer endpoint`,
                 stringValue: "PleaseChangeMe",
             },
         );
 
         cdk.Tags.of(this.ssmParameterStoreAuroraWriterEndPoint).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-aurora-writer-endpoint`,
+            `${commonProps.projectName}-${envProps.envName}-aurora-writer-endpoint`,
         );
         cdk.Tags.of(this.ssmParameterStoreAuroraWriterEndPoint).add(
             "ProvisionedBy",
@@ -789,15 +818,15 @@ export class cfComputeDefinitionStack extends Construct {
             this,
             "ssmParameterStoreAuroraReaderEndPoint",
             {
-                parameterName: `/${commonProps.projectName}/${commonProps.envName}/aurora-reader-endpoint`,
-                description: `The parameter for ${commonProps.projectName}-${commonProps.envName} aurora reader endpoint`,
+                parameterName: `/${commonProps.projectName}/${envProps.envName}/aurora-reader-endpoint`,
+                description: `The parameter for ${commonProps.projectName}-${envProps.envName} aurora reader endpoint`,
                 stringValue: "PleaseChangeMe",
             },
         );
 
         cdk.Tags.of(this.ssmParameterStoreAuroraReaderEndPoint).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-aurora-reader-endpoint`,
+            `${commonProps.projectName}-${envProps.envName}-aurora-reader-endpoint`,
         );
         cdk.Tags.of(this.ssmParameterStoreAuroraReaderEndPoint).add(
             "ProvisionedBy",
@@ -809,15 +838,15 @@ export class cfComputeDefinitionStack extends Construct {
                 this,
                 "ssmParameterStoreElastiCacheWriterEndPoint",
                 {
-                    parameterName: `/${commonProps.projectName}/${commonProps.envName}/elasticache-writer-endpoint`,
-                    description: `The parameter for ${commonProps.projectName}-${commonProps.envName} elasticache writer endpoint`,
+                    parameterName: `/${commonProps.projectName}/${envProps.envName}/elasticache-writer-endpoint`,
+                    description: `The parameter for ${commonProps.projectName}-${envProps.envName} elasticache writer endpoint`,
                     stringValue: "PleaseChangeMe",
                 },
             );
 
         cdk.Tags.of(this.ssmParameterStoreElastiCacheWriterEndPoint).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-elasticache-writer-endpoint`,
+            `${commonProps.projectName}-${envProps.envName}-elasticache-writer-endpoint`,
         );
         cdk.Tags.of(this.ssmParameterStoreElastiCacheWriterEndPoint).add(
             "ProvisionedBy",
@@ -829,15 +858,15 @@ export class cfComputeDefinitionStack extends Construct {
                 this,
                 "ssmParameterStoreElastiCacheReaderEndPoint",
                 {
-                    parameterName: `/${commonProps.projectName}/${commonProps.envName}/elasticache-reader-endpoint`,
-                    description: `The parameter for ${commonProps.projectName}-${commonProps.envName} elasticache reader endpoint`,
+                    parameterName: `/${commonProps.projectName}/${envProps.envName}/elasticache-reader-endpoint`,
+                    description: `The parameter for ${commonProps.projectName}-${envProps.envName} elasticache reader endpoint`,
                     stringValue: "PleaseChangeMe",
                 },
             );
 
         cdk.Tags.of(this.ssmParameterStoreElastiCacheReaderEndPoint).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-elasticache-reader-endpoint`,
+            `${commonProps.projectName}-${envProps.envName}-elasticache-reader-endpoint`,
         );
         cdk.Tags.of(this.ssmParameterStoreElastiCacheReaderEndPoint).add(
             "ProvisionedBy",
