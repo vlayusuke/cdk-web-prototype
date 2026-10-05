@@ -4,6 +4,7 @@ import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
+    dashboardName: string;
 }
 
 export interface envProps {
