@@ -8,7 +8,13 @@ import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
+    dashboardName: string;
+}
+
+export interface envProps {
     envName: string;
+    vpcCidr: string;
+    defaultGatewayCidr: string;
 }
 
 // ------------------------------------------------------------
@@ -46,7 +52,12 @@ export class cfLoggingStack extends Construct {
     public readonly logStreamEc2BatchAzC: logs.LogStream;
     public readonly logStreamSns: logs.LogStream;
 
-    constructor(scope: Construct, id: string, commonProps: commonProps) {
+    constructor(
+        scope: Construct,
+        id: string,
+        commonProps: commonProps,
+        envProps: envProps,
+    ) {
         super(scope, id);
 
         // ------------------------------------------------------------
@@ -56,7 +67,7 @@ export class cfLoggingStack extends Construct {
             this,
             "LogGroupNginxEcsApp",
             {
-                logGroupName: `/ecs/${commonProps.projectName}/${commonProps.envName}/nginx-app`,
+                logGroupName: `/ecs/${commonProps.projectName}/${envProps.envName}/nginx-app`,
                 logGroupClass: logs.LogGroupClass.STANDARD,
                 retention: logs.RetentionDays.ONE_YEAR,
             },
@@ -64,7 +75,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupNginxEcsApp).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-nginx-app`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-nginx-app`,
         );
         cdk.Tags.of(this.logGroupNginxEcsApp).add("ProvisionedBy", "AWS");
 
@@ -73,7 +84,7 @@ export class cfLoggingStack extends Construct {
             "LogStreamNginxEcsApp",
             {
                 logGroup: this.logGroupNginxEcsApp,
-                logStreamName: `/ecs/${commonProps.projectName}/${commonProps.envName}/nginx-app`,
+                logStreamName: `/ecs/${commonProps.projectName}/${envProps.envName}/nginx-app`,
             },
         );
 
@@ -81,14 +92,14 @@ export class cfLoggingStack extends Construct {
         // Amazon CloudWatch Logs for Amazon ECS (app: App) Container Configuration
         // ------------------------------------------------------------
         this.logGroupAppEcsApp = new logs.LogGroup(this, "LogGroupAppEcsApp", {
-            logGroupName: `/ecs/${commonProps.projectName}/${commonProps.envName}/app-app`,
+            logGroupName: `/ecs/${commonProps.projectName}/${envProps.envName}/app-app`,
             logGroupClass: logs.LogGroupClass.STANDARD,
             retention: logs.RetentionDays.ONE_YEAR,
         });
 
         cdk.Tags.of(this.logGroupAppEcsApp).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-app-app`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-app-app`,
         );
         cdk.Tags.of(this.logGroupAppEcsApp).add("ProvisionedBy", "AWS");
 
@@ -97,7 +108,7 @@ export class cfLoggingStack extends Construct {
             "LogStreamAppEcsApp",
             {
                 logGroup: this.logGroupAppEcsApp,
-                logStreamName: `/ecs/${commonProps.projectName}/${commonProps.envName}/app-app`,
+                logStreamName: `/ecs/${commonProps.projectName}/${envProps.envName}/app-app`,
             },
         );
 
@@ -105,40 +116,40 @@ export class cfLoggingStack extends Construct {
         // Amazon CloudWatch Logs for Amazon ECS (cron) Container Configuration
         // ------------------------------------------------------------
         this.logGroupEcsCron = new logs.LogGroup(this, "LogGroupEcsCron", {
-            logGroupName: `/ecs/${commonProps.projectName}/${commonProps.envName}/cron`,
+            logGroupName: `/ecs/${commonProps.projectName}/${envProps.envName}/cron`,
             logGroupClass: logs.LogGroupClass.STANDARD,
             retention: logs.RetentionDays.ONE_YEAR,
         });
 
         cdk.Tags.of(this.logGroupEcsCron).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-cron`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-cron`,
         );
         cdk.Tags.of(this.logGroupEcsCron).add("ProvisionedBy", "AWS");
 
         this.logStreamEcsCron = new logs.LogStream(this, "LogStreamEcsCron", {
             logGroup: this.logGroupEcsCron,
-            logStreamName: `/ecs/${commonProps.projectName}/${commonProps.envName}/cron`,
+            logStreamName: `/ecs/${commonProps.projectName}/${envProps.envName}/cron`,
         });
 
         // ------------------------------------------------------------
         // Amazon CloudWatch Logs for Amazon ECS (queue) Container Configuration
         // ------------------------------------------------------------
         this.logGroupEcsQueue = new logs.LogGroup(this, "LogGroupEcsQueue", {
-            logGroupName: `/ecs/${commonProps.projectName}/${commonProps.envName}/queue`,
+            logGroupName: `/ecs/${commonProps.projectName}/${envProps.envName}/queue`,
             logGroupClass: logs.LogGroupClass.STANDARD,
             retention: logs.RetentionDays.ONE_YEAR,
         });
 
         cdk.Tags.of(this.logGroupEcsQueue).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-queue`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-queue`,
         );
         cdk.Tags.of(this.logGroupEcsQueue).add("ProvisionedBy", "AWS");
 
         this.logStreamEcsQueue = new logs.LogStream(this, "LogStreamEcsQueue", {
             logGroup: this.logGroupEcsQueue,
-            logStreamName: `/ecs/${commonProps.projectName}/${commonProps.envName}/queue`,
+            logStreamName: `/ecs/${commonProps.projectName}/${envProps.envName}/queue`,
         });
 
         // ------------------------------------------------------------
@@ -148,7 +159,7 @@ export class cfLoggingStack extends Construct {
             this,
             "LogGroupAuroraInstance",
             {
-                logGroupName: `/rds/${commonProps.projectName}/${commonProps.envName}/aurora-instance`,
+                logGroupName: `/rds/${commonProps.projectName}/${envProps.envName}/aurora-instance`,
                 logGroupClass: logs.LogGroupClass.STANDARD,
                 retention: logs.RetentionDays.ONE_YEAR,
             },
@@ -156,7 +167,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupAuroraInstance).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-aurora-instance`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-aurora-instance`,
         );
         cdk.Tags.of(this.logGroupAuroraInstance).add("ProvisionedBy", "AWS");
 
@@ -165,7 +176,7 @@ export class cfLoggingStack extends Construct {
             "LogStreamAuroraInstance",
             {
                 logGroup: this.logGroupAuroraInstance,
-                logStreamName: `/rds/${commonProps.projectName}/${commonProps.envName}/aurora-instance`,
+                logStreamName: `/rds/${commonProps.projectName}/${envProps.envName}/aurora-instance`,
             },
         );
 
@@ -176,7 +187,7 @@ export class cfLoggingStack extends Construct {
             this,
             "LogGroupAuroraPostgresql",
             {
-                logGroupName: `/rds/${commonProps.projectName}/${commonProps.envName}/aurora-postgresql`,
+                logGroupName: `/rds/${commonProps.projectName}/${envProps.envName}/aurora-postgresql`,
                 logGroupClass: logs.LogGroupClass.STANDARD,
                 retention: logs.RetentionDays.ONE_YEAR,
             },
@@ -184,7 +195,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupAuroraPostgresql).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-aurora-postgresql`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-aurora-postgresql`,
         );
         cdk.Tags.of(this.logGroupAuroraPostgresql).add("ProvisionedBy", "AWS");
 
@@ -193,7 +204,7 @@ export class cfLoggingStack extends Construct {
             "LogStreamAuroraPostgresql",
             {
                 logGroup: this.logGroupAuroraPostgresql,
-                logStreamName: `/rds/${commonProps.projectName}/${commonProps.envName}/aurora-postgresql`,
+                logStreamName: `/rds/${commonProps.projectName}/${envProps.envName}/aurora-postgresql`,
             },
         );
 
@@ -204,7 +215,7 @@ export class cfLoggingStack extends Construct {
             this,
             "LogGroupAuroraIamDbAuthError",
             {
-                logGroupName: `/rds/${commonProps.projectName}/${commonProps.envName}/aurora-iam-db-auth-error`,
+                logGroupName: `/rds/${commonProps.projectName}/${envProps.envName}/aurora-iam-db-auth-error`,
                 logGroupClass: logs.LogGroupClass.STANDARD,
                 retention: logs.RetentionDays.ONE_YEAR,
             },
@@ -212,7 +223,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupAuroraIamDbAuthError).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-aurora-iam-db-auth-error`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-aurora-iam-db-auth-error`,
         );
         cdk.Tags.of(this.logGroupAuroraIamDbAuthError).add(
             "ProvisionedBy",
@@ -224,7 +235,7 @@ export class cfLoggingStack extends Construct {
             "LogStreamAuroraIamDbAuthError",
             {
                 logGroup: this.logGroupAuroraIamDbAuthError,
-                logStreamName: `/rds/${commonProps.projectName}/${commonProps.envName}/aurora-iam-db-auth-error`,
+                logStreamName: `/rds/${commonProps.projectName}/${envProps.envName}/aurora-iam-db-auth-error`,
             },
         );
 
@@ -235,7 +246,7 @@ export class cfLoggingStack extends Construct {
             this,
             "LogGroupElastiCache",
             {
-                logGroupName: `/elasticache/${commonProps.projectName}/${commonProps.envName}`,
+                logGroupName: `/elasticache/${commonProps.projectName}/${envProps.envName}`,
                 logGroupClass: logs.LogGroupClass.STANDARD,
                 retention: logs.RetentionDays.ONE_YEAR,
             },
@@ -243,7 +254,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupElastiCache).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-elasticache`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-elasticache`,
         );
         cdk.Tags.of(this.logGroupElastiCache).add("ProvisionedBy", "AWS");
 
@@ -252,7 +263,7 @@ export class cfLoggingStack extends Construct {
             "LogStreamElastiCache",
             {
                 logGroup: this.logGroupElastiCache,
-                logStreamName: `/elasticache/${commonProps.projectName}/${commonProps.envName}`,
+                logStreamName: `/elasticache/${commonProps.projectName}/${envProps.envName}`,
             },
         );
 
@@ -263,7 +274,7 @@ export class cfLoggingStack extends Construct {
             this,
             "LogGroupLambdaLogsAlert",
             {
-                logGroupName: `/lambda/${commonProps.projectName}/${commonProps.envName}/cloudwatch-logs-alert`,
+                logGroupName: `/lambda/${commonProps.projectName}/${envProps.envName}/cloudwatch-logs-alert`,
                 logGroupClass: logs.LogGroupClass.STANDARD,
                 retention: logs.RetentionDays.ONE_YEAR,
             },
@@ -271,7 +282,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupLambdaLogsAlert).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-lambda-logs-alert`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-lambda-logs-alert`,
         );
         cdk.Tags.of(this.logGroupLambdaLogsAlert).add("ProvisionedBy", "AWS");
 
@@ -280,7 +291,7 @@ export class cfLoggingStack extends Construct {
             "LogStreamLambdaLogsAlert",
             {
                 logGroup: this.logGroupLambdaLogsAlert,
-                logStreamName: `/lambda/${commonProps.projectName}/${commonProps.envName}/cloudwatch-logs-alert`,
+                logStreamName: `/lambda/${commonProps.projectName}/${envProps.envName}/cloudwatch-logs-alert`,
             },
         );
 
@@ -291,7 +302,7 @@ export class cfLoggingStack extends Construct {
             this,
             "LogGroupLambdaMetricsAlert",
             {
-                logGroupName: `/lambda/${commonProps.projectName}/${commonProps.envName}/cloudwatch-metrics-alert`,
+                logGroupName: `/lambda/${commonProps.projectName}/${envProps.envName}/cloudwatch-metrics-alert`,
                 logGroupClass: logs.LogGroupClass.STANDARD,
                 retention: logs.RetentionDays.ONE_YEAR,
             },
@@ -299,7 +310,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupLambdaMetricsAlert).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-lambda-metrics-alert`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-lambda-metrics-alert`,
         );
         cdk.Tags.of(this.logGroupLambdaMetricsAlert).add(
             "ProvisionedBy",
@@ -311,7 +322,7 @@ export class cfLoggingStack extends Construct {
             "LogStreamLambdaMetricsAlert",
             {
                 logGroup: this.logGroupLambdaMetricsAlert,
-                logStreamName: `/lambda/${commonProps.projectName}/${commonProps.envName}/cloudwatch-metrics-alert`,
+                logStreamName: `/lambda/${commonProps.projectName}/${envProps.envName}/cloudwatch-metrics-alert`,
             },
         );
 
@@ -322,7 +333,7 @@ export class cfLoggingStack extends Construct {
             this,
             "LogGroupLambdaRdsControl",
             {
-                logGroupName: `/lambda/${commonProps.projectName}/${commonProps.envName}/rds-control`,
+                logGroupName: `/lambda/${commonProps.projectName}/${envProps.envName}/rds-control`,
                 logGroupClass: logs.LogGroupClass.STANDARD,
                 retention: logs.RetentionDays.ONE_YEAR,
             },
@@ -330,7 +341,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupLambdaRdsControl).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-lambda-rds-control`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-lambda-rds-control`,
         );
         cdk.Tags.of(this.logGroupLambdaRdsControl).add("ProvisionedBy", "AWS");
 
@@ -339,7 +350,7 @@ export class cfLoggingStack extends Construct {
             "LogStreamLambdaRdsControl",
             {
                 logGroup: this.logGroupLambdaRdsControl,
-                logStreamName: `/lambda/${commonProps.projectName}/${commonProps.envName}/rds-control`,
+                logStreamName: `/lambda/${commonProps.projectName}/${envProps.envName}/rds-control`,
             },
         );
 
@@ -350,7 +361,7 @@ export class cfLoggingStack extends Construct {
             this,
             "LogGroupEc2Bastion",
             {
-                logGroupName: `/ec2/${commonProps.projectName}/${commonProps.envName}/bastion`,
+                logGroupName: `/ec2/${commonProps.projectName}/${envProps.envName}/bastion`,
                 logGroupClass: logs.LogGroupClass.STANDARD,
                 retention: logs.RetentionDays.ONE_YEAR,
             },
@@ -358,7 +369,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupEc2Bastion).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-ec2-bastion`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-ec2-bastion`,
         );
         cdk.Tags.of(this.logGroupEc2Bastion).add("ProvisionedBy", "AWS");
 
@@ -367,7 +378,7 @@ export class cfLoggingStack extends Construct {
             "LogStreamEc2Bastion",
             {
                 logGroup: this.logGroupEc2Bastion,
-                logStreamName: `/ec2/${commonProps.projectName}/${commonProps.envName}/bastion`,
+                logStreamName: `/ec2/${commonProps.projectName}/${envProps.envName}/bastion`,
             },
         );
 
@@ -378,14 +389,14 @@ export class cfLoggingStack extends Construct {
             this,
             "LogGroupEc2BatchAzA",
             {
-                logGroupName: `/ec2/${commonProps.projectName}/${commonProps.envName}/batch-az-a`,
+                logGroupName: `/ec2/${commonProps.projectName}/${envProps.envName}/batch-az-a`,
                 logGroupClass: logs.LogGroupClass.STANDARD,
                 retention: logs.RetentionDays.ONE_YEAR,
             },
         );
         cdk.Tags.of(this.logGroupEc2BatchAzA).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-ec2-batch-az-a`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-ec2-batch-az-a`,
         );
         cdk.Tags.of(this.logGroupEc2BatchAzA).add("ProvisionedBy", "AWS");
 
@@ -394,7 +405,7 @@ export class cfLoggingStack extends Construct {
             "LogStreamEc2BatchAzA",
             {
                 logGroup: this.logGroupEc2BatchAzA,
-                logStreamName: `/ec2/${commonProps.projectName}/${commonProps.envName}/batch-az-a`,
+                logStreamName: `/ec2/${commonProps.projectName}/${envProps.envName}/batch-az-a`,
             },
         );
 
@@ -405,14 +416,14 @@ export class cfLoggingStack extends Construct {
             this,
             "LogGroupEc2BatchAzC",
             {
-                logGroupName: `/ec2/${commonProps.projectName}/${commonProps.envName}/batch-az-c`,
+                logGroupName: `/ec2/${commonProps.projectName}/${envProps.envName}/batch-az-c`,
                 logGroupClass: logs.LogGroupClass.STANDARD,
                 retention: logs.RetentionDays.ONE_YEAR,
             },
         );
         cdk.Tags.of(this.logGroupEc2BatchAzC).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-ec2-batch-az-c`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-ec2-batch-az-c`,
         );
         cdk.Tags.of(this.logGroupEc2BatchAzC).add("ProvisionedBy", "AWS");
 
@@ -421,7 +432,7 @@ export class cfLoggingStack extends Construct {
             "LogStreamEc2BatchAzC",
             {
                 logGroup: this.logGroupEc2BatchAzC,
-                logStreamName: `/ec2/${commonProps.projectName}/${commonProps.envName}/batch-az-c`,
+                logStreamName: `/ec2/${commonProps.projectName}/${envProps.envName}/batch-az-c`,
             },
         );
 
@@ -429,19 +440,19 @@ export class cfLoggingStack extends Construct {
         // Amazon CloudWatch Logs for Amazon SNS Configuration
         // ------------------------------------------------------------
         this.logGroupSns = new logs.LogGroup(this, "LogGroupSns", {
-            logGroupName: `/sns/${commonProps.projectName}/${commonProps.envName}`,
+            logGroupName: `/sns/${commonProps.projectName}/${envProps.envName}`,
             logGroupClass: logs.LogGroupClass.STANDARD,
             retention: logs.RetentionDays.ONE_YEAR,
         });
         cdk.Tags.of(this.logGroupSns).add(
             "Name",
-            `${commonProps.envName}-${commonProps.projectName}-loggroup-sns`,
+            `${envProps.envName}-${commonProps.projectName}-loggroup-sns`,
         );
         cdk.Tags.of(this.logGroupSns).add("ProvisionedBy", "AWS");
 
         this.logStreamSns = new logs.LogStream(this, "LogStreamSns", {
             logGroup: this.logGroupSns,
-            logStreamName: `/sns/${commonProps.projectName}/${commonProps.envName}`,
+            logStreamName: `/sns/${commonProps.projectName}/${envProps.envName}`,
         });
     }
 
