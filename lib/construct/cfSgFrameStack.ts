@@ -4,10 +4,11 @@ import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
-    envName: string;
+    dashboardName: string;
 }
 
 export interface envProps {
+    envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
@@ -37,7 +38,7 @@ export class cfSgFrameStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        props: commonProps,
+        props: commonProps & envProps,
         vpcProps: vpcProps,
     ) {
         super(scope, id);
