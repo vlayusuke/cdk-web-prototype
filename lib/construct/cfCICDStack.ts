@@ -5,7 +5,13 @@ import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
+    dashboardName: string;
+}
+
+export interface envProps {
     envName: string;
+    vpcCidr: string;
+    defaultGatewayCidr: string;
 }
 
 export interface kmsProps {
@@ -20,6 +26,7 @@ export class cfCICDStack extends Construct {
         scope: Construct,
         id: string,
         commonProps: commonProps,
+        envProps: envProps,
         kmsProps: kmsProps,
     ) {
         super(scope, id);
@@ -38,7 +45,7 @@ export class cfCICDStack extends Construct {
 
         cdk.Tags.of(codeCommitRepository).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-codecommit`,
+            `${commonProps.projectName}-${envProps.envName}-codecommit`,
         );
         cdk.Tags.of(codeCommitRepository).add("ProvisionedBy", "AWS");
     }
