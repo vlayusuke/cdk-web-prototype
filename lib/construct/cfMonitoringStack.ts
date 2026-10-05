@@ -9,9 +9,15 @@ import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
-    envName: string;
+    dashboardName: string;
     auroraMaxConnections: number;
     lambdaConcurrentExecutions: number;
+}
+
+export interface envProps {
+    envName: string;
+    vpcCidr: string;
+    defaultGatewayCidr: string;
 }
 
 export interface ecsProps {
@@ -60,6 +66,7 @@ export class cfMonitoringStack extends Construct {
         scope: Construct,
         id: string,
         commonProps: commonProps,
+        envProps: envProps,
         ecsProps: ecsProps,
     ) {
         super(scope, id);
@@ -75,8 +82,8 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ECS",
                     metricName: "CPUUtilization",
                     dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${commonProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${commonProps.envName}-app-service`,
+                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
+                        ServiceName: `${commonProps.projectName}-${envProps.envName}-app-service`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -96,7 +103,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.cpuUtilizationHighAlarmEcsApp).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-cpu-utilization-high-alarm-ecs-app`,
+            `${commonProps.projectName}-${envProps.envName}-cpu-utilization-high-alarm-ecs-app`,
         );
         cdk.Tags.of(this.cpuUtilizationHighAlarmEcsApp).add(
             "ProvisionedBy",
@@ -111,8 +118,8 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ECS",
                     metricName: "CPUUtilization",
                     dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${commonProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${commonProps.envName}-app-service`,
+                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
+                        ServiceName: `${commonProps.projectName}-${envProps.envName}-app-service`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -132,7 +139,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.cpuUtilizationLowAlarmEcsApp).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-cpu-utilization-low-alarm-ecs-app`,
+            `${commonProps.projectName}-${envProps.envName}-cpu-utilization-low-alarm-ecs-app`,
         );
         cdk.Tags.of(this.cpuUtilizationLowAlarmEcsApp).add(
             "ProvisionedBy",
@@ -147,8 +154,8 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ECS",
                     metricName: "MemoryUtilization",
                     dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${commonProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${commonProps.envName}-app-service`,
+                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
+                        ServiceName: `${commonProps.projectName}-${envProps.envName}-app-service`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -168,7 +175,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.memoryUtilizationHighAlarmEcsApp).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-memory-utilization-high-alarm-ecs-app`,
+            `${commonProps.projectName}-${envProps.envName}-memory-utilization-high-alarm-ecs-app`,
         );
         cdk.Tags.of(this.memoryUtilizationHighAlarmEcsApp).add(
             "ProvisionedBy",
@@ -183,8 +190,8 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ECS",
                     metricName: "MemoryUtilization",
                     dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${commonProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${commonProps.envName}-app-service`,
+                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
+                        ServiceName: `${commonProps.projectName}-${envProps.envName}-app-service`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -205,7 +212,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.memoryUtilizationLowAlarmEcsApp).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-memory-utilization-low-alarm-ecs-app`,
+            `${commonProps.projectName}-${envProps.envName}-memory-utilization-low-alarm-ecs-app`,
         );
         cdk.Tags.of(this.memoryUtilizationLowAlarmEcsApp).add(
             "ProvisionedBy",
@@ -220,8 +227,8 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ECS",
                     metricName: "DeploymentFailed",
                     dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${commonProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${commonProps.envName}-app-service`,
+                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
+                        ServiceName: `${commonProps.projectName}-${envProps.envName}-app-service`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -241,7 +248,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.deploymentFailedAlarmEcsApp).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-deployment-failed-alarm-ecs-app`,
+            `${commonProps.projectName}-${envProps.envName}-deployment-failed-alarm-ecs-app`,
         );
         cdk.Tags.of(this.deploymentFailedAlarmEcsApp).add(
             "ProvisionedBy",
@@ -321,8 +328,8 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ECS",
                     metricName: "CPUUtilization",
                     dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${commonProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${commonProps.envName}-cron-service`,
+                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
+                        ServiceName: `${commonProps.projectName}-${envProps.envName}-cron-service`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -342,7 +349,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.cpuUtilizationHighAlarmEcsCron).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-cpu-utilization-high-alarm-ecs-cron`,
+            `${commonProps.projectName}-${envProps.envName}-cpu-utilization-high-alarm-ecs-cron`,
         );
         cdk.Tags.of(this.cpuUtilizationHighAlarmEcsCron).add(
             "ProvisionedBy",
@@ -357,8 +364,8 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ECS",
                     metricName: "MemoryUtilization",
                     dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${commonProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${commonProps.envName}-cron-service`,
+                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
+                        ServiceName: `${commonProps.projectName}-${envProps.envName}-cron-service`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -378,7 +385,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.memoryUtilizationHighAlarmEcsCron).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-memory-utilization-high-alarm-ecs-cron`,
+            `${commonProps.projectName}-${envProps.envName}-memory-utilization-high-alarm-ecs-cron`,
         );
         cdk.Tags.of(this.memoryUtilizationHighAlarmEcsCron).add(
             "ProvisionedBy",
@@ -396,8 +403,8 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ECS",
                     metricName: "CPUUtilization",
                     dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${commonProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${commonProps.envName}-queue-service`,
+                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
+                        ServiceName: `${commonProps.projectName}-${envProps.envName}-queue-service`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -417,7 +424,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.cpuUtilizationHighAlarmEcsQueue).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-cpu-utilization-high-alarm-ecs-queue`,
+            `${commonProps.projectName}-${envProps.envName}-cpu-utilization-high-alarm-ecs-queue`,
         );
         cdk.Tags.of(this.cpuUtilizationHighAlarmEcsQueue).add(
             "ProvisionedBy",
@@ -432,8 +439,8 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ECS",
                     metricName: "MemoryUtilization",
                     dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${commonProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${commonProps.envName}-queue-service`,
+                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
+                        ServiceName: `${commonProps.projectName}-${envProps.envName}-queue-service`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -453,7 +460,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.memoryUtilizationHighAlarmEcsQueue).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-memory-utilization-high-alarm-ecs-queue`,
+            `${commonProps.projectName}-${envProps.envName}-memory-utilization-high-alarm-ecs-queue`,
         );
         cdk.Tags.of(this.memoryUtilizationHighAlarmEcsQueue).add(
             "ProvisionedBy",
@@ -471,7 +478,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/EC2",
                     metricName: "CPUUtilization",
                     dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-bastion-instance`,
+                        InstanceId: `${commonProps.projectName}-${envProps.envName}-bastion-instance`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -492,7 +499,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.cpuUtilizationHighAlarmEc2Bastion).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-cpu-utilization-high-alarm-bastion`,
+            `${commonProps.projectName}-${envProps.envName}-cpu-utilization-high-alarm-bastion`,
         );
         cdk.Tags.of(this.cpuUtilizationHighAlarmEc2Bastion).add(
             "ProvisionedBy",
@@ -507,7 +514,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/EC2",
                     metricName: "MemoryUtilization",
                     dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-bastion-instance`,
+                        InstanceId: `${commonProps.projectName}-${envProps.envName}-bastion-instance`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -528,7 +535,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.memoryUtilizationHighAlarmEc2Bastion).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-memory-utilization-high-alarm-bastion`,
+            `${commonProps.projectName}-${envProps.envName}-memory-utilization-high-alarm-bastion`,
         );
         cdk.Tags.of(this.memoryUtilizationHighAlarmEc2Bastion).add(
             "ProvisionedBy",
@@ -543,7 +550,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/EC2",
                     metricName: "DiskUtilization",
                     dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-bastion-instance`,
+                        InstanceId: `${commonProps.projectName}-${envProps.envName}-bastion-instance`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -564,7 +571,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.diskUtilizationHighAlarmEc2Bastion).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-disk-utilization-high-alarm-bastion`,
+            `${commonProps.projectName}-${envProps.envName}-disk-utilization-high-alarm-bastion`,
         );
         cdk.Tags.of(this.diskUtilizationHighAlarmEc2Bastion).add(
             "ProvisionedBy",
@@ -579,7 +586,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/EC2",
                     metricName: "StatusCheckFailed",
                     dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-bastion-instance`,
+                        InstanceId: `${commonProps.projectName}-${envProps.envName}-bastion-instance`,
                     },
                     statistic: "Minimum",
                     period: cdk.Duration.seconds(60),
@@ -600,7 +607,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.statusCheckFailedAlarmEc2Bastion).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-status-check-failed-alarm-bastion`,
+            `${commonProps.projectName}-${envProps.envName}-status-check-failed-alarm-bastion`,
         );
         cdk.Tags.of(this.statusCheckFailedAlarmEc2Bastion).add(
             "ProvisionedBy",
@@ -618,7 +625,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/EC2",
                     metricName: "CPUUtilization",
                     dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-batch-az-a-instance`,
+                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-a-instance`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -639,7 +646,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.cpuUtilizationHighAlarmEc2BatchAzA).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-cpu-utilization-high-alarm-ec2-batch-az-a`,
+            `${commonProps.projectName}-${envProps.envName}-cpu-utilization-high-alarm-ec2-batch-az-a`,
         );
         cdk.Tags.of(this.cpuUtilizationHighAlarmEc2BatchAzA).add(
             "ProvisionedBy",
@@ -654,7 +661,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/EC2",
                     metricName: "MemoryUtilization",
                     dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-batch-az-a-instance`,
+                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-a-instance`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -675,7 +682,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.memoryUtilizationHighAlarmEc2BatchAzA).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-memory-utilization-high-alarm-ec2-batch-az-a`,
+            `${commonProps.projectName}-${envProps.envName}-memory-utilization-high-alarm-ec2-batch-az-a`,
         );
         cdk.Tags.of(this.memoryUtilizationHighAlarmEc2BatchAzA).add(
             "ProvisionedBy",
@@ -690,7 +697,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/EC2",
                     metricName: "DiskUtilization",
                     dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-batch-az-a-instance`,
+                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-a-instance`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -711,7 +718,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.diskUtilizationHighAlarmEc2BatchAzA).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-disk-utilization-high-alarm-ec2-batch-az-a`,
+            `${commonProps.projectName}-${envProps.envName}-disk-utilization-high-alarm-ec2-batch-az-a`,
         );
         cdk.Tags.of(this.diskUtilizationHighAlarmEc2BatchAzA).add(
             "ProvisionedBy",
@@ -726,7 +733,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/EC2",
                     metricName: "StatusCheckFailed",
                     dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-batch-az-a-instance`,
+                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-a-instance`,
                     },
                     statistic: "Minimum",
                     period: cdk.Duration.seconds(60),
@@ -747,7 +754,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.statusCheckFailedAlarmEc2BatchAzA).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-status-check-failed-alarm-ec2-batch-az-a`,
+            `${commonProps.projectName}-${envProps.envName}-status-check-failed-alarm-ec2-batch-az-a`,
         );
         cdk.Tags.of(this.statusCheckFailedAlarmEc2BatchAzA).add(
             "ProvisionedBy",
@@ -762,7 +769,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/EC2",
                     metricName: "CPUUtilization",
                     dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-batch-az-c-instance`,
+                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-c-instance`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -783,7 +790,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.cpuUtilizationHighAlarmEc2BatchAzC).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-cpu-utilization-high-alarm-ec2-batch-az-c`,
+            `${commonProps.projectName}-${envProps.envName}-cpu-utilization-high-alarm-ec2-batch-az-c`,
         );
         cdk.Tags.of(this.cpuUtilizationHighAlarmEc2BatchAzC).add(
             "ProvisionedBy",
@@ -798,7 +805,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/EC2",
                     metricName: "MemoryUtilization",
                     dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-batch-az-c-instance`,
+                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-c-instance`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -819,7 +826,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.memoryUtilizationHighAlarmEc2BatchAzC).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-memory-utilization-high-alarm-ec2-batch-az-c`,
+            `${commonProps.projectName}-${envProps.envName}-memory-utilization-high-alarm-ec2-batch-az-c`,
         );
         cdk.Tags.of(this.memoryUtilizationHighAlarmEc2BatchAzC).add(
             "ProvisionedBy",
@@ -834,7 +841,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/EC2",
                     metricName: "DiskUtilization",
                     dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-batch-az-c-instance`,
+                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-c-instance`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -855,7 +862,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.diskUtilizationHighAlarmEc2BatchAzC).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-disk-utilization-high-alarm-ec2-batch-az-c`,
+            `${commonProps.projectName}-${envProps.envName}-disk-utilization-high-alarm-ec2-batch-az-c`,
         );
         cdk.Tags.of(this.diskUtilizationHighAlarmEc2BatchAzC).add(
             "ProvisionedBy",
@@ -870,7 +877,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/EC2",
                     metricName: "StatusCheckFailed",
                     dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${commonProps.envName}-batch-az-c-instance`,
+                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-c-instance`,
                     },
                     statistic: "Minimum",
                     period: cdk.Duration.seconds(60),
@@ -891,7 +898,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.statusCheckFailedAlarmEc2BatchAzC).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-status-check-failed-alarm-ec2-batch-az-c`,
+            `${commonProps.projectName}-${envProps.envName}-status-check-failed-alarm-ec2-batch-az-c`,
         );
         cdk.Tags.of(this.statusCheckFailedAlarmEc2BatchAzC).add(
             "ProvisionedBy",
@@ -909,7 +916,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ApplicationELB",
                     metricName: "HealthyHostCount",
                     dimensionsMap: {
-                        LoadBalancer: `${commonProps.projectName}-${commonProps.envName}-alb`,
+                        LoadBalancer: `${commonProps.projectName}-${envProps.envName}-alb`,
                     },
                     statistic: "Minimum",
                     period: cdk.Duration.seconds(60),
@@ -929,7 +936,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.healtyHostCounAlarmAlb).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-healty-host-coun-alarm-alb`,
+            `${commonProps.projectName}-${envProps.envName}-healty-host-coun-alarm-alb`,
         );
         cdk.Tags.of(this.healtyHostCounAlarmAlb).add("ProvisionedBy", "AWS");
 
@@ -941,7 +948,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ApplicationELB",
                     metricName: "UnHealthyHostCount",
                     dimensionsMap: {
-                        LoadBalancer: `${commonProps.projectName}-${commonProps.envName}-alb`,
+                        LoadBalancer: `${commonProps.projectName}-${envProps.envName}-alb`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -962,7 +969,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.unHealthyHostCountAlarmAlb).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-unhealthy-host-count-alarm-alb`,
+            `${commonProps.projectName}-${envProps.envName}-unhealthy-host-count-alarm-alb`,
         );
         cdk.Tags.of(this.unHealthyHostCountAlarmAlb).add(
             "ProvisionedBy",
@@ -977,7 +984,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ApplicationELB",
                     metricName: "RejectedConnectionCount",
                     dimensionsMap: {
-                        LoadBalancer: `${commonProps.projectName}-${commonProps.envName}-alb`,
+                        LoadBalancer: `${commonProps.projectName}-${envProps.envName}-alb`,
                     },
                     statistic: "Sum",
                     period: cdk.Duration.seconds(60),
@@ -998,7 +1005,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.rejectedConnectionCountAlarmAlb).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-rejected-connection-count-alarm-alb`,
+            `${commonProps.projectName}-${envProps.envName}-rejected-connection-count-alarm-alb`,
         );
         cdk.Tags.of(this.rejectedConnectionCountAlarmAlb).add(
             "ProvisionedBy",
@@ -1016,7 +1023,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/RDS",
                     metricName: "CPUUtilization",
                     dimensionsMap: {
-                        DBInstanceIdentifier: `${commonProps.projectName}-${commonProps.envName}-aurora`,
+                        DBInstanceIdentifier: `${commonProps.projectName}-${envProps.envName}-aurora`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -1037,7 +1044,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.cpuUtilizationHighAlarmAurora).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-cpu-utilization-high-alarm-aurora`,
+            `${commonProps.projectName}-${envProps.envName}-cpu-utilization-high-alarm-aurora`,
         );
         cdk.Tags.of(this.cpuUtilizationHighAlarmAurora).add(
             "ProvisionedBy",
@@ -1052,7 +1059,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/RDS",
                     metricName: "FreeableMemory",
                     dimensionsMap: {
-                        DBInstanceIdentifier: `${commonProps.projectName}-${commonProps.envName}-aurora`,
+                        DBInstanceIdentifier: `${commonProps.projectName}-${envProps.envName}-aurora`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(300),
@@ -1071,7 +1078,7 @@ export class cfMonitoringStack extends Construct {
         );
         cdk.Tags.of(this.memoryUtilizationHighAlarmAurora).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-memory-utilization-high-alarm-aurora`,
+            `${commonProps.projectName}-${envProps.envName}-memory-utilization-high-alarm-aurora`,
         );
         cdk.Tags.of(this.memoryUtilizationHighAlarmAurora).add(
             "ProvisionedBy",
@@ -1086,7 +1093,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/RDS",
                     metricName: "DatabaseConnections",
                     dimensionsMap: {
-                        DBInstanceIdentifier: `${commonProps.projectName}-${commonProps.envName}-aurora`,
+                        DBInstanceIdentifier: `${commonProps.projectName}-${envProps.envName}-aurora`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -1106,7 +1113,7 @@ export class cfMonitoringStack extends Construct {
         );
         cdk.Tags.of(this.connectionHighAlarmAurora).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-connection-high-alarm-aurora`,
+            `${commonProps.projectName}-${envProps.envName}-connection-high-alarm-aurora`,
         );
         cdk.Tags.of(this.connectionHighAlarmAurora).add("ProvisionedBy", "AWS");
 
@@ -1121,7 +1128,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ElastiCache",
                     metricName: "CPUUtilization",
                     dimensionsMap: {
-                        CacheClusterId: `${commonProps.projectName}-${commonProps.envName}-redis`,
+                        CacheClusterId: `${commonProps.projectName}-${envProps.envName}-redis`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -1142,7 +1149,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.cpuUtilizationHighAlarmElastiCache).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-cpu-utilization-high-alarm-elasticache`,
+            `${commonProps.projectName}-${envProps.envName}-cpu-utilization-high-alarm-elasticache`,
         );
         cdk.Tags.of(this.cpuUtilizationHighAlarmElastiCache).add(
             "ProvisionedBy",
@@ -1157,7 +1164,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ElastiCache",
                     metricName: "MemoryUtilization",
                     dimensionsMap: {
-                        CacheClusterId: `${commonProps.projectName}-${commonProps.envName}-redis`,
+                        CacheClusterId: `${commonProps.projectName}-${envProps.envName}-redis`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(60),
@@ -1178,7 +1185,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.memoryUtilizationHighAlarmElastiCache).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-memory-utilization-high-alarm-elasticache`,
+            `${commonProps.projectName}-${envProps.envName}-memory-utilization-high-alarm-elasticache`,
         );
         cdk.Tags.of(this.memoryUtilizationHighAlarmElastiCache).add(
             "ProvisionedBy",
@@ -1193,7 +1200,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/ElastiCache",
                     metricName: "SwapUsage",
                     dimensionsMap: {
-                        CacheClusterId: `${commonProps.projectName}-${commonProps.envName}-redis`,
+                        CacheClusterId: `${commonProps.projectName}-${envProps.envName}-redis`,
                     },
                     statistic: "Maximum",
                     period: cdk.Duration.seconds(300),
@@ -1214,7 +1221,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.swapUsageHighAlarmElastiCache).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-swap-usage-high-alarm-elasticache`,
+            `${commonProps.projectName}-${envProps.envName}-swap-usage-high-alarm-elasticache`,
         );
         cdk.Tags.of(this.swapUsageHighAlarmElastiCache).add(
             "ProvisionedBy",
@@ -1229,7 +1236,7 @@ export class cfMonitoringStack extends Construct {
                 namespace: "AWS/Lambda",
                 metricName: "Errors",
                 dimensionsMap: {
-                    FunctionName: `${commonProps.projectName}-${commonProps.envName}-lambda`,
+                    FunctionName: `${commonProps.projectName}-${envProps.envName}-lambda`,
                 },
                 statistic: "Sum",
                 period: cdk.Duration.seconds(60),
@@ -1248,7 +1255,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.errorAlarmLambda).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-error-alarm-lambda`,
+            `${commonProps.projectName}-${envProps.envName}-error-alarm-lambda`,
         );
         cdk.Tags.of(this.errorAlarmLambda).add("ProvisionedBy", "AWS");
 
@@ -1260,7 +1267,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/Lambda",
                     metricName: "Throttles",
                     dimensionsMap: {
-                        FunctionName: `${commonProps.projectName}-${commonProps.envName}-lambda`,
+                        FunctionName: `${commonProps.projectName}-${envProps.envName}-lambda`,
                     },
                     statistic: "Sum",
                     period: cdk.Duration.seconds(60),
@@ -1280,7 +1287,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.throttlesAlarmLambda).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-throttles-alarm-lambda`,
+            `${commonProps.projectName}-${envProps.envName}-throttles-alarm-lambda`,
         );
         cdk.Tags.of(this.throttlesAlarmLambda).add("ProvisionedBy", "AWS");
 
@@ -1292,7 +1299,7 @@ export class cfMonitoringStack extends Construct {
                     namespace: "AWS/Lambda",
                     metricName: "ConcurrentExecutions",
                     dimensionsMap: {
-                        FunctionName: `${commonProps.projectName}-${commonProps.envName}-lambda`,
+                        FunctionName: `${commonProps.projectName}-${envProps.envName}-lambda`,
                     },
                     statistic: "Sum",
                     period: cdk.Duration.seconds(60),
@@ -1312,7 +1319,7 @@ export class cfMonitoringStack extends Construct {
 
         cdk.Tags.of(this.concurrentExecutionsAlarmLambda).add(
             "Name",
-            `${commonProps.projectName}-${commonProps.envName}-concurrent-executions-alarm-lambda`,
+            `${commonProps.projectName}-${envProps.envName}-concurrent-executions-alarm-lambda`,
         );
         cdk.Tags.of(this.concurrentExecutionsAlarmLambda).add(
             "ProvisionedBy",
