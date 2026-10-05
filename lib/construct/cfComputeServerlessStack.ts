@@ -11,10 +11,13 @@ import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
+    dashboardName: string;
 }
 
 export interface envProps {
     envName: string;
+    vpcCidr: string;
+    defaultGatewayCidr: string;
     slackHookUrl: string;
 }
 
