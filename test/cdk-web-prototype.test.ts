@@ -2,6 +2,7 @@ import * as cdk from "aws-cdk-lib";
 import { Template } from "aws-cdk-lib/assertions";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as kms from "aws-cdk-lib/aws-kms";
+import { loadDevParameter } from "../config/devParameter";
 import { loadPrdParameter } from "../config/prdParameter";
 import { loadStgParameter } from "../config/stgParameter";
 import { cfNetworkStack } from "../lib/construct/cfNetworkStack";
@@ -12,32 +13,40 @@ import { cfStorageStack } from "../lib/construct/cfStorageStack";
 test.each([
     ["prd", loadPrdParameter],
     ["stg", loadStgParameter],
-])("%s parameter loader reads deployment values from CDK context", (_env, loadParameter) => {
-    expect(
-        loadParameter({
-            account: "123456789012",
-            region: "ap-northeast-1",
+    ["dev", loadDevParameter],
+])(
+    "%s parameter loader reads deployment values from CDK context",
+    (_env, loadParameter) => {
+        expect(
+            loadParameter({
+                account: "123456789012",
+                region: "ap-northeast-1",
+                monitoringNotifyEmail: "alerts@example.com",
+                monitoringSlackWorkspaceId: "T1234567890",
+                monitoringSlackChannelId: "C1234567890",
+                slackHookUrl: "https://hooks.slack.com/services/test",
+            }),
+        ).toMatchObject({
+            env: { account: "123456789012", region: "ap-northeast-1" },
             monitoringNotifyEmail: "alerts@example.com",
             monitoringSlackWorkspaceId: "T1234567890",
             monitoringSlackChannelId: "C1234567890",
-            slackHookUrl: "https://hooks.slack.com/services/test",
-        }),
-    ).toMatchObject({
-        env: { account: "123456789012", region: "ap-northeast-1" },
-        monitoringNotifyEmail: "alerts@example.com",
-        monitoringSlackWorkspaceId: "T1234567890",
-        monitoringSlackChannelId: "C1234567890",
-    });
-});
+        });
+    },
+);
 
 test.each([
     ["prd", loadPrdParameter],
     ["stg", loadStgParameter],
-])("%s parameter loader rejects missing required context values", (env, loadParameter) => {
-    expect(() => loadParameter({})).toThrow(
-        `Missing required CDK context value: ${env}.monitoringNotifyEmail`,
-    );
-});
+    ["dev", loadDevParameter],
+])(
+    "%s parameter loader rejects missing required context values",
+    (env, loadParameter) => {
+        expect(() => loadParameter({})).toThrow(
+            `Missing required CDK context value: ${env}.monitoringNotifyEmail`,
+        );
+    },
+);
 
 test("network subnets follow the configured availability zones", () => {
     const app = new cdk.App();
@@ -48,8 +57,9 @@ test("network subnets follow the configured availability zones", () => {
         "Network",
         {
             projectName: "test",
+            dashboardName: "test",
             envName: "unit",
-            vpcCidr: "10.60.0.0/16",
+            vpcCidr: "10.80.0.0/16",
             defaultGatewayCidr: "0.0.0.0/0",
             availabilityZones: [availabilityZones[0], availabilityZones[1]],
         },
@@ -78,7 +88,13 @@ test("Systems Manager endpoints share a least-privilege endpoint security group"
     const securityGroups = new cfSgFrameStack(
         stack,
         "SecurityGroups",
-        { projectName: "test", envName: "unit" },
+        {
+            projectName: "test",
+            dashboardName: "test",
+            envName: "unit",
+            vpcCidr: "10.80.0.0/16",
+            defaultGatewayCidr: "0.0.0.0/0",
+        },
         { vpc },
     );
     new cfSgRuleStack(stack, "SecurityGroupRules", {
@@ -131,8 +147,13 @@ test("Systems Manager endpoints share a least-privilege endpoint security group"
         },
         {
             projectName: "test",
-            envName: "unit",
+            dashboardName: "test",
             nakedDomainName: "example.com",
+        },
+        {
+            envName: "unit",
+            vpcCidr: "10.80.0.0/16",
+            defaultGatewayCidr: "0.0.0.0/0",
         },
     );
 
