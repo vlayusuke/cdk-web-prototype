@@ -10,10 +10,11 @@ import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
-    envName: string;
+    dashboardName: string;
 }
 
 export interface envProps {
+    envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
@@ -40,7 +41,8 @@ export class cfDatabaseStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        props: commonProps,
+        commonProps: commonProps,
+        envProps: envProps,
         sgProps: sgProps,
         networkingProps: networkingProps,
         kmsProps: kmsProps,
@@ -58,7 +60,7 @@ export class cfDatabaseStack extends Construct {
 
         cdk.Tags.of(auroraIamRole).add(
             "Name",
-            `${props.projectName}-${props.envName}-iam-aurora-role`,
+            `${commonProps.projectName}-${envProps.envName}-iam-aurora-role`,
         );
         cdk.Tags.of(auroraIamRole).add("ProvisionedBy", "AWS");
 
@@ -77,7 +79,7 @@ export class cfDatabaseStack extends Construct {
 
         cdk.Tags.of(auroraIamPolicy).add(
             "Name",
-            `${props.projectName}-${props.envName}-iam-aurora-policy`,
+            `${commonProps.projectName}-${envProps.envName}-iam-aurora-policy`,
         );
         cdk.Tags.of(auroraIamPolicy).add("ProvisionedBy", "AWS");
 
@@ -93,7 +95,7 @@ export class cfDatabaseStack extends Construct {
 
         cdk.Tags.of(auroraIamPeformanceInsightRole).add(
             "Name",
-            `${props.projectName}-${props.envName}-iam-aurora-performance-insight-role`,
+            `${commonProps.projectName}-${envProps.envName}-iam-aurora-performance-insight-role`,
         );
         cdk.Tags.of(auroraIamPeformanceInsightRole).add("ProvisionedBy", "AWS");
 
@@ -119,7 +121,7 @@ export class cfDatabaseStack extends Construct {
 
         cdk.Tags.of(auroraIamPeformanceInsightPolicy).add(
             "Name",
-            `${props.projectName}-${props.envName}-iam-aurora-performance-insight-policy`,
+            `${commonProps.projectName}-${envProps.envName}-iam-aurora-performance-insight-policy`,
         );
         cdk.Tags.of(auroraIamPeformanceInsightPolicy).add(
             "ProvisionedBy",
@@ -141,7 +143,7 @@ export class cfDatabaseStack extends Construct {
 
         cdk.Tags.of(elasticacheIamRole).add(
             "Name",
-            `${props.projectName}-${props.envName}-iam-elasticache-role`,
+            `${commonProps.projectName}-${envProps.envName}-iam-elasticache-role`,
         );
         cdk.Tags.of(elasticacheIamRole).add("ProvisionedBy", "AWS");
 
@@ -168,7 +170,7 @@ export class cfDatabaseStack extends Construct {
 
         cdk.Tags.of(elasticacheIamPolicy).add(
             "Name",
-            `${props.projectName}-${props.envName}-iam-elasticache-policy`,
+            `${commonProps.projectName}-${envProps.envName}-iam-elasticache-policy`,
         );
         cdk.Tags.of(elasticacheIamPolicy).add("ProvisionedBy", "AWS");
 
@@ -188,7 +190,7 @@ export class cfDatabaseStack extends Construct {
 
         cdk.Tags.of(auroraSubnetGroup).add(
             "Name",
-            `${props.projectName}-${props.envName}-aurora-subnet-group`,
+            `${commonProps.projectName}-${envProps.envName}-aurora-subnet-group`,
         );
         cdk.Tags.of(auroraSubnetGroup).add("ProvisionedBy", "AWS");
 
@@ -209,7 +211,7 @@ export class cfDatabaseStack extends Construct {
 
         cdk.Tags.of(auroraDbParameterGroup).add(
             "Name",
-            `${props.projectName}-${props.envName}-aurora-db-parameter-group`,
+            `${commonProps.projectName}-${envProps.envName}-aurora-db-parameter-group`,
         );
         cdk.Tags.of(auroraDbParameterGroup).add("ProvisionedBy", "AWS");
 
@@ -217,7 +219,7 @@ export class cfDatabaseStack extends Construct {
         // Amazon Aurora Cluster Configuration
         // ------------------------------------------------------------
         const auroraCluster = new rds.CfnDBCluster(this, "AuroraCluster", {
-            dbClusterIdentifier: `${props.projectName}-${props.envName}-aurora-cluster`,
+            dbClusterIdentifier: `${commonProps.projectName}-${envProps.envName}-aurora-cluster`,
             associatedRoles: [
                 { roleArn: auroraIamRole.roleArn },
                 { roleArn: auroraIamPeformanceInsightRole.roleArn },
@@ -226,7 +228,7 @@ export class cfDatabaseStack extends Construct {
             dbSubnetGroupName: auroraSubnetGroup.ref,
             backupRetentionPeriod: 7,
             backtrackWindow: 86400,
-            databaseName: `${props.projectName}-${props.envName}-aurora-db`,
+            databaseName: `${commonProps.projectName}-${envProps.envName}-aurora-db`,
             databaseInsightsMode: "standard",
             deletionProtection: false,
             enableCloudwatchLogsExports: [
@@ -251,7 +253,7 @@ export class cfDatabaseStack extends Construct {
         auroraCluster.applyRemovalPolicy(cdk.RemovalPolicy.SNAPSHOT);
         cdk.Tags.of(auroraCluster).add(
             "Name",
-            `${props.projectName}-${props.envName}-aurora-cluster`,
+            `${commonProps.projectName}-${envProps.envName}-aurora-cluster`,
         );
         cdk.Tags.of(auroraCluster).add("AutoStop", "true");
         cdk.Tags.of(auroraCluster).add("ProvisionedBy", "AWS");
@@ -265,7 +267,7 @@ export class cfDatabaseStack extends Construct {
             this,
             "AuroraWriterInstance",
             {
-                dbInstanceIdentifier: `${props.projectName}-${props.envName}-aurora-writer-instance`,
+                dbInstanceIdentifier: `${commonProps.projectName}-${envProps.envName}-aurora-writer-instance`,
                 dbInstanceClass: "db.t4g.medium",
                 engine: "aurora-postgresql",
                 dbClusterIdentifier: auroraCluster.ref,
@@ -287,7 +289,7 @@ export class cfDatabaseStack extends Construct {
             this,
             "AuroraReaderInstance",
             {
-                dbInstanceIdentifier: `${props.projectName}-${props.envName}-aurora-reader-instance`,
+                dbInstanceIdentifier: `${commonProps.projectName}-${envProps.envName}-aurora-reader-instance`,
                 dbInstanceClass: "db.t4g.medium",
                 engine: "aurora-postgresql",
                 dbClusterIdentifier: auroraCluster.ref,
@@ -314,11 +316,11 @@ export class cfDatabaseStack extends Construct {
 
         cdk.Tags.of(auroraReaderInstance).add(
             "Name",
-            `${props.projectName}-${props.envName}-aurora-reader-instance`,
+            `${commonProps.projectName}-${envProps.envName}-aurora-reader-instance`,
         );
         cdk.Tags.of(auroraWriterInstance).add(
             "Name",
-            `${props.projectName}-${props.envName}-aurora-writer-instance`,
+            `${commonProps.projectName}-${envProps.envName}-aurora-writer-instance`,
         );
 
         // ------------------------------------------------------------
@@ -336,7 +338,7 @@ export class cfDatabaseStack extends Construct {
 
         cdk.Tags.of(elasticacheSubnetGroup).add(
             "Name",
-            `${props.projectName}-${props.envName}-elasticache-subnet-group`,
+            `${commonProps.projectName}-${envProps.envName}-elasticache-subnet-group`,
         );
         cdk.Tags.of(elasticacheSubnetGroup).add("ProvisionedBy", "AWS");
 
@@ -356,7 +358,7 @@ export class cfDatabaseStack extends Construct {
         );
         cdk.Tags.of(elasticacheParameterGroup).add(
             "Name",
-            `${props.projectName}-${props.envName}-elasticache-parameter-group`,
+            `${commonProps.projectName}-${envProps.envName}-elasticache-parameter-group`,
         );
         cdk.Tags.of(elasticacheParameterGroup).add("ProvisionedBy", "AWS");
 
@@ -408,7 +410,7 @@ export class cfDatabaseStack extends Construct {
 
         cdk.Tags.of(elasticacheReplicationGroup).add(
             "Name",
-            `${props.projectName}-${props.envName}-elasticache-replication-group`,
+            `${commonProps.projectName}-${envProps.envName}-elasticache-replication-group`,
         );
         cdk.Tags.of(elasticacheReplicationGroup).add("ProvisionedBy", "AWS");
     }
