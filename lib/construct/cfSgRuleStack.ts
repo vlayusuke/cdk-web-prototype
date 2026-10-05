@@ -3,10 +3,11 @@ import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
-    envName: string;
+    dashboardName: string;
 }
 
 export interface envProps {
+    envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
@@ -43,26 +44,27 @@ export class cfSgRuleStack extends Construct {
     public readonly vpcEndPointKMSSecurityGroup: ec2.SecurityGroup;
     public readonly vpcEndPointCloudWatchLogsSecurityGroup: ec2.SecurityGroup;
 
-    constructor(scope: Construct, id: string, props: sgProps) {
+    constructor(scope: Construct, id: string, sgProps: sgProps) {
         super(scope, id);
 
         // Assign security group frames to the actual security groups
-        this.albSecurityGroup = props.albSecurityGroupFrame;
-        this.batchSecurityGroup = props.batchSecurityGroupFrame;
-        this.bastionSecurityGroup = props.bastionSecurityGroupFrame;
-        this.ecsSecurityGroup = props.ecsSecurityGroupFrame;
-        this.elasticacheSecurityGroup = props.elasticacheSecurityGroupFrame;
-        this.auroraSecurityGroup = props.auroraSecurityGroupFrame;
-        this.lambdaSecurityGroup = props.lambdaSecurityGroupFrame;
-        this.vpcEndPointS3SecurityGroup = props.vpcEndPointS3SecurityGroupFrame;
+        this.albSecurityGroup = sgProps.albSecurityGroupFrame;
+        this.batchSecurityGroup = sgProps.batchSecurityGroupFrame;
+        this.bastionSecurityGroup = sgProps.bastionSecurityGroupFrame;
+        this.ecsSecurityGroup = sgProps.ecsSecurityGroupFrame;
+        this.elasticacheSecurityGroup = sgProps.elasticacheSecurityGroupFrame;
+        this.auroraSecurityGroup = sgProps.auroraSecurityGroupFrame;
+        this.lambdaSecurityGroup = sgProps.lambdaSecurityGroupFrame;
+        this.vpcEndPointS3SecurityGroup =
+            sgProps.vpcEndPointS3SecurityGroupFrame;
         this.vpcEndPointECRSecurityGroup =
-            props.vpcEndPointECRSecurityGroupFrame;
+            sgProps.vpcEndPointECRSecurityGroupFrame;
         this.vpcEndPointSSMSecurityGroup =
-            props.vpcEndPointSSMSecurityGroupFrame;
+            sgProps.vpcEndPointSSMSecurityGroupFrame;
         this.vpcEndPointKMSSecurityGroup =
-            props.vpcEndPointKMSSecurityGroupFrame;
+            sgProps.vpcEndPointKMSSecurityGroupFrame;
         this.vpcEndPointCloudWatchLogsSecurityGroup =
-            props.vpcEndPointCloudWatchLogsSecurityGroupFrame;
+            sgProps.vpcEndPointCloudWatchLogsSecurityGroupFrame;
 
         // Security group rules for ALB
         this.albSecurityGroup.addIngressRule(
