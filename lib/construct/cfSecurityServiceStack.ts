@@ -5,10 +5,11 @@ import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
-    envName: string;
+    dashboardName: string;
 }
 
 export interface envProps {
+    envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
@@ -27,7 +28,8 @@ export class cfSecurityServiceStack extends Construct {
         scope: Construct,
         id: string,
         commonProps: commonProps,
-        props: kmsProps,
+        envProps: envProps,
+        kmsProps: kmsProps,
     ) {
         super(scope, id);
 
@@ -36,10 +38,10 @@ export class cfSecurityServiceStack extends Construct {
         // ------------------------------------------------------------
         // WAF requires the S3 logging destination bucket name to start with 'aws-waf-logs-'.
         const s3WAFv2LogsBucket = new s3.Bucket(this, "s3WAFv2LogsBucket", {
-            bucketName: `aws-waf-logs-${commonProps.projectName}-${commonProps.envName}-s3-wafv2logs`,
+            bucketName: `aws-waf-logs-${commonProps.projectName}-${envProps.envName}-s3-wafv2logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
-            encryptionKey: props.s3Key,
+            encryptionKey: kmsProps.s3Key,
             encryption: s3.BucketEncryption.KMS,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
             removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -49,12 +51,12 @@ export class cfSecurityServiceStack extends Construct {
 
         cdk.Tags.of(s3WAFv2LogsBucket).add(
             "Name",
-            `aws-waf-logs-${commonProps.projectName}-${commonProps.envName}-s3-wafv2logs`,
+            `aws-waf-logs-${commonProps.projectName}-${envProps.envName}-s3-wafv2logs`,
         );
         cdk.Tags.of(s3WAFv2LogsBucket).add("ProvisionedBy", "AWS");
 
         // Allow WAF log delivery to use the customer-managed KMS key encrypting the bucket.
-        props.s3Key.addToResourcePolicy(
+        kmsProps.s3Key.addToResourcePolicy(
             new iam.PolicyStatement({
                 sid: "AllowWafLogDeliveryToUseKey",
                 effect: iam.Effect.ALLOW,
@@ -189,7 +191,7 @@ export class cfSecurityServiceStack extends Construct {
 
         cdk.Tags.of(this).add(
             "Name",
-            `aws-waf-logs-${commonProps.projectName}-${commonProps.envName}-wafv2-webacl`,
+            `aws-waf-logs-${commonProps.projectName}-${envProps.envName}-wafv2-webacl`,
         );
         cdk.Tags.of(this).add("ProvisionedBy", "AWS");
 
