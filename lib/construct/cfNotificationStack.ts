@@ -11,10 +11,16 @@ import { Construct } from "constructs";
 
 export interface commonProps {
     projectName: string;
-    envName: string;
+    dashboardName: string;
 }
 
 export interface envProps {
+    envName: string;
+    vpcCidr: string;
+    defaultGatewayCidr: string;
+}
+
+export interface notificationProps {
     monitoringSlackWorkspaceId: string;
     monitoringSlackChannelId: string;
 }
@@ -34,8 +40,9 @@ export class cfNotificationStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        props: commonProps,
+        commonProps: commonProps,
         envProps: envProps,
+        notificationProps: notificationProps,
         kmsProps: kmsProps,
     ) {
         super(scope, id);
@@ -47,7 +54,7 @@ export class cfNotificationStack extends Construct {
             this,
             "SnsTopicMetricsAlarm",
             {
-                topicName: `${props.projectName}-${props.envName}-sns-metrics-alarm`,
+                topicName: `${commonProps.projectName}-${envProps.envName}-sns-metrics-alarm`,
                 displayName: "SNS Topic for CloudWatch Metrics Alarm",
                 enforceSSL: true,
                 masterKey: kmsProps.snsKeyArn,
@@ -57,7 +64,7 @@ export class cfNotificationStack extends Construct {
 
         cdk.Tags.of(this.snsTopicMetricsAlarm).add(
             "Name",
-            `${props.projectName}-${props.envName}-sns-metrics-alarm`,
+            `${commonProps.projectName}-${envProps.envName}-sns-metrics-alarm`,
         );
         cdk.Tags.of(this.snsTopicMetricsAlarm).add("ProvisionedBy", "AWS");
 
@@ -65,7 +72,7 @@ export class cfNotificationStack extends Construct {
         // Amazon SNS for Amazon CloudWatch Logs Alarm Configuration
         // ------------------------------------------------------------
         this.snsTopicLogsAlarm = new sns.Topic(this, "SnsTopicLogsAlarm", {
-            topicName: `${props.projectName}-${props.envName}-sns-logs-alarm`,
+            topicName: `${commonProps.projectName}-${envProps.envName}-sns-logs-alarm`,
             displayName: "SNS Topic for CloudWatch Logs Alarm",
             enforceSSL: true,
             masterKey: kmsProps.snsKeyArn,
@@ -74,7 +81,7 @@ export class cfNotificationStack extends Construct {
 
         cdk.Tags.of(this.snsTopicLogsAlarm).add(
             "Name",
-            `${props.projectName}-${props.envName}-sns-logs-alarm`,
+            `${commonProps.projectName}-${envProps.envName}-sns-logs-alarm`,
         );
         cdk.Tags.of(this.snsTopicLogsAlarm).add("ProvisionedBy", "AWS");
 
@@ -85,7 +92,7 @@ export class cfNotificationStack extends Construct {
             this,
             "SnsTopicEventNotification",
             {
-                topicName: `${props.projectName}-${props.envName}-sns-event-notification`,
+                topicName: `${commonProps.projectName}-${envProps.envName}-sns-event-notification`,
                 displayName: "SNS Topic for Event Notification",
                 enforceSSL: true,
                 masterKey: kmsProps.snsKeyArn,
@@ -95,7 +102,7 @@ export class cfNotificationStack extends Construct {
 
         cdk.Tags.of(this.snsTopicEventNotification).add(
             "Name",
-            `${props.projectName}-${props.envName}-sns-event-notification`,
+            `${commonProps.projectName}-${envProps.envName}-sns-event-notification`,
         );
         cdk.Tags.of(this.snsTopicEventNotification).add("ProvisionedBy", "AWS");
 
@@ -103,9 +110,9 @@ export class cfNotificationStack extends Construct {
             this,
             "SlackChannelConfiguration",
             {
-                slackChannelConfigurationName: `${props.projectName}-${props.envName}-slack-channel`,
-                slackWorkspaceId: envProps.monitoringSlackWorkspaceId,
-                slackChannelId: envProps.monitoringSlackChannelId,
+                slackChannelConfigurationName: `${commonProps.projectName}-${envProps.envName}-slack-channel`,
+                slackWorkspaceId: notificationProps.monitoringSlackWorkspaceId,
+                slackChannelId: notificationProps.monitoringSlackChannelId,
                 notificationTopics: [
                     this.snsTopicMetricsAlarm,
                     this.snsTopicLogsAlarm,
