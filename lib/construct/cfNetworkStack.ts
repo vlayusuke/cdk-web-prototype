@@ -4,33 +4,34 @@ import { aws_ec2 as ec2, aws_s3 as s3 } from "aws-cdk-lib";
 import { IpAddresses } from "aws-cdk-lib/aws-ec2";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
     availabilityZones: [string, string];
 }
 
-export interface kmsProps {
+export interface KmsProps {
     s3Key: kms.IKey;
 }
 
 // ------------------------------------------------------------
 // [02] - Network Configuration Stack
 // ------------------------------------------------------------
-export class cfNetworkStack extends Construct {
+export class CfNetworkStack extends Construct {
     public readonly Vpc: ec2.IVpc;
 
     constructor(
         scope: Construct,
         id: string,
-        props: commonProps & envProps,
-        kmsProps: kmsProps,
+        kmsProps: KmsProps,
+        commonProps: CommonProps,
+        envProps: EnvProps,
     ) {
         super(scope, id);
 
@@ -38,8 +39,8 @@ export class cfNetworkStack extends Construct {
         // Amazon VPC Configuration
         // ------------------------------------------------------------
         const Vpc = new ec2.Vpc(this, "Vpc", {
-            ipAddresses: IpAddresses.cidr(props.vpcCidr),
-            availabilityZones: props.availabilityZones,
+            ipAddresses: IpAddresses.cidr(envProps.vpcCidr),
+            availabilityZones: envProps.availabilityZones,
             natGateways: 2,
 
             subnetConfiguration: [
@@ -65,45 +66,45 @@ export class cfNetworkStack extends Construct {
 
         cdk.Tags.of(Vpc).add(
             "Name",
-            `${props.projectName}-${props.envName}-vpc`,
+            `${commonProps.projectName}-${envProps.envName}-vpc`,
         );
         cdk.Tags.of(Vpc).add("ProvisionedBy", "AWS");
 
         for (const [index, subnet] of Vpc.publicSubnets.entries()) {
-            const zoneSuffix = props.availabilityZones[index].slice(-1);
+            const zoneSuffix = envProps.availabilityZones[index].slice(-1);
             const routeTable = subnet.node.findChild(
                 "RouteTable",
             ) as ec2.CfnRouteTable;
 
             cdk.Tags.of(routeTable).add(
                 "Name",
-                `${props.projectName}-${props.envName}-pubsub-route-table-az-${zoneSuffix}`,
+                `${commonProps.projectName}-${envProps.envName}-pubsub-route-table-az-${zoneSuffix}`,
             );
             cdk.Tags.of(routeTable).add("ProvisionedBy", "AWS");
         }
 
         for (const [index, subnet] of Vpc.privateSubnets.entries()) {
-            const zoneSuffix = props.availabilityZones[index].slice(-1);
+            const zoneSuffix = envProps.availabilityZones[index].slice(-1);
             const routeTable = subnet.node.findChild(
                 "RouteTable",
             ) as ec2.CfnRouteTable;
 
             cdk.Tags.of(routeTable).add(
                 "Name",
-                `${props.projectName}-${props.envName}-prvsub-route-table-az-${zoneSuffix}`,
+                `${commonProps.projectName}-${envProps.envName}-prvsub-route-table-az-${zoneSuffix}`,
             );
             cdk.Tags.of(routeTable).add("ProvisionedBy", "AWS");
         }
 
         for (const [index, subnet] of Vpc.isolatedSubnets.entries()) {
-            const zoneSuffix = props.availabilityZones[index].slice(-1);
+            const zoneSuffix = envProps.availabilityZones[index].slice(-1);
             const routeTable = subnet.node.findChild(
                 "RouteTable",
             ) as ec2.CfnRouteTable;
 
             cdk.Tags.of(routeTable).add(
                 "Name",
-                `${props.projectName}-${props.envName}-protsub-route-table-az-${zoneSuffix}`,
+                `${commonProps.projectName}-${envProps.envName}-protsub-route-table-az-${zoneSuffix}`,
             );
             cdk.Tags.of(routeTable).add("ProvisionedBy", "AWS");
         }
@@ -123,7 +124,7 @@ export class cfNetworkStack extends Construct {
 
         cdk.Tags.of(internetGateway).add(
             "Name",
-            `${props.projectName}-${props.envName}-igw`,
+            `${commonProps.projectName}-${envProps.envName}-igw`,
         );
         cdk.Tags.of(internetGateway).add("ProvisionedBy", "AWS");
 
@@ -145,7 +146,7 @@ export class cfNetworkStack extends Construct {
 
         cdk.Tags.of(virtualPrivateGateway).add(
             "Name",
-            `${props.projectName}-${props.envName}-vgw`,
+            `${commonProps.projectName}-${envProps.envName}-vgw`,
         );
         cdk.Tags.of(virtualPrivateGateway).add("ProvisionedBy", "AWS");
 
@@ -153,7 +154,7 @@ export class cfNetworkStack extends Construct {
         // NAT Gateway Configuration
         // ------------------------------------------------------------
         const natGateways = Vpc.publicSubnets.map((subnet, index) => {
-            const zoneSuffix = props.availabilityZones[index].slice(-1);
+            const zoneSuffix = envProps.availabilityZones[index].slice(-1);
             const natGateway = new ec2.CfnNatGateway(
                 this,
                 `NatGatewayAZ${zoneSuffix}`,
@@ -169,7 +170,7 @@ export class cfNetworkStack extends Construct {
 
             cdk.Tags.of(natGateway).add(
                 "Name",
-                `${props.projectName}-${props.envName}-nat-gateway-az-${zoneSuffix}`,
+                `${commonProps.projectName}-${envProps.envName}-nat-gateway-az-${zoneSuffix}`,
             );
             cdk.Tags.of(natGateway).add("ProvisionedBy", "AWS");
 
@@ -180,10 +181,10 @@ export class cfNetworkStack extends Construct {
         // Public Subnet Route Configuration
         // ------------------------------------------------------------
         for (const [index, subnet] of Vpc.publicSubnets.entries()) {
-            const zoneSuffix = props.availabilityZones[index].slice(-1);
+            const zoneSuffix = envProps.availabilityZones[index].slice(-1);
             new ec2.CfnRoute(this, `PublicRouteAZ${zoneSuffix}`, {
                 routeTableId: subnet.routeTable.routeTableId,
-                destinationCidrBlock: props.defaultGatewayCidr,
+                destinationCidrBlock: envProps.defaultGatewayCidr,
                 gatewayId: internetGateway.ref,
             });
         }
@@ -192,10 +193,10 @@ export class cfNetworkStack extends Construct {
         // Private Subnet Route Configuration
         // ------------------------------------------------------------
         for (const [index, subnet] of Vpc.privateSubnets.entries()) {
-            const zoneSuffix = props.availabilityZones[index].slice(-1);
+            const zoneSuffix = envProps.availabilityZones[index].slice(-1);
             new ec2.CfnRoute(this, `PrivateRouteAZ${zoneSuffix}`, {
                 routeTableId: subnet.routeTable.routeTableId,
-                destinationCidrBlock: props.defaultGatewayCidr,
+                destinationCidrBlock: envProps.defaultGatewayCidr,
                 natGatewayId: natGateways[index].ref,
             });
         }
@@ -215,7 +216,7 @@ export class cfNetworkStack extends Construct {
 
         cdk.Tags.of(s3VPCFlowLogsBucket).add(
             "Name",
-            `${props.projectName}-${props.envName}-s3-vpc-flow-logs-bucket`,
+            `${commonProps.projectName}-${envProps.envName}-s3-vpc-flow-logs-bucket`,
         );
         cdk.Tags.of(s3VPCFlowLogsBucket).add("ProvisionedBy", "AWS");
 
@@ -237,7 +238,7 @@ export class cfNetworkStack extends Construct {
 
         cdk.Tags.of(cfnVPVFlowLog).add(
             "Name",
-            `${props.projectName}-${props.envName}-vpc-flow-log`,
+            `${commonProps.projectName}-${envProps.envName}-vpc-flow-log`,
         );
         cdk.Tags.of(cfnVPVFlowLog).add("ProvisionedBy", "AWS");
 
