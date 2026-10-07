@@ -7,27 +7,27 @@ import {
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
     auroraMaxConnections: number;
     lambdaConcurrentExecutions: number;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
 
-export interface ecsProps {
+export interface EcsProps {
     ecsAppScalableTarget: ecs.ScalableTaskCount;
 }
 
 // ------------------------------------------------------------
 // [13] - cfMonitoringStack
 // ------------------------------------------------------------
-export class cfMonitoringStack extends Construct {
+export class CfMonitoringStack extends Construct {
     private readonly cpuUtilizationHighAlarmEcsApp: cloudwatch.Alarm;
     private readonly cpuUtilizationLowAlarmEcsApp: cloudwatch.Alarm;
     private readonly memoryUtilizationHighAlarmEcsApp: cloudwatch.Alarm;
@@ -65,9 +65,9 @@ export class cfMonitoringStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        commonProps: commonProps,
-        envProps: envProps,
-        ecsProps: ecsProps,
+        ecsProps: EcsProps,
+        commonProps: CommonProps,
+        envProps: EnvProps,
     ) {
         super(scope, id);
 
