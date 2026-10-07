@@ -130,42 +130,42 @@ const addJsonContainerDefinitions = (
     }
 };
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
 
-export interface kmsProps {
+export interface KmsProps {
     applicationKey: kms.IKey;
 }
 
-export interface networkingProps {
+export interface NetworkingProps {
     vpcId: string;
     subnetIds: string[];
 }
 
-export interface sgProps {
+export interface SgProps {
     ecsSecurityGroup: ec2.SecurityGroup;
 }
 
-export interface ecsProps {
+export interface EcsProps {
     ecsCluster: ecs.Cluster;
 }
 
-export interface albProps {
+export interface AlbProps {
     targetGroup: elbv2.IApplicationTargetGroup;
 }
 
 // ------------------------------------------------------------
 // [11] - Compute Definition Stack
 // ------------------------------------------------------------
-export class cfComputeDefinitionStack extends Construct {
+export class CfComputeDefinitionStack extends Construct {
     public readonly ecsAppScalableTarget: ecs.ScalableTaskCount;
     public readonly ssmParameterStoreAppKey: ssm.StringParameter;
     public readonly ssmParamenterStoreJwtSecret: ssm.StringParameter;
@@ -177,12 +177,12 @@ export class cfComputeDefinitionStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        sgProps: sgProps,
-        albProps: albProps,
-        ecsProps: ecsProps,
-        kmsProps: kmsProps,
-        commonProps: commonProps,
-        envProps: envProps,
+        sgProps: SgProps,
+        albProps: AlbProps,
+        ecsProps: EcsProps,
+        kmsProps: KmsProps,
+        commonProps: CommonProps,
+        envProps: EnvProps,
     ) {
         super(scope, id);
 
