@@ -3,33 +3,33 @@ import { aws_iam as iam, aws_s3 as s3, aws_wafv2 as wafv2 } from "aws-cdk-lib";
 import type * as kms from "aws-cdk-lib/aws-kms";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
 
-export interface kmsProps {
+export interface KmsProps {
     s3Key: kms.IKey;
 }
 
 // ------------------------------------------------------------
 // [05] - Security Service Stack
 // ------------------------------------------------------------
-export class cfSecurityServiceStack extends Construct {
+export class CfSecurityServiceStack extends Construct {
     public readonly wafv2WebACL: wafv2.CfnWebACL;
 
     constructor(
         scope: Construct,
         id: string,
-        commonProps: commonProps,
-        envProps: envProps,
-        kmsProps: kmsProps,
+        commonProps: CommonProps,
+        envProps: EnvProps,
+        kmsProps: KmsProps,
     ) {
         super(scope, id);
 
