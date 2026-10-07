@@ -6,12 +6,12 @@ import {
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
@@ -20,7 +20,7 @@ export interface envProps {
 // ------------------------------------------------------------
 // [01] - Security Configuration Stack
 // ------------------------------------------------------------
-export class cfSecurityConfigStack extends Construct {
+export class CfSecurityConfigStack extends Construct {
     public readonly applicationKey: kms.IKey;
     public readonly bastionKey: kms.IKey;
     public readonly s3Key: kms.IKey;
@@ -34,7 +34,12 @@ export class cfSecurityConfigStack extends Construct {
     public readonly codeCommitKey: kms.IKey;
     public readonly postgresqlSecret: secretsmanager.ISecret;
 
-    constructor(scope: Construct, id: string, props: commonProps & envProps) {
+    constructor(
+        scope: Construct,
+        id: string,
+        commonProps: CommonProps,
+        envProps: EnvProps,
+    ) {
         super(scope, id);
 
         // ------------------------------------------------------------
@@ -49,7 +54,7 @@ export class cfSecurityConfigStack extends Construct {
 
         cdk.Tags.of(this.applicationKey).add(
             "Name",
-            `${props.projectName}-${props.envName}-kms-application-key`,
+            `${commonProps.projectName}-${envProps.envName}-kms-application-key`,
         );
         cdk.Tags.of(this.applicationKey).add("ProvisionedBy", "AWS");
 
@@ -62,7 +67,7 @@ export class cfSecurityConfigStack extends Construct {
 
         cdk.Tags.of(this.bastionKey).add(
             "Name",
-            `${props.projectName}-${props.envName}-kms-bastion-key`,
+            `${commonProps.projectName}-${envProps.envName}-kms-bastion-key`,
         );
         cdk.Tags.of(this.bastionKey).add("ProvisionedBy", "AWS");
 
@@ -123,7 +128,7 @@ export class cfSecurityConfigStack extends Construct {
 
         cdk.Tags.of(this.ecrKey).add(
             "Name",
-            `${props.projectName}-${props.envName}-kms-ecr-key`,
+            `${commonProps.projectName}-${envProps.envName}-kms-ecr-key`,
         );
         cdk.Tags.of(this.ecrKey).add("ProvisionedBy", "AWS");
 
@@ -164,7 +169,7 @@ export class cfSecurityConfigStack extends Construct {
 
         cdk.Tags.of(this.auroraKey).add(
             "Name",
-            `${props.projectName}-${props.envName}-kms-aurora-key`,
+            `${commonProps.projectName}-${envProps.envName}-kms-aurora-key`,
         );
         cdk.Tags.of(this.auroraKey).add("ProvisionedBy", "AWS");
 
@@ -205,7 +210,7 @@ export class cfSecurityConfigStack extends Construct {
 
         cdk.Tags.of(this.elasticacheKey).add(
             "Name",
-            `${props.projectName}-${props.envName}-kms-elasticache-key`,
+            `${commonProps.projectName}-${envProps.envName}-kms-elasticache-key`,
         );
         cdk.Tags.of(this.elasticacheKey).add("ProvisionedBy", "AWS");
 
@@ -248,7 +253,7 @@ export class cfSecurityConfigStack extends Construct {
 
         cdk.Tags.of(this.s3Key).add(
             "Name",
-            `${props.projectName}-${props.envName}-kms-s3-key`,
+            `${commonProps.projectName}-${envProps.envName}-kms-s3-key`,
         );
         cdk.Tags.of(this.s3Key).add("ProvisionedBy", "AWS");
 
@@ -289,7 +294,7 @@ export class cfSecurityConfigStack extends Construct {
 
         cdk.Tags.of(this.ebsKey).add(
             "Name",
-            `${props.projectName}-${props.envName}-kms-ebs-key`,
+            `${commonProps.projectName}-${envProps.envName}-kms-ebs-key`,
         );
         cdk.Tags.of(this.ebsKey).add("ProvisionedBy", "AWS");
 
@@ -330,7 +335,7 @@ export class cfSecurityConfigStack extends Construct {
 
         cdk.Tags.of(this.lambdaKey).add(
             "Name",
-            `${props.projectName}-${props.envName}-kms-lambda-key`,
+            `${commonProps.projectName}-${envProps.envName}-kms-lambda-key`,
         );
         cdk.Tags.of(this.lambdaKey).add("ProvisionedBy", "AWS");
 
@@ -371,7 +376,7 @@ export class cfSecurityConfigStack extends Construct {
 
         cdk.Tags.of(this.eventBridgeKey).add(
             "Name",
-            `${props.projectName}-${props.envName}-kms-event-bridge-key`,
+            `${commonProps.projectName}-${envProps.envName}-kms-event-bridge-key`,
         );
         cdk.Tags.of(this.eventBridgeKey).add("ProvisionedBy", "AWS");
 
@@ -414,7 +419,7 @@ export class cfSecurityConfigStack extends Construct {
 
         cdk.Tags.of(this.snsKey).add(
             "Name",
-            `${props.projectName}-${props.envName}-kms-sns-key`,
+            `${commonProps.projectName}-${envProps.envName}-kms-sns-key`,
         );
         cdk.Tags.of(this.snsKey).add("ProvisionedBy", "AWS");
 
@@ -455,7 +460,7 @@ export class cfSecurityConfigStack extends Construct {
 
         cdk.Tags.of(this.codeCommitKey).add(
             "Name",
-            `${props.projectName}-${props.envName}-kms-codecommit-key`,
+            `${commonProps.projectName}-${envProps.envName}-kms-codecommit-key`,
         );
         cdk.Tags.of(this.codeCommitKey).add("ProvisionedBy", "AWS");
 
@@ -522,7 +527,7 @@ export class cfSecurityConfigStack extends Construct {
 
         cdk.Tags.of(this.postgresqlSecret).add(
             "Name",
-            `${props.projectName}-${props.envName}-smg-postgresql-secret`,
+            `${commonProps.projectName}-${envProps.envName}-smg-postgresql-secret`,
         );
         cdk.Tags.of(this.postgresqlSecret).add("ProvisionedBy", "AWS");
     }
