@@ -8,28 +8,28 @@ import type * as ec2 from "aws-cdk-lib/aws-ec2";
 import type * as kms from "aws-cdk-lib/aws-kms";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
 
-export interface kmsProps {
+export interface KmsProps {
     auroraKey: kms.IKey;
     elasticacheKey: kms.IKey;
 }
 
-export interface networkingProps {
+export interface NetworkingProps {
     subnetIds: string[];
     availabilityZones: [string, string];
 }
 
-export interface sgProps {
+export interface SgProps {
     auroraSecurityGroup: ec2.SecurityGroup;
     elasticacheSecurityGroup: ec2.SecurityGroup;
 }
@@ -37,15 +37,15 @@ export interface sgProps {
 // ------------------------------------------------------------
 // [04] - Database Configuration Stack
 // ------------------------------------------------------------
-export class cfDatabaseStack extends Construct {
+export class CfDatabaseStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        commonProps: commonProps,
-        envProps: envProps,
-        sgProps: sgProps,
-        networkingProps: networkingProps,
-        kmsProps: kmsProps,
+        sgProps: SgProps,
+        networkingProps: NetworkingProps,
+        kmsProps: KmsProps,
+        commonProps: CommonProps,
+        envProps: EnvProps,
     ) {
         super(scope, id);
 
