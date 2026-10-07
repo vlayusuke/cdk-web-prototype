@@ -2,25 +2,25 @@ import * as cdk from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
 
-export interface vpcProps {
+export interface NetworkProps {
     vpc: ec2.IVpc;
 }
 
 // ------------------------------------------------------------
 // [03] - Security group Frame Stack
 // ------------------------------------------------------------
-export class cfSgFrameStack extends Construct {
+export class CfSgFrameStack extends Construct {
     public readonly vpc: ec2.IVpc;
     public readonly albSecurityGroupFrame: ec2.SecurityGroup;
     public readonly batchSecurityGroupFrame: ec2.SecurityGroup;
@@ -38,12 +38,13 @@ export class cfSgFrameStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        props: commonProps & envProps,
-        vpcProps: vpcProps,
+        networkProps: NetworkProps,
+        commonProps: CommonProps,
+        envProps: EnvProps,
     ) {
         super(scope, id);
 
-        this.vpc = vpcProps.vpc;
+        this.vpc = networkProps.vpc;
 
         // ------------------------------------------------------------
         // Security group for ALB Configuration (Frame Only)
@@ -53,15 +54,15 @@ export class cfSgFrameStack extends Construct {
             "AlbSecurityGroupFrame",
             {
                 vpc: this.vpc,
-                description: `Security group for ALB - ${props.projectName}-${props.envName}`,
-                securityGroupName: `${props.projectName}-${props.envName}-sg-alb`,
+                description: `Security group for ALB - ${commonProps.projectName}-${envProps.envName}`,
+                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-alb`,
                 allowAllOutbound: false,
             },
         );
 
         cdk.Tags.of(this.albSecurityGroupFrame).add(
             "Name",
-            `${props.projectName}-${props.envName}-sg-alb`,
+            `${commonProps.projectName}-${envProps.envName}-sg-alb`,
         );
         cdk.Tags.of(this.albSecurityGroupFrame).add("ProvisionedBy", "AWS");
 
@@ -73,15 +74,15 @@ export class cfSgFrameStack extends Construct {
             "BastionSecurityGroupFrame",
             {
                 vpc: this.vpc,
-                description: `Security group for Amazon EC2 Bastion - ${props.projectName}-${props.envName}`,
-                securityGroupName: `${props.projectName}-${props.envName}-sg-bastion`,
+                description: `Security group for Amazon EC2 Bastion - ${commonProps.projectName}-${envProps.envName}`,
+                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-bastion`,
                 allowAllOutbound: false,
             },
         );
 
         cdk.Tags.of(this.bastionSecurityGroupFrame).add(
             "Name",
-            `${props.projectName}-${props.envName}-sg-bastion`,
+            `${commonProps.projectName}-${envProps.envName}-sg-bastion`,
         );
         cdk.Tags.of(this.bastionSecurityGroupFrame).add("ProvisionedBy", "AWS");
 
@@ -93,15 +94,15 @@ export class cfSgFrameStack extends Construct {
             "BatchSecurityGroupFrame",
             {
                 vpc: this.vpc,
-                description: `Security group for Amazon EC2 Batch - ${props.projectName}-${props.envName}`,
-                securityGroupName: `${props.projectName}-${props.envName}-sg-batch`,
+                description: `Security group for Amazon EC2 Batch - ${commonProps.projectName}-${envProps.envName}`,
+                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-batch`,
                 allowAllOutbound: false,
             },
         );
 
         cdk.Tags.of(this.batchSecurityGroupFrame).add(
             "Name",
-            `${props.projectName}-${props.envName}-sg-batch`,
+            `${commonProps.projectName}-${envProps.envName}-sg-batch`,
         );
         cdk.Tags.of(this.batchSecurityGroupFrame).add("ProvisionedBy", "AWS");
 
@@ -113,15 +114,15 @@ export class cfSgFrameStack extends Construct {
             "EcsSecurityGroupFrame",
             {
                 vpc: this.vpc,
-                description: `Security group for Amazon ECS - ${props.projectName}-${props.envName}`,
-                securityGroupName: `${props.projectName}-${props.envName}-sg-ecs`,
+                description: `Security group for Amazon ECS - ${commonProps.projectName}-${envProps.envName}`,
+                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-ecs`,
                 allowAllOutbound: false,
             },
         );
 
         cdk.Tags.of(this.ecsSecurityGroupFrame).add(
             "Name",
-            `${props.projectName}-${props.envName}-sg-ecs`,
+            `${commonProps.projectName}-${envProps.envName}-sg-ecs`,
         );
         cdk.Tags.of(this.ecsSecurityGroupFrame).add("ProvisionedBy", "AWS");
 
@@ -133,15 +134,15 @@ export class cfSgFrameStack extends Construct {
             "AuroraSecurityGroupFrame",
             {
                 vpc: this.vpc,
-                description: `Security group for Amazon Aurora - ${props.projectName}-${props.envName}`,
-                securityGroupName: `${props.projectName}-${props.envName}-sg-aurora`,
+                description: `Security group for Amazon Aurora - ${commonProps.projectName}-${envProps.envName}`,
+                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-aurora`,
                 allowAllOutbound: false,
             },
         );
 
         cdk.Tags.of(this.auroraSecurityGroupFrame).add(
             "Name",
-            `${props.projectName}-${props.envName}-sg-aurora`,
+            `${commonProps.projectName}-${envProps.envName}-sg-aurora`,
         );
         cdk.Tags.of(this.auroraSecurityGroupFrame).add("ProvisionedBy", "AWS");
 
@@ -153,15 +154,15 @@ export class cfSgFrameStack extends Construct {
             "ElasticacheSecurityGroupFrame",
             {
                 vpc: this.vpc,
-                description: `Security group for Amazon ElastiCache - ${props.projectName}-${props.envName}`,
-                securityGroupName: `${props.projectName}-${props.envName}-sg-elasticache`,
+                description: `Security group for Amazon ElastiCache - ${commonProps.projectName}-${envProps.envName}`,
+                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-elasticache`,
                 allowAllOutbound: false,
             },
         );
 
         cdk.Tags.of(this.elasticacheSecurityGroupFrame).add(
             "Name",
-            `${props.projectName}-${props.envName}-sg-elasticache`,
+            `${commonProps.projectName}-${envProps.envName}-sg-elasticache`,
         );
         cdk.Tags.of(this.elasticacheSecurityGroupFrame).add(
             "ProvisionedBy",
@@ -176,15 +177,15 @@ export class cfSgFrameStack extends Construct {
             "LambdaSecurityGroupFrame",
             {
                 vpc: this.vpc,
-                description: `Security group for AWS Lambda - ${props.projectName}-${props.envName}`,
-                securityGroupName: `${props.projectName}-${props.envName}-sg-lambda`,
+                description: `Security group for AWS Lambda - ${commonProps.projectName}-${envProps.envName}`,
+                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-lambda`,
                 allowAllOutbound: false,
             },
         );
 
         cdk.Tags.of(this.lambdaSecurityGroupFrame).add(
             "Name",
-            `${props.projectName}-${props.envName}-sg-lambda`,
+            `${commonProps.projectName}-${envProps.envName}-sg-lambda`,
         );
         cdk.Tags.of(this.lambdaSecurityGroupFrame).add("ProvisionedBy", "AWS");
 
@@ -197,14 +198,14 @@ export class cfSgFrameStack extends Construct {
             {
                 vpc: this.vpc,
                 description: "Security group for Amazon S3",
-                securityGroupName: `${props.projectName}-${props.envName}-sg-vpc-endpoint-s3`,
+                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-s3`,
                 allowAllOutbound: false,
             },
         );
 
         cdk.Tags.of(this.vpcEndPointS3SecurityGroupFrame).add(
             "Name",
-            `${props.projectName}-${props.envName}-sg-vpc-endpoint-s3`,
+            `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-s3`,
         );
         cdk.Tags.of(this.vpcEndPointS3SecurityGroupFrame).add(
             "ProvisionedBy",
@@ -220,14 +221,14 @@ export class cfSgFrameStack extends Construct {
             {
                 vpc: this.vpc,
                 description: "Security group for Amazon ECR",
-                securityGroupName: `${props.projectName}-${props.envName}-sg-vpc-endpoint-ecr`,
+                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-ecr`,
                 allowAllOutbound: false,
             },
         );
 
         cdk.Tags.of(this.vpcEndPointECRSecurityGroupFrame).add(
             "Name",
-            `${props.projectName}-${props.envName}-sg-vpc-endpoint-ecr`,
+            `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-ecr`,
         );
         cdk.Tags.of(this.vpcEndPointECRSecurityGroupFrame).add(
             "ProvisionedBy",
@@ -243,14 +244,14 @@ export class cfSgFrameStack extends Construct {
             {
                 vpc: this.vpc,
                 description: "Security group for AWS Systems Manager",
-                securityGroupName: `${props.projectName}-${props.envName}-sg-vpc-endpoint-ssm`,
+                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-ssm`,
                 allowAllOutbound: false,
             },
         );
 
         cdk.Tags.of(this.vpcEndPointSSMSecurityGroupFrame).add(
             "Name",
-            `${props.projectName}-${props.envName}-sg-vpc-endpoint-ssm`,
+            `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-ssm`,
         );
         cdk.Tags.of(this.vpcEndPointSSMSecurityGroupFrame).add(
             "ProvisionedBy",
@@ -266,14 +267,14 @@ export class cfSgFrameStack extends Construct {
             {
                 vpc: this.vpc,
                 description: "Security group for AWS KMS",
-                securityGroupName: `${props.projectName}-${props.envName}-sg-vpc-endpoint-kms`,
+                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-kms`,
                 allowAllOutbound: false,
             },
         );
 
         cdk.Tags.of(this.vpcEndPointKMSSecurityGroupFrame).add(
             "Name",
-            `${props.projectName}-${props.envName}-sg-vpc-endpoint-kms`,
+            `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-kms`,
         );
         cdk.Tags.of(this.vpcEndPointKMSSecurityGroupFrame).add(
             "ProvisionedBy",
@@ -290,14 +291,14 @@ export class cfSgFrameStack extends Construct {
                 {
                     vpc: this.vpc,
                     description: "Security group for Amazon CloudWatch Logs",
-                    securityGroupName: `${props.projectName}-${props.envName}-sg-vpc-endpoint-cloudwatch-logs`,
+                    securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-cloudwatch-logs`,
                     allowAllOutbound: false,
                 },
             );
 
         cdk.Tags.of(this.vpcEndPointCloudWatchLogsSecurityGroupFrame).add(
             "Name",
-            `${props.projectName}-${props.envName}-sg-vpc-endpoint-cloudwatch-logs`,
+            `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-cloudwatch-logs`,
         );
         cdk.Tags.of(this.vpcEndPointCloudWatchLogsSecurityGroupFrame).add(
             "ProvisionedBy",
