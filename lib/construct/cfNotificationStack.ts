@@ -9,30 +9,30 @@ import {
 import type * as lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
 
-export interface notificationProps {
+export interface NotificationProps {
     monitoringSlackWorkspaceId: string;
     monitoringSlackChannelId: string;
 }
 
-export interface kmsProps {
+export interface KmsProps {
     snsKeyArn: kms.IKey;
 }
 
 // ------------------------------------------------------------
 // [12] - Notification Configuration Stack
 // ------------------------------------------------------------
-export class cfNotificationStack extends Construct {
+export class CfNotificationStack extends Construct {
     public readonly snsTopicMetricsAlarm: sns.Topic;
     public readonly snsTopicLogsAlarm: sns.Topic;
     public readonly snsTopicEventNotification: sns.Topic;
@@ -40,10 +40,10 @@ export class cfNotificationStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        commonProps: commonProps,
-        envProps: envProps,
-        notificationProps: notificationProps,
-        kmsProps: kmsProps,
+        notificationProps: NotificationProps,
+        kmsProps: KmsProps,
+        commonProps: CommonProps,
+        envProps: EnvProps,
     ) {
         super(scope, id);
 
