@@ -6,25 +6,25 @@ import type * as kms from "aws-cdk-lib/aws-kms";
 import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
     nakedDomainName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
 
-export interface networkingProps {
+export interface NetworkProps {
     vpcId: string;
     privateSubnetIds: string[];
     privateSubnetRouteTableIds: string[];
 }
 
-export interface sgProps {
+export interface SgProps {
     vpcEndPointS3SecurityGroup: ec2.SecurityGroup;
     vpcEndPointECRSecurityGroup: ec2.SecurityGroup;
     vpcEndPointSSMSecurityGroup: ec2.SecurityGroup;
@@ -32,18 +32,16 @@ export interface sgProps {
     vpcEndPointCloudWatchLogsSecurityGroup: ec2.SecurityGroup;
 }
 
-export interface kmsProps {
+export interface KmsProps {
     applicationKey: kms.IKey;
     ecrKey: kms.IKey;
     s3Key: kms.IKey;
 }
 
-export interface CfStorageStackProps extends networkingProps, kmsProps {}
-
 // ------------------------------------------------------------
 // [06] - Storage Stack
 // ------------------------------------------------------------
-export class cfStorageStack extends Construct {
+export class CfStorageStack extends Construct {
     public readonly vpcEndpointECRDocker: ec2.CfnVPCEndpoint;
     public readonly vpcEndpointECRAPI: ec2.CfnVPCEndpoint;
     public readonly vpcEndpointKMS: ec2.CfnVPCEndpoint;
@@ -69,10 +67,11 @@ export class cfStorageStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        props: CfStorageStackProps,
-        sgProps: sgProps,
-        commonProps: commonProps,
-        envProps: envProps,
+        networkProps: NetworkProps,
+        kmsProps: KmsProps,
+        sgProps: SgProps,
+        commonProps: CommonProps,
+        envProps: EnvProps,
     ) {
         super(scope, id);
 
@@ -189,7 +188,7 @@ export class cfStorageStack extends Construct {
                         "kms:Encrypt",
                         "kms:GenerateDataKey",
                     ],
-                    Resource: props.applicationKey.keyArn,
+                    Resource: kmsProps.applicationKey.keyArn,
                 },
             ],
         };
@@ -283,14 +282,14 @@ export class cfStorageStack extends Construct {
             this,
             "vpcEndpointECRDocker",
             {
-                vpcId: props.vpcId,
+                vpcId: networkProps.vpcId,
                 serviceName: `com.amazonaws.${cdk.Aws.REGION}.ecr.dkr`,
                 vpcEndpointType: "Interface",
                 policyDocument: ecrEndpointPolicy,
                 securityGroupIds: [
                     sgProps.vpcEndPointECRSecurityGroup.securityGroupId,
                 ],
-                subnetIds: props.privateSubnetIds,
+                subnetIds: networkProps.privateSubnetIds,
                 ipAddressType: "ipv4",
                 privateDnsEnabled: true,
                 dnsOptions: {
@@ -312,14 +311,14 @@ export class cfStorageStack extends Construct {
             this,
             "vpcEndpointECRAPI",
             {
-                vpcId: props.vpcId,
+                vpcId: networkProps.vpcId,
                 serviceName: `com.amazonaws.${cdk.Aws.REGION}.ecr.api`,
                 vpcEndpointType: "Interface",
                 policyDocument: ecrEndpointPolicy,
                 securityGroupIds: [
                     sgProps.vpcEndPointECRSecurityGroup.securityGroupId,
                 ],
-                subnetIds: props.privateSubnetIds,
+                subnetIds: networkProps.privateSubnetIds,
                 ipAddressType: "ipv4",
                 privateDnsEnabled: true,
                 dnsOptions: {
@@ -338,14 +337,14 @@ export class cfStorageStack extends Construct {
         // VPC Endpoint for AWS KMS Interface Configuration
         // ------------------------------------------------------------
         this.vpcEndpointKMS = new ec2.CfnVPCEndpoint(this, "vpcEndpointKMS", {
-            vpcId: props.vpcId,
+            vpcId: networkProps.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.kms`,
             vpcEndpointType: "Interface",
             policyDocument: kmsEndpointPolicy,
             securityGroupIds: [
                 sgProps.vpcEndPointKMSSecurityGroup.securityGroupId,
             ],
-            subnetIds: props.privateSubnetIds,
+            subnetIds: networkProps.privateSubnetIds,
             ipAddressType: "ipv4",
             privateDnsEnabled: true,
             dnsOptions: {
@@ -364,14 +363,14 @@ export class cfStorageStack extends Construct {
         // All SSM endpoints share the same HTTPS clients and TCP 443 policy.
         // ------------------------------------------------------------
         this.vpcEndpointSSM = new ec2.CfnVPCEndpoint(this, "vpcEndpointSSM", {
-            vpcId: props.vpcId,
+            vpcId: networkProps.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.ssm`,
             vpcEndpointType: "Interface",
             policyDocument: ssmEndpointPolicy,
             securityGroupIds: [
                 sgProps.vpcEndPointSSMSecurityGroup.securityGroupId,
             ],
-            subnetIds: props.privateSubnetIds,
+            subnetIds: networkProps.privateSubnetIds,
             ipAddressType: "ipv4",
             privateDnsEnabled: true,
             dnsOptions: {
@@ -392,14 +391,14 @@ export class cfStorageStack extends Construct {
             this,
             "vpcEndpointSSMEC2",
             {
-                vpcId: props.vpcId,
+                vpcId: networkProps.vpcId,
                 serviceName: `com.amazonaws.${cdk.Aws.REGION}.ssmmessages`,
                 vpcEndpointType: "Interface",
                 policyDocument: ssmMessagesEndpointPolicy,
                 securityGroupIds: [
                     sgProps.vpcEndPointSSMSecurityGroup.securityGroupId,
                 ],
-                subnetIds: props.privateSubnetIds,
+                subnetIds: networkProps.privateSubnetIds,
                 ipAddressType: "ipv4",
                 privateDnsEnabled: true,
                 dnsOptions: {
@@ -421,14 +420,14 @@ export class cfStorageStack extends Construct {
             this,
             "vpcEndpointSSMEC2Messages",
             {
-                vpcId: props.vpcId,
+                vpcId: networkProps.vpcId,
                 serviceName: `com.amazonaws.${cdk.Aws.REGION}.ec2messages`,
                 vpcEndpointType: "Interface",
                 policyDocument: ec2MessagesEndpointPolicy,
                 securityGroupIds: [
                     sgProps.vpcEndPointSSMSecurityGroup.securityGroupId,
                 ],
-                subnetIds: props.privateSubnetIds,
+                subnetIds: networkProps.privateSubnetIds,
                 ipAddressType: "ipv4",
                 privateDnsEnabled: true,
                 dnsOptions: {
@@ -450,7 +449,7 @@ export class cfStorageStack extends Construct {
             this,
             "vpcEndpointCloudWatchLogs",
             {
-                vpcId: props.vpcId,
+                vpcId: networkProps.vpcId,
                 serviceName: `com.amazonaws.${cdk.Aws.REGION}.logs`,
                 vpcEndpointType: "Interface",
                 policyDocument: cloudWatchLogsEndpointPolicy,
@@ -458,7 +457,7 @@ export class cfStorageStack extends Construct {
                     sgProps.vpcEndPointCloudWatchLogsSecurityGroup
                         .securityGroupId,
                 ],
-                subnetIds: props.privateSubnetIds,
+                subnetIds: networkProps.privateSubnetIds,
                 ipAddressType: "ipv4",
                 privateDnsEnabled: true,
                 dnsOptions: {
@@ -477,10 +476,10 @@ export class cfStorageStack extends Construct {
         // VPC Endpoint for Amazon S3 Gateway Configuration
         // ------------------------------------------------------------
         this.vpcEndpointS3 = new ec2.CfnVPCEndpoint(this, "vpcEndpointS3", {
-            vpcId: props.vpcId,
+            vpcId: networkProps.vpcId,
             serviceName: `com.amazonaws.${cdk.Aws.REGION}.s3`,
             vpcEndpointType: "Gateway",
-            routeTableIds: props.privateSubnetRouteTableIds,
+            routeTableIds: networkProps.privateSubnetRouteTableIds,
             policyDocument: s3EndpointPolicy,
         });
 
@@ -506,7 +505,7 @@ export class cfStorageStack extends Construct {
                 imageTagMutability: ecr.TagMutability.IMMUTABLE,
                 imageScanOnPush: true,
                 encryption: ecr.RepositoryEncryption.KMS,
-                encryptionKey: props.ecrKey,
+                encryptionKey: kmsProps.ecrKey,
             },
         );
 
@@ -533,7 +532,7 @@ export class cfStorageStack extends Construct {
                 imageTagMutability: ecr.TagMutability.IMMUTABLE,
                 imageScanOnPush: true,
                 encryption: ecr.RepositoryEncryption.KMS,
-                encryptionKey: props.ecrKey,
+                encryptionKey: kmsProps.ecrKey,
             },
         );
 
@@ -557,7 +556,7 @@ export class cfStorageStack extends Construct {
             imageTagMutability: ecr.TagMutability.IMMUTABLE,
             imageScanOnPush: true,
             encryption: ecr.RepositoryEncryption.KMS,
-            encryptionKey: props.ecrKey,
+            encryptionKey: kmsProps.ecrKey,
         });
 
         cdk.Tags.of(this.ecrRepositoryWeb).add(
@@ -580,7 +579,7 @@ export class cfStorageStack extends Construct {
             imageTagMutability: ecr.TagMutability.IMMUTABLE,
             imageScanOnPush: true,
             encryption: ecr.RepositoryEncryption.KMS,
-            encryptionKey: props.ecrKey,
+            encryptionKey: kmsProps.ecrKey,
         });
 
         cdk.Tags.of(this.ecrRepositoryApp).add(
@@ -602,7 +601,7 @@ export class cfStorageStack extends Construct {
             bucketName: `${commonProps.projectName}-${envProps.envName}-alb-logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
-            encryptionKey: props.s3Key,
+            encryptionKey: kmsProps.s3Key,
             encryption: s3.BucketEncryption.KMS,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
             removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -623,7 +622,7 @@ export class cfStorageStack extends Construct {
             bucketName: `${commonProps.projectName}-${envProps.envName}-ecs-logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
-            encryptionKey: props.s3Key,
+            encryptionKey: kmsProps.s3Key,
             encryption: s3.BucketEncryption.KMS,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
             removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -668,7 +667,7 @@ export class cfStorageStack extends Construct {
             bucketName: `${commonProps.projectName}-${envProps.envName}-ec2-logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
-            encryptionKey: props.s3Key,
+            encryptionKey: kmsProps.s3Key,
             encryption: s3.BucketEncryption.KMS,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
             removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -707,7 +706,7 @@ export class cfStorageStack extends Construct {
             bucketName: `${commonProps.projectName}-${envProps.envName}-lambda-logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
-            encryptionKey: props.s3Key,
+            encryptionKey: kmsProps.s3Key,
             encryption: s3.BucketEncryption.KMS,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
             removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -754,7 +753,7 @@ export class cfStorageStack extends Construct {
             bucketName: `${commonProps.projectName}-${envProps.envName}-aurora-logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
-            encryptionKey: props.s3Key,
+            encryptionKey: kmsProps.s3Key,
             encryption: s3.BucketEncryption.KMS,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
             removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -796,7 +795,7 @@ export class cfStorageStack extends Construct {
                 bucketName: `${commonProps.projectName}-${envProps.envName}-elasticache-logs`,
                 versioned: true,
                 accessControl: s3.BucketAccessControl.PRIVATE,
-                encryptionKey: props.s3Key,
+                encryptionKey: kmsProps.s3Key,
                 encryption: s3.BucketEncryption.KMS,
                 blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
                 removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -818,7 +817,7 @@ export class cfStorageStack extends Construct {
             bucketName: `${commonProps.projectName}-${envProps.envName}-sns-logs`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
-            encryptionKey: props.s3Key,
+            encryptionKey: kmsProps.s3Key,
             encryption: s3.BucketEncryption.KMS,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
             removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -839,7 +838,7 @@ export class cfStorageStack extends Construct {
             bucketName: `${commonProps.projectName}-${envProps.envName}-assets`,
             versioned: true,
             accessControl: s3.BucketAccessControl.PRIVATE,
-            encryptionKey: props.s3Key,
+            encryptionKey: kmsProps.s3Key,
             encryption: s3.BucketEncryption.KMS,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
             removalPolicy: cdk.RemovalPolicy.RETAIN,
