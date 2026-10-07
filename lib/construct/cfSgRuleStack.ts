@@ -1,18 +1,18 @@
 import { aws_ec2 as ec2 } from "aws-cdk-lib";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
 
-export interface sgProps {
+export interface SgProps {
     albSecurityGroupFrame: ec2.SecurityGroup;
     batchSecurityGroupFrame: ec2.SecurityGroup;
     bastionSecurityGroupFrame: ec2.SecurityGroup;
@@ -30,7 +30,7 @@ export interface sgProps {
 // ------------------------------------------------------------
 // [09] - Security group Rule Stack
 // ------------------------------------------------------------
-export class cfSgRuleStack extends Construct {
+export class CfSgRuleStack extends Construct {
     public readonly albSecurityGroup: ec2.SecurityGroup;
     public readonly batchSecurityGroup: ec2.SecurityGroup;
     public readonly bastionSecurityGroup: ec2.SecurityGroup;
@@ -44,7 +44,7 @@ export class cfSgRuleStack extends Construct {
     public readonly vpcEndPointKMSSecurityGroup: ec2.SecurityGroup;
     public readonly vpcEndPointCloudWatchLogsSecurityGroup: ec2.SecurityGroup;
 
-    constructor(scope: Construct, id: string, sgProps: sgProps) {
+    constructor(scope: Construct, id: string, sgProps: SgProps) {
         super(scope, id);
 
         // Assign security group frames to the actual security groups
