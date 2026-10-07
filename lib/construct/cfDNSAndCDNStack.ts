@@ -12,39 +12,33 @@ import type * as s3 from "aws-cdk-lib/aws-s3";
 import type * as wafv2 from "aws-cdk-lib/aws-wafv2";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     envName: string;
     nakedDomainName: string;
     dashboardName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
 
-export interface envProps {
-    Vpc: ec2.IVpc;
-    vpcCidr: string;
-    defaultGatewayCidr: string;
-}
-
-export interface networkProps {
+export interface NetworkProps {
     vpc: ec2.IVpc;
     subnets: ec2.ISubnet[];
 }
 
-export interface sgProps {
+export interface SgProps {
     albSecurityGroup: ec2.ISecurityGroup;
 }
 
-export interface wafProps {
+export interface WafProps {
     wafv2WebACL: wafv2.IWebACLRef;
 }
 
-export interface storageProps {
+export interface StorageProps {
     assetsBucket: s3.IBucket;
     uploadsBucket: s3.IBucket;
 }
@@ -52,7 +46,7 @@ export interface storageProps {
 // ------------------------------------------------------------
 // [10] - DNS And CDN Stack
 // ------------------------------------------------------------
-export class cfDNSAndCDNStack extends Construct {
+export class CfDNSAndCDNStack extends Construct {
     public readonly route53PublicHostedZone: route53.PublicHostedZone;
     public readonly route53ARecord: route53.ARecord;
     public readonly route53AAAARecord: route53.AaaaRecord;
@@ -66,11 +60,12 @@ export class cfDNSAndCDNStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        commonProps: commonProps,
-        envProps: envProps,
-        sgProps: sgProps,
-        storageProps: storageProps,
-        wafProps: wafProps,
+        networkProps: NetworkProps,
+        sgProps: SgProps,
+        storageProps: StorageProps,
+        wafProps: WafProps,
+        commonProps: CommonProps,
+        envProps: EnvProps,
     ) {
         super(scope, id);
 
@@ -139,7 +134,7 @@ export class cfDNSAndCDNStack extends Construct {
             this,
             "albExternal",
             {
-                vpc: envProps.Vpc,
+                vpc: networkProps.vpc,
                 vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
                 securityGroup: sgProps.albSecurityGroup,
                 internetFacing: true,
@@ -229,7 +224,7 @@ export class cfDNSAndCDNStack extends Construct {
             "albExternalTargetGroup",
             {
                 targetType: elbv2.TargetType.IP,
-                vpc: envProps.Vpc,
+                vpc: networkProps.vpc,
                 port: 80,
                 protocol: elbv2.ApplicationProtocol.HTTP,
                 loadBalancingAlgorithmType:
