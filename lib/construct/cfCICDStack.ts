@@ -3,31 +3,31 @@ import * as cdk from "aws-cdk-lib";
 import { aws_codecommit as codecommit } from "aws-cdk-lib";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
 
-export interface kmsProps {
+export interface KmsProps {
     codeCommitKey: kms.IKey;
 }
 
 // ------------------------------------------------------------
 // [16] - CICD Stack
 // ------------------------------------------------------------
-export class cfCICDStack extends Construct {
+export class CfCICDStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        commonProps: commonProps,
-        envProps: envProps,
-        kmsProps: kmsProps,
+        commonProps: CommonProps,
+        envProps: EnvProps,
+        kmsProps: KmsProps,
     ) {
         super(scope, id);
 
