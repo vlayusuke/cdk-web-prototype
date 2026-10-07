@@ -2,18 +2,18 @@ import * as cdk from "aws-cdk-lib";
 import { aws_ec2 as ec2, aws_ecs as ecs, aws_iam as iam } from "aws-cdk-lib";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
 }
 
-export interface networkingProps {
+export interface NetworkingProps {
     vpcId: string;
     publicSubnetIds: string[];
     publicSubnetRouteTableIds: string[];
@@ -21,23 +21,23 @@ export interface networkingProps {
     defaultGatewayCidr: string;
 }
 
-export interface sgProps {
+export interface SgProps {
     bastionSecurityGroup: ec2.SecurityGroup;
 }
 
 // ------------------------------------------------------------
 // [07] - Compute WebAP Stack
 // ------------------------------------------------------------
-export class cfComputeWebAPStack extends Construct {
+export class CfComputeWebAPStack extends Construct {
     public readonly ecsCluster: ecs.Cluster;
 
     constructor(
         scope: Construct,
         id: string,
-        networkingProps: networkingProps,
-        sgProps: sgProps,
-        commonProps: commonProps,
-        envProps: envProps,
+        networkingProps: NetworkingProps,
+        sgProps: SgProps,
+        commonProps: CommonProps,
+        envProps: EnvProps,
     ) {
         super(scope, id);
 
