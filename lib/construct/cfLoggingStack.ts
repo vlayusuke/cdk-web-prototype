@@ -6,12 +6,12 @@ import {
 import type * as lambda from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
@@ -20,7 +20,7 @@ export interface envProps {
 // ------------------------------------------------------------
 // [14] - cfLoggingStack
 // ------------------------------------------------------------
-export class cfLoggingStack extends Construct {
+export class CfLoggingStack extends Construct {
     public readonly logGroupNginxEcsApp: logs.LogGroup;
     public readonly logGroupAppEcsApp: logs.LogGroup;
     public readonly logGroupEcsCron: logs.LogGroup;
@@ -55,8 +55,8 @@ export class cfLoggingStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
-        commonProps: commonProps,
-        envProps: envProps,
+        commonProps: CommonProps,
+        envProps: EnvProps,
     ) {
         super(scope, id);
 
@@ -75,7 +75,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupNginxEcsApp).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-nginx-app`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-nginx-app`,
         );
         cdk.Tags.of(this.logGroupNginxEcsApp).add("ProvisionedBy", "AWS");
 
@@ -99,7 +99,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupAppEcsApp).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-app-app`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-app-app`,
         );
         cdk.Tags.of(this.logGroupAppEcsApp).add("ProvisionedBy", "AWS");
 
@@ -123,7 +123,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupEcsCron).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-cron`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-cron`,
         );
         cdk.Tags.of(this.logGroupEcsCron).add("ProvisionedBy", "AWS");
 
@@ -143,7 +143,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupEcsQueue).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-queue`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-queue`,
         );
         cdk.Tags.of(this.logGroupEcsQueue).add("ProvisionedBy", "AWS");
 
@@ -167,7 +167,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupAuroraInstance).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-aurora-instance`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-aurora-instance`,
         );
         cdk.Tags.of(this.logGroupAuroraInstance).add("ProvisionedBy", "AWS");
 
@@ -195,7 +195,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupAuroraPostgresql).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-aurora-postgresql`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-aurora-postgresql`,
         );
         cdk.Tags.of(this.logGroupAuroraPostgresql).add("ProvisionedBy", "AWS");
 
@@ -223,7 +223,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupAuroraIamDbAuthError).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-aurora-iam-db-auth-error`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-aurora-iam-db-auth-error`,
         );
         cdk.Tags.of(this.logGroupAuroraIamDbAuthError).add(
             "ProvisionedBy",
@@ -254,7 +254,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupElastiCache).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-elasticache`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-elasticache`,
         );
         cdk.Tags.of(this.logGroupElastiCache).add("ProvisionedBy", "AWS");
 
@@ -282,7 +282,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupLambdaLogsAlert).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-lambda-logs-alert`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-lambda-logs-alert`,
         );
         cdk.Tags.of(this.logGroupLambdaLogsAlert).add("ProvisionedBy", "AWS");
 
@@ -310,7 +310,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupLambdaMetricsAlert).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-lambda-metrics-alert`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-lambda-metrics-alert`,
         );
         cdk.Tags.of(this.logGroupLambdaMetricsAlert).add(
             "ProvisionedBy",
@@ -341,7 +341,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupLambdaRdsControl).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-lambda-rds-control`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-lambda-rds-control`,
         );
         cdk.Tags.of(this.logGroupLambdaRdsControl).add("ProvisionedBy", "AWS");
 
@@ -369,7 +369,7 @@ export class cfLoggingStack extends Construct {
 
         cdk.Tags.of(this.logGroupEc2Bastion).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-ec2-bastion`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-ec2-bastion`,
         );
         cdk.Tags.of(this.logGroupEc2Bastion).add("ProvisionedBy", "AWS");
 
@@ -396,7 +396,7 @@ export class cfLoggingStack extends Construct {
         );
         cdk.Tags.of(this.logGroupEc2BatchAzA).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-ec2-batch-az-a`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-ec2-batch-az-a`,
         );
         cdk.Tags.of(this.logGroupEc2BatchAzA).add("ProvisionedBy", "AWS");
 
@@ -423,7 +423,7 @@ export class cfLoggingStack extends Construct {
         );
         cdk.Tags.of(this.logGroupEc2BatchAzC).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-ec2-batch-az-c`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-ec2-batch-az-c`,
         );
         cdk.Tags.of(this.logGroupEc2BatchAzC).add("ProvisionedBy", "AWS");
 
@@ -446,7 +446,7 @@ export class cfLoggingStack extends Construct {
         });
         cdk.Tags.of(this.logGroupSns).add(
             "Name",
-            `${envProps.envName}-${commonProps.projectName}-loggroup-sns`,
+            `${commonProps.projectName}-${envProps.envName}-loggroup-sns`,
         );
         cdk.Tags.of(this.logGroupSns).add("ProvisionedBy", "AWS");
 
