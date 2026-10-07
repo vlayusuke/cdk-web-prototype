@@ -9,35 +9,35 @@ import {
 import type * as kms from "aws-cdk-lib/aws-kms";
 import { Construct } from "constructs";
 
-export interface commonProps {
+export interface CommonProps {
     projectName: string;
     dashboardName: string;
 }
 
-export interface envProps {
+export interface EnvProps {
     envName: string;
     vpcCidr: string;
     defaultGatewayCidr: string;
     slackHookUrl: string;
 }
 
-export interface kmsProps {
+export interface KmsProps {
     lambdaKey: kms.IKey;
 }
 
 // ------------------------------------------------------------
 // [15] - Compute Serverless Stack
 // ------------------------------------------------------------
-export class cfComputeServerlessStack extends Construct {
+export class CfComputeServerlessStack extends Construct {
     public readonly lambdaCloudWatchLogsAlert: lambda.Function;
     public readonly lambdaCloudWatchMetricsAlert: lambda.Function;
 
     constructor(
         scope: Construct,
         id: string,
-        kmsProps: kmsProps,
-        commonProps: commonProps,
-        envProps: envProps,
+        kmsProps: KmsProps,
+        commonProps: CommonProps,
+        envProps: EnvProps,
     ) {
         super(scope, id);
 
