@@ -5,10 +5,10 @@ import * as kms from "aws-cdk-lib/aws-kms";
 import { loadDevParameter } from "../config/devParameter";
 import { loadPrdParameter } from "../config/prdParameter";
 import { loadStgParameter } from "../config/stgParameter";
-import { cfNetworkStack } from "../lib/construct/cfNetworkStack";
-import { cfSgFrameStack } from "../lib/construct/cfSgFrameStack";
-import { cfSgRuleStack } from "../lib/construct/cfSgRuleStack";
-import { cfStorageStack } from "../lib/construct/cfStorageStack";
+import { CfNetworkStack } from "../lib/construct/cfNetworkStack";
+import { CfSgFrameStack } from "../lib/construct/cfSgFrameStack";
+import { CfSgRuleStack } from "../lib/construct/cfSgRuleStack";
+import { CfStorageStack } from "../lib/construct/cfStorageStack";
 
 test.each([
     ["prd", loadPrdParameter],
@@ -52,18 +52,17 @@ test("network subnets follow the configured availability zones", () => {
     const app = new cdk.App();
     const stack = new cdk.Stack(app, "NetworkTestStack");
     const availabilityZones = ["ap-northeast-1a", "ap-northeast-1c"];
-    const network = new cfNetworkStack(
+    const network = new CfNetworkStack(
         stack,
         "Network",
+        { s3Key: new kms.Key(stack, "FlowLogsKey") },
+        { projectName: "test", dashboardName: "test" },
         {
-            projectName: "test",
-            dashboardName: "test",
             envName: "unit",
             vpcCidr: "10.80.0.0/16",
             defaultGatewayCidr: "0.0.0.0/0",
             availabilityZones: [availabilityZones[0], availabilityZones[1]],
         },
-        { s3Key: new kms.Key(stack, "FlowLogsKey") },
     );
 
     expect(network.Vpc.availabilityZones).toEqual(availabilityZones);
@@ -85,19 +84,18 @@ test("Systems Manager endpoints share a least-privilege endpoint security group"
             },
         ],
     });
-    const securityGroups = new cfSgFrameStack(
+    const securityGroups = new CfSgFrameStack(
         stack,
         "SecurityGroups",
+        { vpc },
+        { projectName: "test", dashboardName: "test" },
         {
-            projectName: "test",
-            dashboardName: "test",
             envName: "unit",
             vpcCidr: "10.80.0.0/16",
             defaultGatewayCidr: "0.0.0.0/0",
         },
-        { vpc },
     );
-    new cfSgRuleStack(stack, "SecurityGroupRules", {
+    new CfSgRuleStack(stack, "SecurityGroupRules", {
         albSecurityGroupFrame: securityGroups.albSecurityGroupFrame,
         batchSecurityGroupFrame: securityGroups.batchSecurityGroupFrame,
         bastionSecurityGroupFrame: securityGroups.bastionSecurityGroupFrame,
@@ -118,7 +116,7 @@ test("Systems Manager endpoints share a least-privilege endpoint security group"
             securityGroups.vpcEndPointCloudWatchLogsSecurityGroupFrame,
     });
 
-    const storage = new cfStorageStack(
+    const storage = new CfStorageStack(
         stack,
         "Storage",
         {
@@ -129,6 +127,8 @@ test("Systems Manager endpoints share a least-privilege endpoint security group"
             privateSubnetRouteTableIds: vpc.isolatedSubnets.map(
                 (subnet) => subnet.routeTable.routeTableId,
             ),
+        },
+        {
             applicationKey: new kms.Key(stack, "ApplicationKey"),
             ecrKey: new kms.Key(stack, "EcrKey"),
             s3Key: new kms.Key(stack, "S3Key"),
