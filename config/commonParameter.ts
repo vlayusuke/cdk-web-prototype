@@ -1,4 +1,4 @@
-// Parameters for common
+// Interfaces for common environments
 export interface commonParameter {
     projectName: string;
     dashboardName: string;
@@ -8,7 +8,7 @@ export interface commonParameter {
     availabilityZones: [string, string];
 }
 
-// Parameters for common
+// Parameters for common environments
 export const commonParameter: commonParameter = {
     projectName: "cdk-web",
     dashboardName: "cdk-web-prototype",
