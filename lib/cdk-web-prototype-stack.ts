@@ -1,6 +1,7 @@
 import * as cdk from "aws-cdk-lib/core";
 import type { Construct } from "constructs";
 import { commonParameter } from "../config/commonParameter";
+import type { DevParameter } from "../config/devParameter";
 import type { PrdParameter } from "../config/prdParameter";
 import type { StgParameter } from "../config/stgParameter";
 import { CfCICDStack } from "./construct/cfCICDStack";
@@ -33,7 +34,7 @@ export interface EnvProps {
 }
 
 export interface CfCdkWebPrototypeStackProps extends cdk.StackProps {
-    deploymentParameter: PrdParameter | StgParameter;
+    deploymentParameter: PrdParameter | StgParameter | DevParameter;
 }
 
 /**
@@ -44,22 +45,22 @@ export interface CfCdkWebPrototypeStackProps extends cdk.StackProps {
  * This stack ensures that all components are properly configured and interconnected to support the web prototype's functionality.
  *
  * construction order:
- *   1. [01] cfSecurityConfigStack
- *   2. [02] cfNetworkStack
- *   3. [03] cfSgFrameStack
- *   4. [04] cfDatabaseStack
- *   5. [05] cfSecurityServiceStack
- *   6. [06] cfStorageStack
- *   7. [07] cfComputeWebAPStack
- *   8. [08] cfComputeBackendStack
- *   9. [09] cfSgRuleStack
- *  10. [10] cfDNSAndCDNStack
- *  11. [11] cfComputeDefinitionStack
- *  12. [12] cfNotificationStack
- *  13. [13] cfMonitoringStack
- *  14. [14] cfLoggingStack
- *  15. [15] cfComputeServerlessStack
- *  16. [16] cfCICDStack
+ *   1. [01] CfSecurityConfigStack
+ *   2. [02] CfNetworkStack
+ *   3. [03] CfSgFrameStack
+ *   4. [04] CfDatabaseStack
+ *   5. [05] CfSecurityServiceStack
+ *   6. [06] CfStorageStack
+ *   7. [07] CfComputeWebAPStack
+ *   8. [08] CfComputeBackendStack
+ *   9. [09] CfSgRuleStack
+ *  10. [10] CfDNSAndCDNStack
+ *  11. [11] CfComputeDefinitionStack
+ *  12. [12] CfNotificationStack
+ *  13. [13] CfMonitoringStack
+ *  14. [14] CfLoggingStack
+ *  15. [15] CfComputeServerlessStack
+ *  16. [16] CfCICDStack
  */
 export class CfCdkWebPrototypeStack extends cdk.Stack {
     constructor(
@@ -84,16 +85,22 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             throw new Error("At least two availability zones are required.");
         }
 
+        // ------------------------------------------------------------
+        // [01] - CfSecurityConfigStack
+        // ------------------------------------------------------------
         const securityConfigStack = new CfSecurityConfigStack(
             this,
-            "cfSecurityConfigStack",
+            "CfSecurityConfigStack",
             commonProps,
             envProps,
         );
 
+        //-------------------------------------------------------------
+        // [02] - CfNetworkStack
+        // ------------------------------------------------------------
         const networkStack = new CfNetworkStack(
             this,
-            "networkStack",
+            "CfNetworkStack",
             { s3Key: securityConfigStack.s3Key },
             commonProps,
             {
@@ -102,17 +109,23 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             },
         );
 
+        //-------------------------------------------------------------
+        // [03] - CfSgFrameStack
+        // ------------------------------------------------------------
         const sgFrameStack = new CfSgFrameStack(
             this,
-            "cfSgFrameStack",
+            "CfSgFrameStack",
             { vpc: networkStack.Vpc },
             commonProps,
             envProps,
         );
 
+        // ------------------------------------------------------------
+        // [04] - CfDatabaseStack
+        // ------------------------------------------------------------
         new CfDatabaseStack(
             this,
-            "cfDatabaseStack",
+            "CfDatabaseStack",
             {
                 auroraSecurityGroup: sgFrameStack.auroraSecurityGroupFrame,
                 elasticacheSecurityGroup:
@@ -150,7 +163,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         // ------------------------------------------------------------
         const storageStack = new CfStorageStack(
             this,
-            "cfStorageStack",
+            "CfStorageStack",
             {
                 vpcId: networkStack.Vpc.vpcId,
                 privateSubnetIds: networkStack.Vpc.privateSubnets.map(
