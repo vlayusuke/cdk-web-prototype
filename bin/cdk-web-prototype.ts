@@ -13,7 +13,7 @@ const devParameter = loadDevParameter(app.node.tryGetContext("dev"));
 for (const deploymentParameter of [prdParameter, stgParameter, devParameter]) {
     new CfCdkWebPrototypeStack(
         app,
-        `cfCdkWebPrototypeStack-${deploymentParameter.envName}`,
+        `CfCdkWebPrototypeStack-${deploymentParameter.envName}`,
         {
             env: {
                 account: deploymentParameter.env?.account,
