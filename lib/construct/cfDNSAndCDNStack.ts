@@ -86,6 +86,10 @@ export class CfDNSAndCDNStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-r53-pub-host-zone`,
         );
         cdk.Tags.of(this.route53PublicHostedZone).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.route53PublicHostedZone).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // AWS Certificate Manager for ALB Configuration
@@ -106,6 +110,7 @@ export class CfDNSAndCDNStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-acm-certificate`,
         );
         cdk.Tags.of(this.acmCertificateALB).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.acmCertificateALB).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // AWS Certificate Manager for Amazon CloudFront Configuration
@@ -126,6 +131,10 @@ export class CfDNSAndCDNStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-acm-certificate-cloudfront`,
         );
         cdk.Tags.of(this.acmCertificateCloudFront).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.acmCertificateCloudFront).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Application Load Balancer Configuration
@@ -149,6 +158,7 @@ export class CfDNSAndCDNStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-alb-external`,
         );
         cdk.Tags.of(this.albExternal).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.albExternal).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon Route 53 A Record Configuration
@@ -166,6 +176,7 @@ export class CfDNSAndCDNStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-r53-a-record`,
         );
         cdk.Tags.of(this.route53ARecord).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.route53ARecord).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon Route 53 AAAA Record Configuration
@@ -187,6 +198,7 @@ export class CfDNSAndCDNStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-r53-aaaa-record`,
         );
         cdk.Tags.of(this.route53AAAARecord).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.route53AAAARecord).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Application Load Balancer Listener Configuration
@@ -215,6 +227,7 @@ export class CfDNSAndCDNStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-alb-external-listener`,
         );
         cdk.Tags.of(this.albExternalListener).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.albExternalListener).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Application Load Balancer Target Rule Configuration
@@ -247,6 +260,10 @@ export class CfDNSAndCDNStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-alb-external-target-group`,
         );
         cdk.Tags.of(this.albExternalTargetGroup).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.albExternalTargetGroup).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Application Load Balancer Listener Rule Configuration
@@ -273,6 +290,7 @@ export class CfDNSAndCDNStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-alb-external-listener-rule`,
         );
         cdk.Tags.of(albExternalListenerRule).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(albExternalListenerRule).add("ProjectCode", "1234567890");
 
         const albExternalListenerRuleRedirect =
             new elbv2.ApplicationListenerRule(
@@ -304,6 +322,10 @@ export class CfDNSAndCDNStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(albExternalListenerRuleRedirect).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         const cloudFrontResponseHeadersPolicy =
             new cloudfront.ResponseHeadersPolicy(
@@ -327,6 +349,19 @@ export class CfDNSAndCDNStack extends Construct {
                 },
             );
 
+        cdk.Tags.of(cloudFrontResponseHeadersPolicy).add(
+            "Name",
+            `${commonProps.projectName}-${envProps.envName}-cft-response-header-policy`,
+        );
+        cdk.Tags.of(cloudFrontResponseHeadersPolicy).add(
+            "ProvisionedBy",
+            "AWS",
+        );
+        cdk.Tags.of(cloudFrontResponseHeadersPolicy).add(
+            "ProjectCode",
+            "1234567890",
+        );
+
         const cloudFrontCachePolicy = new cloudfront.CachePolicy(
             this,
             "cloudFrontCachePolicy",
@@ -343,6 +378,13 @@ export class CfDNSAndCDNStack extends Construct {
                 enableAcceptEncodingGzip: true,
             },
         );
+
+        cdk.Tags.of(cloudFrontCachePolicy).add(
+            "Name",
+            `${commonProps.projectName}-${envProps.envName}-cft-cache-policy`,
+        );
+        cdk.Tags.of(cloudFrontCachePolicy).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(cloudFrontCachePolicy).add("ProjectCode", "1234567890");
 
         const assetsOriginAccessControl = new cloudfront.S3OriginAccessControl(
             this,
@@ -395,6 +437,7 @@ export class CfDNSAndCDNStack extends Construct {
                         viewerProtocolPolicy:
                             cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                     },
+
                     "/uploads/*": {
                         origin: origins.S3BucketOrigin.withOriginAccessControl(
                             storageProps.assetsBucket,
@@ -414,6 +457,7 @@ export class CfDNSAndCDNStack extends Construct {
                             cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                     },
                 },
+
                 defaultBehavior: {
                     origin: new origins.HttpOrigin(
                         this.albExternal.loadBalancerDnsName,
@@ -447,5 +491,9 @@ export class CfDNSAndCDNStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-cloudfront-distribution`,
         );
         cdk.Tags.of(this.cloudFrontDistribution).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.cloudFrontDistribution).add(
+            "ProjectCode",
+            "1234567890",
+        );
     }
 }
