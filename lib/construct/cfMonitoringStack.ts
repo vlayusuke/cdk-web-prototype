@@ -109,6 +109,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.cpuUtilizationHighAlarmEcsApp).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.cpuUtilizationLowAlarmEcsApp = new cloudwatch.Alarm(
             this,
@@ -145,6 +149,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.cpuUtilizationLowAlarmEcsApp).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.memoryUtilizationHighAlarmEcsApp = new cloudwatch.Alarm(
             this,
@@ -180,6 +188,10 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.memoryUtilizationHighAlarmEcsApp).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.memoryUtilizationHighAlarmEcsApp).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         this.memoryUtilizationLowAlarmEcsApp = new cloudwatch.Alarm(
@@ -218,6 +230,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.memoryUtilizationLowAlarmEcsApp).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.deploymentFailedAlarmEcsApp = new cloudwatch.Alarm(
             this,
@@ -253,6 +269,10 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.deploymentFailedAlarmEcsApp).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.deploymentFailedAlarmEcsApp).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         // ------------------------------------------------------------
@@ -355,6 +375,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.cpuUtilizationHighAlarmEcsCron).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.memoryUtilizationHighAlarmEcsCron = new cloudwatch.Alarm(
             this,
@@ -390,6 +414,10 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.memoryUtilizationHighAlarmEcsCron).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.memoryUtilizationHighAlarmEcsCron).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         // ------------------------------------------------------------
@@ -430,6 +458,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.memoryUtilizationHighAlarmEcsQueue).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.memoryUtilizationHighAlarmEcsQueue = new cloudwatch.Alarm(
             this,
@@ -465,6 +497,10 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.memoryUtilizationHighAlarmEcsQueue).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.memoryUtilizationHighAlarmEcsQueue).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         // ------------------------------------------------------------
@@ -505,6 +541,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.cpuUtilizationHighAlarmEc2Bastion).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.memoryUtilizationHighAlarmEc2Bastion = new cloudwatch.Alarm(
             this,
@@ -540,6 +580,10 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.memoryUtilizationHighAlarmEc2Bastion).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.memoryUtilizationHighAlarmEc2Bastion).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         this.diskUtilizationHighAlarmEc2Bastion = new cloudwatch.Alarm(
@@ -577,6 +621,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.diskUtilizationHighAlarmEc2Bastion).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.statusCheckFailedAlarmEc2Bastion = new cloudwatch.Alarm(
             this,
@@ -612,6 +660,10 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.statusCheckFailedAlarmEc2Bastion).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.statusCheckFailedAlarmEc2Bastion).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         // ------------------------------------------------------------
@@ -652,6 +704,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.cpuUtilizationHighAlarmEc2BatchAzA).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.memoryUtilizationHighAlarmEc2BatchAzA = new cloudwatch.Alarm(
             this,
@@ -687,6 +743,10 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.memoryUtilizationHighAlarmEc2BatchAzA).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.memoryUtilizationHighAlarmEc2BatchAzA).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         this.diskUtilizationHighAlarmEc2BatchAzA = new cloudwatch.Alarm(
@@ -724,6 +784,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.diskUtilizationHighAlarmEc2BatchAzA).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.statusCheckFailedAlarmEc2BatchAzA = new cloudwatch.Alarm(
             this,
@@ -759,6 +823,10 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.statusCheckFailedAlarmEc2BatchAzA).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.statusCheckFailedAlarmEc2BatchAzA).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         this.cpuUtilizationHighAlarmEc2BatchAzC = new cloudwatch.Alarm(
@@ -796,6 +864,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.cpuUtilizationHighAlarmEc2BatchAzC).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.memoryUtilizationHighAlarmEc2BatchAzC = new cloudwatch.Alarm(
             this,
@@ -831,6 +903,10 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.memoryUtilizationHighAlarmEc2BatchAzC).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.memoryUtilizationHighAlarmEc2BatchAzC).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         this.diskUtilizationHighAlarmEc2BatchAzC = new cloudwatch.Alarm(
@@ -868,6 +944,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.diskUtilizationHighAlarmEc2BatchAzC).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.statusCheckFailedAlarmEc2BatchAzC = new cloudwatch.Alarm(
             this,
@@ -904,6 +984,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.statusCheckFailedAlarmEc2BatchAzC).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Amazon CloudWatch Metrics for Application Load Balancer Configuration
@@ -939,6 +1023,10 @@ export class CfMonitoringStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-healty-host-coun-alarm-alb`,
         );
         cdk.Tags.of(this.healtyHostCounAlarmAlb).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.healtyHostCounAlarmAlb).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.unHealthyHostCountAlarmAlb = new cloudwatch.Alarm(
             this,
@@ -975,6 +1063,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.unHealthyHostCountAlarmAlb).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.rejectedConnectionCountAlarmAlb = new cloudwatch.Alarm(
             this,
@@ -1010,6 +1102,10 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.rejectedConnectionCountAlarmAlb).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.rejectedConnectionCountAlarmAlb).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         // ------------------------------------------------------------
@@ -1050,6 +1146,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.cpuUtilizationHighAlarmAurora).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.memoryUtilizationHighAlarmAurora = new cloudwatch.Alarm(
             this,
@@ -1084,6 +1184,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.memoryUtilizationHighAlarmAurora).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.connectionHighAlarmAurora = new cloudwatch.Alarm(
             this,
@@ -1116,6 +1220,10 @@ export class CfMonitoringStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-connection-high-alarm-aurora`,
         );
         cdk.Tags.of(this.connectionHighAlarmAurora).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.connectionHighAlarmAurora).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Amazon CloudWatch Metrics for Amazon ElastiCache Configuration
@@ -1155,6 +1263,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.cpuUtilizationHighAlarmElastiCache).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.memoryUtilizationHighAlarmElastiCache = new cloudwatch.Alarm(
             this,
@@ -1190,6 +1302,10 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.memoryUtilizationHighAlarmElastiCache).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.memoryUtilizationHighAlarmElastiCache).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         this.swapUsageHighAlarmElastiCache = new cloudwatch.Alarm(
@@ -1227,6 +1343,10 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.swapUsageHighAlarmElastiCache).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Amazon CloudWatch Metrics for AWS Lambda Configuration
@@ -1258,6 +1378,7 @@ export class CfMonitoringStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-error-alarm-lambda`,
         );
         cdk.Tags.of(this.errorAlarmLambda).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.errorAlarmLambda).add("ProjectCode", "1234567890");
 
         this.throttlesAlarmLambda = new cloudwatch.Alarm(
             this,
@@ -1290,6 +1411,7 @@ export class CfMonitoringStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-throttles-alarm-lambda`,
         );
         cdk.Tags.of(this.throttlesAlarmLambda).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.throttlesAlarmLambda).add("ProjectCode", "1234567890");
 
         this.concurrentExecutionsAlarmLambda = new cloudwatch.Alarm(
             this,
@@ -1324,6 +1446,10 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.concurrentExecutionsAlarmLambda).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.concurrentExecutionsAlarmLambda).add(
+            "ProjectCode",
+            "1234567890",
         );
     }
 }
