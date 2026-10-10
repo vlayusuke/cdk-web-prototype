@@ -59,6 +59,7 @@ export class CfComputeWebAPStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-role-for-bastion`,
         );
         cdk.Tags.of(ec2IamRoleForBastion).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ec2IamRoleForBastion).add("ProjectCode", "1234567890");
 
         const ec2IamPolicyForBastion = new iam.Policy(
             this,
@@ -92,6 +93,7 @@ export class CfComputeWebAPStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-policy-for-bastion`,
         );
         cdk.Tags.of(ec2IamPolicyForBastion).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ec2IamPolicyForBastion).add("ProjectCode", "1234567890");
 
         ec2IamPolicyForBastion.attachToRole(ec2IamRoleForBastion);
 
@@ -118,6 +120,10 @@ export class CfComputeWebAPStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(ec2IamInstanceProfileForBastion).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Amazon ECS Cluster Configuration
@@ -139,6 +145,7 @@ export class CfComputeWebAPStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
         );
         cdk.Tags.of(this.ecsCluster).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.ecsCluster).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon EC2 Bastion Key Pair Configuration
@@ -148,6 +155,12 @@ export class CfComputeWebAPStack extends Construct {
             type: ec2.KeyPairType.ED25519,
             format: ec2.KeyPairFormat.PEM,
         });
+        cdk.Tags.of(bastionKeyPair).add(
+            "Name",
+            `${commonProps.projectName}-${envProps.envName}-bastion-key-pair`,
+        );
+        cdk.Tags.of(bastionKeyPair).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(bastionKeyPair).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon EC2 Bastion Configuration
@@ -206,6 +219,7 @@ export class CfComputeWebAPStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ec2-instance-bastion`,
         );
         cdk.Tags.of(ec2InstanceBastion).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ec2InstanceBastion).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // EIP for Amazon EC2 Bastion Configuration
@@ -219,6 +233,7 @@ export class CfComputeWebAPStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-bastion-eip`,
         );
         cdk.Tags.of(bastionEip).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(bastionEip).add("ProjectCode", "1234567890");
 
         new ec2.CfnEIPAssociation(this, "bastionEipAssociation", {
             allocationId: bastionEip.attrAllocationId,
