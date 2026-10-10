@@ -62,6 +62,10 @@ export class CfComputeServerlessStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(iamLambdaCloudWatchLogsAlertRole).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         const lambdaPolicy = new iam.Policy(
             this,
@@ -111,6 +115,7 @@ export class CfComputeServerlessStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-lambda-policy`,
         );
         cdk.Tags.of(lambdaPolicy).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(lambdaPolicy).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // AWS IAM for AWS Lambda (cloudwatch-metrics-alert) Configuration
@@ -132,6 +137,10 @@ export class CfComputeServerlessStack extends Construct {
         cdk.Tags.of(iamLambdaCloudWatchMetricsAlertRole).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(iamLambdaCloudWatchMetricsAlertRole).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         const lambdaCloudWatchMetricsAlertPolicy = new iam.Policy(
@@ -159,6 +168,10 @@ export class CfComputeServerlessStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(lambdaCloudWatchMetricsAlertPolicy).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // AWS IAM for AWS Lambda (rds-control) Configuration
@@ -178,6 +191,7 @@ export class CfComputeServerlessStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-lambda-rds-control-role`,
         );
         cdk.Tags.of(iamLambdaRdsControlRole).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamLambdaRdsControlRole).add("ProjectCode", "1234567890");
 
         const lambdaRdsControlPolicy = new iam.Policy(
             this,
@@ -204,6 +218,7 @@ export class CfComputeServerlessStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-lambda-rds-control-policy`,
         );
         cdk.Tags.of(lambdaRdsControlPolicy).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(lambdaRdsControlPolicy).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // AWS Lambda (cloudwatch-log-alert) Configuration
@@ -244,6 +259,7 @@ export class CfComputeServerlessStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-cloudwatch-log-alert`,
         );
         cdk.Tags.of(lambdaCloudWatchLogsAlert).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(lambdaCloudWatchLogsAlert).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // AWS Lambda (cloudwatch-metrics-alert) Configuration
@@ -285,6 +301,10 @@ export class CfComputeServerlessStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-cloudwatch-metrics-alert`,
         );
         cdk.Tags.of(lambdaCloudWatchMetricsAlert).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(lambdaCloudWatchMetricsAlert).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // AWS Lambda (rds-control) Configuration
@@ -317,6 +337,7 @@ export class CfComputeServerlessStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-rds-control`,
         );
         cdk.Tags.of(lambdaRdsControl).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(lambdaRdsControl).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon EventBridge Rule Configuration
@@ -343,6 +364,7 @@ export class CfComputeServerlessStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-rds-control-start`,
         );
         cdk.Tags.of(rdsControlStartRule).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(rdsControlStartRule).add("ProjectCode", "1234567890");
 
         const rdsControlStopRule = new events.Rule(this, "RdsControlStopRule", {
             ruleName: `${commonProps.projectName}-${envProps.envName}-rds-control-stop`,
@@ -362,5 +384,6 @@ export class CfComputeServerlessStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-rds-control-stop`,
         );
         cdk.Tags.of(rdsControlStopRule).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(rdsControlStopRule).add("ProjectCode", "1234567890");
     }
 }
