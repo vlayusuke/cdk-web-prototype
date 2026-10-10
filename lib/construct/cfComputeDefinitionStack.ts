@@ -218,6 +218,7 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-oidc-provider`,
         );
         cdk.Tags.of(oidcProvider).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(oidcProvider).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // AWS IAM for GitHub Actions Deployment Configuration
@@ -241,6 +242,13 @@ export class CfComputeDefinitionStack extends Construct {
                 ),
             },
         );
+
+        cdk.Tags.of(iamGithubActionsRole).add(
+            "Name",
+            `${commonProps.projectName}-${envProps.envName}-iam-github-actions-role`,
+        );
+        cdk.Tags.of(iamGithubActionsRole).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamGithubActionsRole).add("ProjectCode", "1234567890");
 
         const assumeRolePolicy = iamGithubActionsRole.assumeRolePolicy;
 
@@ -272,6 +280,7 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-github-actions-role`,
         );
         cdk.Tags.of(iamGithubActionsRole).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamGithubActionsRole).add("ProjectCode", "1234567890");
 
         const iamGithubActionsPolicy = new iam.Policy(
             this,
@@ -295,6 +304,7 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-github-actions-policy`,
         );
         cdk.Tags.of(iamGithubActionsPolicy).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamGithubActionsPolicy).add("ProjectCode", "1234567890");
 
         iamGithubActionsPolicy.attachToRole(iamGithubActionsRole);
 
@@ -319,6 +329,7 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-execution-role`,
         );
         cdk.Tags.of(iamEcsTaskExecutionRole).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamEcsTaskExecutionRole).add("ProjectCode", "1234567890");
 
         const iamEcsTaskExectionPolicy = new iam.Policy(
             this,
@@ -353,6 +364,7 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-execution-policy`,
         );
         cdk.Tags.of(iamEcsTaskExectionPolicy).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamEcsTaskExectionPolicy).add("ProjectCode", "1234567890");
 
         iamEcsTaskExecutionRole.addManagedPolicy(
             iam.ManagedPolicy.fromAwsManagedPolicyName(
@@ -380,77 +392,72 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-role`,
         );
         cdk.Tags.of(iamEcsTaskRole).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamEcsTaskRole).add("ProjectCode", "1234567890");
 
-        const iamEcsTaskPolicy = new iam.Policy(
-            this,
-            `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-policy`,
-            {
-                policyName: `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-policy`,
-                statements: [
-                    new iam.PolicyStatement({
-                        sid: "PassRole",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["iam:PassRole"],
-                        resources: [
-                            iamEcsTaskRole.roleArn,
-                            iamEcsTaskExecutionRole.roleArn,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "ECSAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "ecs:RunTask",
-                            "ecs:ListTaskDefinitions",
-                            "ecs:DescribeServices",
-                        ],
-                        resources: [
-                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task/*`,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "AuroraAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "rds-db:connect",
-                            "rds-data:ExecuteStatement",
-                        ],
-                        resources: [
-                            `arn:aws:rds:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:db:*`,
-                            `arn:aws:rds-db:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:dbuser:*/*`,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "ElastiCacheConnect",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["elasticache:Connect"],
-                        resources: [
-                            `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:replicationgroup:*`,
-                            `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:user:*`,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "AllowECSExec",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "ssmmessages:CreateControlChannel",
-                            "ssmmessages:CreateDataChannel",
-                            "ssmmessages:OpenControlChannel",
-                            "ssmmessages:OpenDataChannel",
-                        ],
-                        resources: [
-                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task/*`,
-                        ],
-                    }),
-                ],
-            },
-        );
+        const iamEcsTaskPolicy = new iam.Policy(this, "iamEcsTaskPolicy", {
+            policyName: `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-policy`,
+            statements: [
+                new iam.PolicyStatement({
+                    sid: "PassRole",
+                    effect: iam.Effect.ALLOW,
+                    actions: ["iam:PassRole"],
+                    resources: [
+                        iamEcsTaskRole.roleArn,
+                        iamEcsTaskExecutionRole.roleArn,
+                    ],
+                }),
+                new iam.PolicyStatement({
+                    sid: "ECSAccess",
+                    effect: iam.Effect.ALLOW,
+                    actions: [
+                        "ecs:RunTask",
+                        "ecs:ListTaskDefinitions",
+                        "ecs:DescribeServices",
+                    ],
+                    resources: [
+                        `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task/*`,
+                    ],
+                }),
+                new iam.PolicyStatement({
+                    sid: "AuroraAccess",
+                    effect: iam.Effect.ALLOW,
+                    actions: ["rds-db:connect", "rds-data:ExecuteStatement"],
+                    resources: [
+                        `arn:aws:rds:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:db:*`,
+                        `arn:aws:rds-db:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:dbuser:*/*`,
+                    ],
+                }),
+                new iam.PolicyStatement({
+                    sid: "ElastiCacheConnect",
+                    effect: iam.Effect.ALLOW,
+                    actions: ["elasticache:Connect"],
+                    resources: [
+                        `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:replicationgroup:*`,
+                        `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:user:*`,
+                    ],
+                }),
+                new iam.PolicyStatement({
+                    sid: "AllowECSExec",
+                    effect: iam.Effect.ALLOW,
+                    actions: [
+                        "ssmmessages:CreateControlChannel",
+                        "ssmmessages:CreateDataChannel",
+                        "ssmmessages:OpenControlChannel",
+                        "ssmmessages:OpenDataChannel",
+                    ],
+                    resources: [
+                        `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task/*`,
+                    ],
+                }),
+            ],
+        });
 
         cdk.Tags.of(iamEcsTaskPolicy).add(
             "Name",
             `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-policy`,
         );
         cdk.Tags.of(iamEcsTaskPolicy).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamEcsTaskPolicy).add("ProjectCode", "1234567890");
 
         iamEcsTaskPolicy.attachToRole(iamEcsTaskRole);
 
@@ -478,6 +485,7 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ecs-app-task-definition`,
         );
         cdk.Tags.of(ecsAppTaskDefinition).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ecsAppTaskDefinition).add("ProjectCode", "1234567890");
 
         addJsonContainerDefinitions(
             this,
@@ -510,6 +518,7 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ecs-cron-task-definition`,
         );
         cdk.Tags.of(ecsCronTaskDefinition).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ecsCronTaskDefinition).add("ProjectCode", "1234567890");
 
         addJsonContainerDefinitions(
             this,
@@ -542,6 +551,7 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ecs-queue-task-definition`,
         );
         cdk.Tags.of(ecsQueueTaskDefinition).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ecsQueueTaskDefinition).add("ProjectCode", "1234567890");
 
         addJsonContainerDefinitions(
             this,
@@ -605,6 +615,7 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ecs-app-service`,
         );
         cdk.Tags.of(ecsAppService).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ecsAppService).add("ProjectCode", "1234567890");
 
         this.ecsAppScalableTarget = ecsAppService.autoScaleTaskCount({
             minCapacity: 2,
@@ -616,6 +627,7 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ecs-app-autoscaling-target`,
         );
         cdk.Tags.of(this.ecsAppScalableTarget).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.ecsAppScalableTarget).add("ProjectCode", "1234567890");
 
         new applicationautoscaling.StepScalingPolicy(
             this,
@@ -710,6 +722,10 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ecs-cron-service`,
         );
         cdk.Tags.of(ecsCronServiceConfiguration).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ecsCronServiceConfiguration).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Amazon ECS Queue Service Configuration
@@ -756,6 +772,10 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ecs-queue-service`,
         );
         cdk.Tags.of(ecsQueueServiceConfiguration).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ecsQueueServiceConfiguration).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // AWS SSM Parameter Store for Application Configuration
@@ -775,6 +795,10 @@ export class CfComputeDefinitionStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-app-key`,
         );
         cdk.Tags.of(this.ssmParameterStoreAppKey).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.ssmParameterStoreAppKey).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.ssmParamenterStoreJwtSecret = new ssm.StringParameter(
             this,
@@ -793,6 +817,10 @@ export class CfComputeDefinitionStack extends Construct {
         cdk.Tags.of(this.ssmParamenterStoreJwtSecret).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.ssmParamenterStoreJwtSecret).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         this.ssmParameterStoreAuroraWriterEndPoint = new ssm.StringParameter(
@@ -813,6 +841,10 @@ export class CfComputeDefinitionStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.ssmParameterStoreAuroraWriterEndPoint).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.ssmParameterStoreAuroraReaderEndPoint = new ssm.StringParameter(
             this,
@@ -831,6 +863,10 @@ export class CfComputeDefinitionStack extends Construct {
         cdk.Tags.of(this.ssmParameterStoreAuroraReaderEndPoint).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.ssmParameterStoreAuroraReaderEndPoint).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         this.ssmParameterStoreElastiCacheWriterEndPoint =
@@ -852,6 +888,10 @@ export class CfComputeDefinitionStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.ssmParameterStoreElastiCacheWriterEndPoint).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         this.ssmParameterStoreElastiCacheReaderEndPoint =
             new ssm.StringParameter(
@@ -871,6 +911,10 @@ export class CfComputeDefinitionStack extends Construct {
         cdk.Tags.of(this.ssmParameterStoreElastiCacheReaderEndPoint).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.ssmParameterStoreElastiCacheReaderEndPoint).add(
+            "ProjectCode",
+            "1234567890",
         );
     }
 }
