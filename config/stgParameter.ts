@@ -1,6 +1,6 @@
 import type { Environment } from "aws-cdk-lib";
 
-// Parameters for Staging Application
+// Parameters for Staging environment Application
 export interface StgParameter {
     env?: Environment;
     envName: string;
@@ -21,8 +21,6 @@ export type StgParameterDefaults = Omit<
 >;
 
 export interface StgContextParameter {
-    account?: string;
-    region?: string;
     monitoringNotifyEmail?: string;
     monitoringSlackWorkspaceId?: string;
     monitoringSlackChannelId?: string;
@@ -41,20 +39,19 @@ export const stgParameter: StgParameterDefaults = {
 
 export const loadStgParameter = (context: unknown): StgParameter => {
     const contextParameter = (context ?? {}) as StgContextParameter;
+
+    // Load sensitive parameters from cdk.context.json
     const requiredValue = (key: keyof StgContextParameter): string => {
-        const value = contextParameter[key];
-        if (typeof value !== "string" || value.trim() === "") {
+        const contextValue = contextParameter[key];
+
+        if (typeof contextValue !== "string" || contextValue.trim() === "") {
             throw new Error(`Missing required CDK context value: stg.${key}`);
         }
-        return value;
+        return contextValue;
     };
 
     return {
         ...stgParameter,
-        env: {
-            account: contextParameter.account,
-            region: contextParameter.region ?? "ap-northeast-1",
-        },
         monitoringNotifyEmail: requiredValue("monitoringNotifyEmail"),
         monitoringSlackWorkspaceId: requiredValue("monitoringSlackWorkspaceId"),
         monitoringSlackChannelId: requiredValue("monitoringSlackChannelId"),
