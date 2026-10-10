@@ -1,6 +1,6 @@
 import type { Environment } from "aws-cdk-lib";
 
-// Parameters for Production Application
+// Parameters for Production environment Application
 export interface PrdParameter {
     env?: Environment;
     envName: string;
@@ -21,8 +21,6 @@ export type PrdParameterDefaults = Omit<
 >;
 
 export interface PrdContextParameter {
-    account?: string;
-    region?: string;
     monitoringNotifyEmail?: string;
     monitoringSlackWorkspaceId?: string;
     monitoringSlackChannelId?: string;
@@ -41,20 +39,19 @@ export const prdParameter: PrdParameterDefaults = {
 
 export const loadPrdParameter = (context: unknown): PrdParameter => {
     const contextParameter = (context ?? {}) as PrdContextParameter;
+
+    // Load sensitive parameters from cdk.context.json
     const requiredValue = (key: keyof PrdContextParameter): string => {
-        const value = contextParameter[key];
-        if (typeof value !== "string" || value.trim() === "") {
+        const contextValue = contextParameter[key];
+
+        if (typeof contextValue !== "string" || contextValue.trim() === "") {
             throw new Error(`Missing required CDK context value: prd.${key}`);
         }
-        return value;
+        return contextValue;
     };
 
     return {
         ...prdParameter,
-        env: {
-            account: contextParameter.account,
-            region: contextParameter.region ?? "ap-northeast-1",
-        },
         monitoringNotifyEmail: requiredValue("monitoringNotifyEmail"),
         monitoringSlackWorkspaceId: requiredValue("monitoringSlackWorkspaceId"),
         monitoringSlackChannelId: requiredValue("monitoringSlackChannelId"),
