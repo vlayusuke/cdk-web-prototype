@@ -52,6 +52,7 @@ export class CfComputeBackendStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-role-for-batch`,
         );
         cdk.Tags.of(ec2IamRoleForBatch).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ec2IamRoleForBatch).add("ProjectCode", "1234567890");
 
         const ec2IamPolicyForBatch = new iam.Policy(
             this,
@@ -87,6 +88,7 @@ export class CfComputeBackendStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-policy-for-batch`,
         );
         cdk.Tags.of(ec2IamPolicyForBatch).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ec2IamPolicyForBatch).add("ProjectCode", "1234567890");
 
         ec2IamPolicyForBatch.attachToRole(ec2IamRoleForBatch);
 
@@ -110,6 +112,10 @@ export class CfComputeBackendStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-instance-profile-for-batch`,
         );
         cdk.Tags.of(ec2IamInstanceProfileForBatch).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ec2IamInstanceProfileForBatch).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Amazon EC2 Batch Key Pair Configuration
@@ -119,6 +125,12 @@ export class CfComputeBackendStack extends Construct {
             type: ec2.KeyPairType.ED25519,
             format: ec2.KeyPairFormat.PEM,
         });
+        cdk.Tags.of(batchKeyPair).add(
+            "Name",
+            `${commonProps.projectName}-${envProps.envName}-batch-key-pair`,
+        );
+        cdk.Tags.of(batchKeyPair).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(batchKeyPair).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon EC2 Batch (AZ-a) Configuration
@@ -174,9 +186,10 @@ export class CfComputeBackendStack extends Construct {
 
         cdk.Tags.of(ec2InstanceBatchAZa).add(
             "Name",
-            `${commonProps.projectName}-${envProps.envName}-ec2-instance-batch-az-c`,
+            `${commonProps.projectName}-${envProps.envName}-ec2-instance-batch-az-a`,
         );
         cdk.Tags.of(ec2InstanceBatchAZa).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ec2InstanceBatchAZa).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon EC2 Batch (AZ-c) Configuration
@@ -235,6 +248,7 @@ export class CfComputeBackendStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ec2-instance-batch-az-c`,
         );
         cdk.Tags.of(ec2InstanceBatchAZc).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(ec2InstanceBatchAZc).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // EIP for Amazon EC2 Batch (AZ-a) Configuration
@@ -248,6 +262,7 @@ export class CfComputeBackendStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-batch-eip-az-a`,
         );
         cdk.Tags.of(batchEipAZa).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(batchEipAZa).add("ProjectCode", "1234567890");
 
         new ec2.CfnEIPAssociation(this, "batchEipAssociationAZa", {
             allocationId: batchEipAZa.attrAllocationId,
@@ -266,6 +281,7 @@ export class CfComputeBackendStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-batch-eip-az-c`,
         );
         cdk.Tags.of(batchEipAZc).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(batchEipAZc).add("ProjectCode", "1234567890");
 
         new ec2.CfnEIPAssociation(this, "batchEipAssociationAZc", {
             allocationId: batchEipAZc.attrAllocationId,
