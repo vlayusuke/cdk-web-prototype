@@ -24,6 +24,7 @@ import { CfStorageStack } from "./construct/cfStorageStack";
 export interface CommonProps {
     projectName: string;
     dashboardName: string;
+    availabilityZones: [string, string, string?];
 }
 
 export interface EnvProps {
