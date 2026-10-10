@@ -63,6 +63,7 @@ export class CfDatabaseStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-aurora-role`,
         );
         cdk.Tags.of(auroraIamRole).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(auroraIamRole).add("ProjectCode", "1234567890");
 
         const auroraIamPolicy = new iam.Policy(this, "AuroraIamPolicy", {
             statements: [
@@ -82,6 +83,7 @@ export class CfDatabaseStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-aurora-policy`,
         );
         cdk.Tags.of(auroraIamPolicy).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(auroraIamPolicy).add("ProjectCode", "1234567890");
 
         const auroraIamPeformanceInsightRole = new iam.Role(
             this,
@@ -98,6 +100,10 @@ export class CfDatabaseStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-aurora-performance-insight-role`,
         );
         cdk.Tags.of(auroraIamPeformanceInsightRole).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(auroraIamPeformanceInsightRole).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         const auroraIamPeformanceInsightPolicy = new iam.Policy(
             this,
@@ -127,6 +133,10 @@ export class CfDatabaseStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(auroraIamPeformanceInsightPolicy).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         auroraIamPolicy.attachToRole(auroraIamRole);
         auroraIamPeformanceInsightPolicy.attachToRole(
@@ -146,6 +156,7 @@ export class CfDatabaseStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-elasticache-role`,
         );
         cdk.Tags.of(elasticacheIamRole).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(elasticacheIamRole).add("ProjectCode", "1234567890");
 
         const elasticacheIamPolicy = new iam.Policy(
             this,
@@ -173,6 +184,7 @@ export class CfDatabaseStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-iam-elasticache-policy`,
         );
         cdk.Tags.of(elasticacheIamPolicy).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(elasticacheIamPolicy).add("ProjectCode", "1234567890");
 
         elasticacheIamPolicy.attachToRole(elasticacheIamRole);
 
@@ -193,6 +205,7 @@ export class CfDatabaseStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-aurora-subnet-group`,
         );
         cdk.Tags.of(auroraSubnetGroup).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(auroraSubnetGroup).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon Aurora DB Parameter Group Configuration
@@ -214,6 +227,7 @@ export class CfDatabaseStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-aurora-db-parameter-group`,
         );
         cdk.Tags.of(auroraDbParameterGroup).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(auroraDbParameterGroup).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon Aurora Cluster Configuration
@@ -257,6 +271,7 @@ export class CfDatabaseStack extends Construct {
         );
         cdk.Tags.of(auroraCluster).add("AutoStop", "true");
         cdk.Tags.of(auroraCluster).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(auroraCluster).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon Aurora Instance Configuration
@@ -312,6 +327,7 @@ export class CfDatabaseStack extends Construct {
             instance.applyRemovalPolicy(cdk.RemovalPolicy.SNAPSHOT);
             cdk.Tags.of(instance).add("AutoStop", "true");
             cdk.Tags.of(instance).add("ProvisionedBy", "AWS");
+            cdk.Tags.of(instance).add("ProjectCode", "1234567890");
         }
 
         cdk.Tags.of(auroraReaderInstance).add(
@@ -341,6 +357,7 @@ export class CfDatabaseStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-elasticache-subnet-group`,
         );
         cdk.Tags.of(elasticacheSubnetGroup).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(elasticacheSubnetGroup).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon ElastiCache Parameter Group Configuration
@@ -361,6 +378,7 @@ export class CfDatabaseStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-elasticache-parameter-group`,
         );
         cdk.Tags.of(elasticacheParameterGroup).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(elasticacheParameterGroup).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon ElastiCache Replication Group Configuration
@@ -413,5 +431,9 @@ export class CfDatabaseStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-elasticache-replication-group`,
         );
         cdk.Tags.of(elasticacheReplicationGroup).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(elasticacheReplicationGroup).add(
+            "ProjectCode",
+            "1234567890",
+        );
     }
 }
