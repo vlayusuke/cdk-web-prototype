@@ -69,6 +69,7 @@ export class CfNetworkStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-vpc`,
         );
         cdk.Tags.of(Vpc).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(Vpc).add("ProjectCode", "1234567890");
 
         for (const [index, subnet] of Vpc.publicSubnets.entries()) {
             const zoneSuffix = envProps.availabilityZones[index].slice(-1);
@@ -81,6 +82,7 @@ export class CfNetworkStack extends Construct {
                 `${commonProps.projectName}-${envProps.envName}-pubsub-route-table-az-${zoneSuffix}`,
             );
             cdk.Tags.of(routeTable).add("ProvisionedBy", "AWS");
+            cdk.Tags.of(routeTable).add("ProjectCode", "1234567890");
         }
 
         for (const [index, subnet] of Vpc.privateSubnets.entries()) {
@@ -94,6 +96,7 @@ export class CfNetworkStack extends Construct {
                 `${commonProps.projectName}-${envProps.envName}-prvsub-route-table-az-${zoneSuffix}`,
             );
             cdk.Tags.of(routeTable).add("ProvisionedBy", "AWS");
+            cdk.Tags.of(routeTable).add("ProjectCode", "1234567890");
         }
 
         for (const [index, subnet] of Vpc.isolatedSubnets.entries()) {
@@ -107,6 +110,7 @@ export class CfNetworkStack extends Construct {
                 `${commonProps.projectName}-${envProps.envName}-protsub-route-table-az-${zoneSuffix}`,
             );
             cdk.Tags.of(routeTable).add("ProvisionedBy", "AWS");
+            cdk.Tags.of(routeTable).add("ProjectCode", "1234567890");
         }
 
         // ------------------------------------------------------------
@@ -127,6 +131,7 @@ export class CfNetworkStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-igw`,
         );
         cdk.Tags.of(internetGateway).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(internetGateway).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Virtual Private Gateway Configuration
@@ -149,6 +154,7 @@ export class CfNetworkStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-vgw`,
         );
         cdk.Tags.of(virtualPrivateGateway).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(virtualPrivateGateway).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // NAT Gateway Configuration
@@ -173,6 +179,7 @@ export class CfNetworkStack extends Construct {
                 `${commonProps.projectName}-${envProps.envName}-nat-gateway-az-${zoneSuffix}`,
             );
             cdk.Tags.of(natGateway).add("ProvisionedBy", "AWS");
+            cdk.Tags.of(natGateway).add("ProjectCode", "1234567890");
 
             return natGateway;
         });
@@ -219,6 +226,7 @@ export class CfNetworkStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-s3-vpc-flow-logs-bucket`,
         );
         cdk.Tags.of(s3VPCFlowLogsBucket).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(s3VPCFlowLogsBucket).add("ProjectCode", "1234567890");
 
         Vpc.addFlowLog("FlowLogs", {
             destination: ec2.FlowLogDestination.toS3(
@@ -241,6 +249,7 @@ export class CfNetworkStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-vpc-flow-log`,
         );
         cdk.Tags.of(cfnVPVFlowLog).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(cfnVPVFlowLog).add("ProjectCode", "1234567890");
 
         this.Vpc = Vpc;
     }
