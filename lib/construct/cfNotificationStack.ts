@@ -67,6 +67,7 @@ export class CfNotificationStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-sns-metrics-alarm`,
         );
         cdk.Tags.of(this.snsTopicMetricsAlarm).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.snsTopicMetricsAlarm).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon SNS for Amazon CloudWatch Logs Alarm Configuration
@@ -84,6 +85,7 @@ export class CfNotificationStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-sns-logs-alarm`,
         );
         cdk.Tags.of(this.snsTopicLogsAlarm).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.snsTopicLogsAlarm).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon SNS for Event Notification Configuration
@@ -105,6 +107,10 @@ export class CfNotificationStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-sns-event-notification`,
         );
         cdk.Tags.of(this.snsTopicEventNotification).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.snsTopicEventNotification).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         new chatbot.SlackChannelConfiguration(
             this,
@@ -126,6 +132,13 @@ export class CfNotificationStack extends Construct {
                 loggingLevel: chatbot.LoggingLevel.ERROR,
             },
         );
+
+        cdk.Tags.of(this).add(
+            "Name",
+            `${commonProps.projectName}-${envProps.envName}-notification-stack`,
+        );
+        cdk.Tags.of(this).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this).add("ProjectCode", "1234567890");
     }
 
     // ------------------------------------------------------------
