@@ -48,5 +48,6 @@ export class CfCICDStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-codecommit`,
         );
         cdk.Tags.of(codeCommitRepository).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(codeCommitRepository).add("ProjectCode", "1234567890");
     }
 }
