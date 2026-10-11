@@ -54,6 +54,7 @@ export class CfSecurityServiceStack extends Construct {
             `aws-waf-logs-${commonProps.projectName}-${envProps.envName}-s3-wafv2logs`,
         );
         cdk.Tags.of(s3WAFv2LogsBucket).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(s3WAFv2LogsBucket).add("ProjectCode", "1234567890");
 
         // Allow WAF log delivery to use the customer-managed KMS key encrypting the bucket.
         kmsProps.s3Key.addToResourcePolicy(
@@ -194,6 +195,7 @@ export class CfSecurityServiceStack extends Construct {
             `aws-waf-logs-${commonProps.projectName}-${envProps.envName}-wafv2-webacl`,
         );
         cdk.Tags.of(this).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // AWS WAFv2 Logging Configuration
