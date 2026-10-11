@@ -303,6 +303,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-vpcendpoint-ecr-docker`,
         );
         cdk.Tags.of(this.vpcEndpointECRDocker).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.vpcEndpointECRDocker).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // VPC Endpoint for Amazon ECR API Interface Configuration
@@ -332,6 +333,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-vpcendpoint-ecr-api`,
         );
         cdk.Tags.of(this.vpcEndpointECRAPI).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.vpcEndpointECRAPI).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // VPC Endpoint for AWS KMS Interface Configuration
@@ -357,6 +359,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-vpcendpoint-kms`,
         );
         cdk.Tags.of(this.vpcEndpointKMS).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.vpcEndpointKMS).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // VPC Endpoint for AWS Systems Manager Interface Configuration
@@ -383,6 +386,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-vpcendpoint-ssm`,
         );
         cdk.Tags.of(this.vpcEndpointSSM).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.vpcEndpointSSM).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // VPC Endpoint for AWS Systems Manager Messages Interface Configuration
@@ -412,6 +416,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-vpcendpoint-ssm-messages`,
         );
         cdk.Tags.of(this.vpcEndpointSSMEC2).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.vpcEndpointSSMEC2).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // VPC Endpoint for AWS Systems Manager EC2 Messages Interface Configuration
@@ -441,6 +446,10 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-vpcendpoint-ssm-ec2-messages`,
         );
         cdk.Tags.of(this.vpcEndpointSSMEC2Messages).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.vpcEndpointSSMEC2Messages).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // VPC Endpoint for Amazon CloudWatch Logs Interface Configuration
@@ -471,6 +480,10 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-vpcendpoint-cloudwatch-logs`,
         );
         cdk.Tags.of(this.vpcEndpointCloudWatchLogs).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.vpcEndpointCloudWatchLogs).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // VPC Endpoint for Amazon S3 Gateway Configuration
@@ -488,6 +501,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-vpcendpoint-s3`,
         );
         cdk.Tags.of(this.vpcEndpointS3).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.vpcEndpointS3).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon ECR Repository for Web BaseImage Configuration
@@ -514,6 +528,10 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ecr-repository-web-baseimage`,
         );
         cdk.Tags.of(this.ecrRepositoryWebBaseImage).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.ecrRepositoryWebBaseImage).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         const cfnRepositoryWebBaseImage = this.ecrRepositoryWebBaseImage.node
             .defaultChild as ecr.CfnRepository;
@@ -541,6 +559,10 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ecr-repository-app-baseimage`,
         );
         cdk.Tags.of(this.ecrRepositoryAppBaseImage).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.ecrRepositoryAppBaseImage).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         const cfnRepositoryAppBaseImage = this.ecrRepositoryAppBaseImage.node
             .defaultChild as ecr.CfnRepository;
@@ -564,6 +586,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ecr-repository-web`,
         );
         cdk.Tags.of(this.ecrRepositoryWeb).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.ecrRepositoryWeb).add("ProjectCode", "1234567890");
 
         const cfnRepositoryWeb = this.ecrRepositoryWeb.node
             .defaultChild as ecr.CfnRepository;
@@ -587,6 +610,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-ecr-repository-app`,
         );
         cdk.Tags.of(this.ecrRepositoryApp).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.ecrRepositoryApp).add("ProjectCode", "1234567890");
 
         const cfnRepositoryApp = this.ecrRepositoryApp.node
             .defaultChild as ecr.CfnRepository;
@@ -614,6 +638,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-s3-bucket-alb-logs`,
         );
         cdk.Tags.of(this.s3BucketAlbLogs).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.s3BucketAlbLogs).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon S3 Bucket for Amazon ECS Logs Configuration
@@ -635,6 +660,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-s3-bucket-ecs-logs`,
         );
         cdk.Tags.of(this.s3BucketEcsLogs).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.s3BucketEcsLogs).add("ProjectCode", "1234567890");
 
         new s3deploy.BucketDeployment(this, "deployNginxLogs", {
             sources: [repositoryAsset],
@@ -680,6 +706,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-s3-bucket-ec2-logs`,
         );
         cdk.Tags.of(this.s3BucketEc2Logs).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.s3BucketEc2Logs).add("ProjectCode", "1234567890");
 
         new s3deploy.BucketDeployment(this, "deployEc2BastionLogs", {
             sources: [repositoryAsset],
@@ -719,6 +746,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-s3-bucket-lambda-logs`,
         );
         cdk.Tags.of(this.s3BucketLambdaLogs).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.s3BucketLambdaLogs).add("ProjectCode", "1234567890");
 
         new s3deploy.BucketDeployment(this, "deployLambdaRdsControlLogs", {
             sources: [repositoryAsset],
@@ -766,6 +794,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-s3-bucket-aurora-logs`,
         );
         cdk.Tags.of(this.s3BucketAuroraLogs).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.s3BucketAuroraLogs).add("ProjectCode", "1234567890");
 
         new s3deploy.BucketDeployment(this, "deployAuroraInstanceLogs", {
             sources: [repositoryAsset],
@@ -809,6 +838,10 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-s3-bucket-elasticache-logs`,
         );
         cdk.Tags.of(this.s3BucketElastiCacheLogs).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.s3BucketElastiCacheLogs).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Amazon S3 Bucket for Amazon SNS Logs Configuration
@@ -830,6 +863,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-s3-bucket-sns-logs`,
         );
         cdk.Tags.of(this.s3BucketSnsLogs).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.s3BucketSnsLogs).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon S3 Bucket for Assets Configuration
@@ -865,6 +899,7 @@ export class CfStorageStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-s3-bucket-assets`,
         );
         cdk.Tags.of(this.s3BucketAssets).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.s3BucketAssets).add("ProjectCode", "1234567890");
 
         new s3deploy.BucketDeployment(this, "deployAssets", {
             sources: [repositoryAsset],
