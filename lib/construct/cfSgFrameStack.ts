@@ -65,6 +65,10 @@ export class CfSgFrameStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-sg-alb`,
         );
         cdk.Tags.of(this.albSecurityGroupFrame).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.albSecurityGroupFrame).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Security group for Amazon EC2 Bastion (Frame Only)
@@ -85,6 +89,10 @@ export class CfSgFrameStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-sg-bastion`,
         );
         cdk.Tags.of(this.bastionSecurityGroupFrame).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.bastionSecurityGroupFrame).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Security group for Amazon EC2 Batch (Frame Only)
@@ -105,6 +113,10 @@ export class CfSgFrameStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-sg-batch`,
         );
         cdk.Tags.of(this.batchSecurityGroupFrame).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.batchSecurityGroupFrame).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Security group for Amazon ECS (Frame Only)
@@ -125,6 +137,10 @@ export class CfSgFrameStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-sg-ecs`,
         );
         cdk.Tags.of(this.ecsSecurityGroupFrame).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.ecsSecurityGroupFrame).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Security group for Amazon Aurora (Frame Only)
@@ -145,6 +161,10 @@ export class CfSgFrameStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-sg-aurora`,
         );
         cdk.Tags.of(this.auroraSecurityGroupFrame).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.auroraSecurityGroupFrame).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Security group for Amazon ElastiCache (Frame Only)
@@ -168,6 +188,10 @@ export class CfSgFrameStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.elasticacheSecurityGroupFrame).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Security group for AWS Lambda (Frame Only)
@@ -188,6 +212,10 @@ export class CfSgFrameStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-sg-lambda`,
         );
         cdk.Tags.of(this.lambdaSecurityGroupFrame).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.lambdaSecurityGroupFrame).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Security group for VPC Endpoint of Amazon S3 Interface (Frame Only)
@@ -210,6 +238,10 @@ export class CfSgFrameStack extends Construct {
         cdk.Tags.of(this.vpcEndPointS3SecurityGroupFrame).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.vpcEndPointS3SecurityGroupFrame).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         // ------------------------------------------------------------
@@ -234,6 +266,10 @@ export class CfSgFrameStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.vpcEndPointECRSecurityGroupFrame).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Security group for VPC Endpoint of AWS Systems Manager Interface (Frame Only)
@@ -256,6 +292,10 @@ export class CfSgFrameStack extends Construct {
         cdk.Tags.of(this.vpcEndPointSSMSecurityGroupFrame).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.vpcEndPointSSMSecurityGroupFrame).add(
+            "ProjectCode",
+            "1234567890",
         );
 
         // ------------------------------------------------------------
@@ -280,6 +320,10 @@ export class CfSgFrameStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
+        cdk.Tags.of(this.vpcEndPointKMSSecurityGroupFrame).add(
+            "ProjectCode",
+            "1234567890",
+        );
 
         // ------------------------------------------------------------
         // Security group for VPC Endpoint of Amazon CloudWatch Logs Interface (Frame Only)
@@ -303,6 +347,10 @@ export class CfSgFrameStack extends Construct {
         cdk.Tags.of(this.vpcEndPointCloudWatchLogsSecurityGroupFrame).add(
             "ProvisionedBy",
             "AWS",
+        );
+        cdk.Tags.of(this.vpcEndPointCloudWatchLogsSecurityGroupFrame).add(
+            "ProjectCode",
+            "1234567890",
         );
     }
 }
