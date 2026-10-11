@@ -57,6 +57,7 @@ export class CfSecurityConfigStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-kms-application-key`,
         );
         cdk.Tags.of(this.applicationKey).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.applicationKey).add("ProjectCode", "1234567890");
 
         this.bastionKey = new kms.Key(this, "bastionKey", {
             description: "KMS key for bastion and administration access",
@@ -70,6 +71,7 @@ export class CfSecurityConfigStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-kms-bastion-key`,
         );
         cdk.Tags.of(this.bastionKey).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.bastionKey).add("ProjectCode", "1234567890");
 
         // AWS KMS Key policy for application encryption
         const kmsApplicationKeyPolicy = new iam.PolicyStatement({
@@ -131,6 +133,7 @@ export class CfSecurityConfigStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-kms-ecr-key`,
         );
         cdk.Tags.of(this.ecrKey).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.ecrKey).add("ProjectCode", "1234567890");
 
         // AWS KMS Key policy for Amazon ECR encryption
         const kmsEcrKeyPolicy = new iam.PolicyStatement({
@@ -172,6 +175,7 @@ export class CfSecurityConfigStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-kms-aurora-key`,
         );
         cdk.Tags.of(this.auroraKey).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.auroraKey).add("ProjectCode", "1234567890");
 
         // AWS KMS Key policy for Amazon Aurora encryption
         const kmsAuroraKeyPolicy = new iam.PolicyStatement({
@@ -213,6 +217,7 @@ export class CfSecurityConfigStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-kms-elasticache-key`,
         );
         cdk.Tags.of(this.elasticacheKey).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.elasticacheKey).add("ProjectCode", "1234567890");
 
         // AWS KMS Key policy for Amazon ElastiCache encryption
         const kmsElasticacheKeyPolicy = new iam.PolicyStatement({
@@ -256,6 +261,7 @@ export class CfSecurityConfigStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-kms-s3-key`,
         );
         cdk.Tags.of(this.s3Key).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.s3Key).add("ProjectCode", "1234567890");
 
         // AWS KMS Key policy for Amazon S3 encryption
         const kmsS3KeyPolicy = new iam.PolicyStatement({
@@ -297,6 +303,7 @@ export class CfSecurityConfigStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-kms-ebs-key`,
         );
         cdk.Tags.of(this.ebsKey).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.ebsKey).add("ProjectCode", "1234567890");
 
         // AWS KMS Key policy for Amazon EBS encryption
         const kmsEbsKeyPolicy = new iam.PolicyStatement({
@@ -338,6 +345,7 @@ export class CfSecurityConfigStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-kms-lambda-key`,
         );
         cdk.Tags.of(this.lambdaKey).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.lambdaKey).add("ProjectCode", "1234567890");
 
         // AWS KMS Key policy for AWS Lambda encryption
         const kmsLambdaKeyPolicy = new iam.PolicyStatement({
@@ -379,6 +387,7 @@ export class CfSecurityConfigStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-kms-event-bridge-key`,
         );
         cdk.Tags.of(this.eventBridgeKey).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.eventBridgeKey).add("ProjectCode", "1234567890");
 
         // AWS KMS Key policy for Amazon EventBridge encryption
         const kmsEventBridgeKeyPolicy = new iam.PolicyStatement({
@@ -422,6 +431,7 @@ export class CfSecurityConfigStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-kms-sns-key`,
         );
         cdk.Tags.of(this.snsKey).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.snsKey).add("ProjectCode", "1234567890");
 
         // AWS KMS Key policy for Amazon SNS encryption
         const kmsSnsKeyPolicy = new iam.PolicyStatement({
@@ -463,6 +473,7 @@ export class CfSecurityConfigStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-kms-codecommit-key`,
         );
         cdk.Tags.of(this.codeCommitKey).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.codeCommitKey).add("ProjectCode", "1234567890");
 
         // AWS KMS Key policy for AWS CodeCommit encryption
         const kmsCodeCommitKeyPolicy = new iam.PolicyStatement({
@@ -530,5 +541,6 @@ export class CfSecurityConfigStack extends Construct {
             `${commonProps.projectName}-${envProps.envName}-smg-postgresql-secret`,
         );
         cdk.Tags.of(this.postgresqlSecret).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(this.postgresqlSecret).add("ProjectCode", "1234567890");
     }
 }
