@@ -84,6 +84,14 @@ export class CfComputeWebAPStack extends Construct {
                         ],
                         resources: [`arn:aws:s3:::*`],
                     }),
+                    new iam.PolicyStatement({
+                        sid: "AuroraAccess",
+                        effect: iam.Effect.ALLOW,
+                        actions: ["rds:DescribeDBInstances", "rds:Connect"],
+                        resources: [
+                            `arn:aws:rds:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:db:*`,
+                        ],
+                    }),
                 ],
             },
         );
@@ -155,6 +163,7 @@ export class CfComputeWebAPStack extends Construct {
             type: ec2.KeyPairType.ED25519,
             format: ec2.KeyPairFormat.PEM,
         });
+
         cdk.Tags.of(bastionKeyPair).add(
             "Name",
             `${commonProps.projectName}-${envProps.envName}-bastion-key-pair`,
