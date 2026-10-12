@@ -15,8 +15,8 @@ export interface EnvProps {
 
 export interface NetworkingProps {
     vpcId: string;
-    publicSubnetIds: string[];
-    publicSubnetRouteTableIds: string[];
+    privateSubnetIds: string[];
+    privateSubnetRouteTableIds: string[];
     availabilityZones: [string, string];
 }
 
@@ -69,12 +69,9 @@ export class CfComputeBackendStack extends Construct {
                         ],
                     }),
                     new iam.PolicyStatement({
-                        sid: "RDSAccess",
+                        sid: "AuroraAccess",
                         effect: iam.Effect.ALLOW,
-                        actions: [
-                            "rds-db:connect",
-                            "rds-data:ExecuteStatement",
-                        ],
+                        actions: ["rds:DescribeDBInstances", "rds:Connect"],
                         resources: [
                             `arn:aws:rds:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:db:*`,
                         ],
@@ -125,6 +122,7 @@ export class CfComputeBackendStack extends Construct {
             type: ec2.KeyPairType.ED25519,
             format: ec2.KeyPairFormat.PEM,
         });
+
         cdk.Tags.of(batchKeyPair).add(
             "Name",
             `${commonProps.projectName}-${envProps.envName}-batch-key-pair`,
@@ -147,9 +145,9 @@ export class CfComputeBackendStack extends Construct {
                 vpc: ec2.Vpc.fromVpcAttributes(this, "vpc", {
                     vpcId: networkingProps.vpcId,
                     availabilityZones: [networkingProps.availabilityZones[0]],
-                    publicSubnetIds: [networkingProps.publicSubnetIds[0]],
-                    publicSubnetRouteTableIds: [
-                        networkingProps.publicSubnetRouteTableIds[0],
+                    privateSubnetIds: [networkingProps.privateSubnetIds[0]],
+                    privateSubnetRouteTableIds: [
+                        networkingProps.privateSubnetRouteTableIds[0],
                     ],
                 }),
                 securityGroup: sgProps.batchSecurityGroup,
@@ -206,9 +204,9 @@ export class CfComputeBackendStack extends Construct {
                 vpc: ec2.Vpc.fromVpcAttributes(this, "vpcAZc", {
                     vpcId: networkingProps.vpcId,
                     availabilityZones: [networkingProps.availabilityZones[1]],
-                    publicSubnetIds: [networkingProps.publicSubnetIds[1]],
-                    publicSubnetRouteTableIds: [
-                        networkingProps.publicSubnetRouteTableIds[1],
+                    privateSubnetIds: [networkingProps.privateSubnetIds[1]],
+                    privateSubnetRouteTableIds: [
+                        networkingProps.privateSubnetRouteTableIds[1],
                     ],
                 }),
                 securityGroup: sgProps.batchSecurityGroup,
