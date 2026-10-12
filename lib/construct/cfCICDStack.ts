@@ -36,9 +36,9 @@ export class CfCICDStack extends Construct {
         // ------------------------------------------------------------
         const codeCommitRepository = new codecommit.Repository(
             this,
-            "CodeCommitRepository",
+            "codeCommitRepository",
             {
-                repositoryName: "cdk-web-prototype",
+                repositoryName: commonProps.dashboardName,
                 kmsKey: kmsProps.codeCommitKey,
             },
         );
