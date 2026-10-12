@@ -52,8 +52,8 @@ export class CfDatabaseStack extends Construct {
         // ------------------------------------------------------------
         // AWS IAM for Amazon Aurora Configuration
         // ------------------------------------------------------------
-        const auroraIamRole = new iam.Role(this, "AuroraIamRole", {
-            roleName: "AuroraIamRole",
+        const auroraIamRole = new iam.Role(this, "auroraIamRole", {
+            roleName: `${commonProps.projectName}-${envProps.envName}-iam-aurora-role`,
             description: "IAM role for Amazon Aurora to access AWS resources",
             assumedBy: new iam.ServicePrincipal("rds.amazonaws.com"),
         });
@@ -65,7 +65,7 @@ export class CfDatabaseStack extends Construct {
         cdk.Tags.of(auroraIamRole).add("ProvisionedBy", "AWS");
         cdk.Tags.of(auroraIamRole).add("ProjectCode", "1234567890");
 
-        const auroraIamPolicy = new iam.Policy(this, "AuroraIamPolicy", {
+        const auroraIamPolicy = new iam.Policy(this, "auroraIamPolicy", {
             statements: [
                 new iam.PolicyStatement({
                     sid: "AuroraRDSAccess",
@@ -87,9 +87,9 @@ export class CfDatabaseStack extends Construct {
 
         const auroraIamPeformanceInsightRole = new iam.Role(
             this,
-            "AuroraIamPeformanceInsightRole",
+            "auroraIamPeformanceInsightRole",
             {
-                roleName: "AuroraIamPeformanceInsightRole",
+                roleName: `${commonProps.projectName}-${envProps.envName}-iam-aurora-performance-insight-role`,
                 description: "IAM role for Amazon Aurora Performance Insights",
                 assumedBy: new iam.ServicePrincipal("rds.amazonaws.com"),
             },
@@ -107,7 +107,7 @@ export class CfDatabaseStack extends Construct {
 
         const auroraIamPeformanceInsightPolicy = new iam.Policy(
             this,
-            "AuroraIamPeformanceInsightPolicy",
+            "auroraIamPeformanceInsightPolicy",
             {
                 statements: [
                     new iam.PolicyStatement({
@@ -146,7 +146,8 @@ export class CfDatabaseStack extends Construct {
         // ------------------------------------------------------------
         // AWS IAM for Amazon ElastiCache Configuration
         // ------------------------------------------------------------
-        const elasticacheIamRole = new iam.Role(this, "ElasticacheIamRole", {
+        const elasticacheIamRole = new iam.Role(this, "elasticacheIamRole", {
+            roleName: `${commonProps.projectName}-${envProps.envName}-iam-elasticache-role`,
             description: "IAM role for Amazon ElastiCache",
             assumedBy: new iam.ServicePrincipal("elasticache.amazonaws.com"),
         });
@@ -160,7 +161,7 @@ export class CfDatabaseStack extends Construct {
 
         const elasticacheIamPolicy = new iam.Policy(
             this,
-            "ElasticacheIamPolicy",
+            "elasticacheIamPolicy",
             {
                 statements: [
                     new iam.PolicyStatement({
@@ -193,7 +194,7 @@ export class CfDatabaseStack extends Construct {
         // ------------------------------------------------------------
         const auroraSubnetGroup = new rds.CfnDBSubnetGroup(
             this,
-            "AuroraSubnetGroup",
+            "auroraSubnetGroup",
             {
                 dbSubnetGroupDescription: "Subnet group for Amazon Aurora",
                 subnetIds: networkingProps.subnetIds,
@@ -212,7 +213,7 @@ export class CfDatabaseStack extends Construct {
         // ------------------------------------------------------------
         const auroraDbParameterGroup = new rds.CfnDBParameterGroup(
             this,
-            "AuroraDbParameterGroup",
+            "auroraDbParameterGroup",
             {
                 description: "DB parameter group for Amazon Aurora",
                 family: "aurora-postgresql15",
@@ -232,7 +233,7 @@ export class CfDatabaseStack extends Construct {
         // ------------------------------------------------------------
         // Amazon Aurora Cluster Configuration
         // ------------------------------------------------------------
-        const auroraCluster = new rds.CfnDBCluster(this, "AuroraCluster", {
+        const auroraCluster = new rds.CfnDBCluster(this, "auroraCluster", {
             dbClusterIdentifier: `${commonProps.projectName}-${envProps.envName}-aurora-cluster`,
             associatedRoles: [
                 { roleArn: auroraIamRole.roleArn },
@@ -265,6 +266,7 @@ export class CfDatabaseStack extends Construct {
         });
 
         auroraCluster.applyRemovalPolicy(cdk.RemovalPolicy.SNAPSHOT);
+
         cdk.Tags.of(auroraCluster).add(
             "Name",
             `${commonProps.projectName}-${envProps.envName}-aurora-cluster`,
@@ -280,7 +282,7 @@ export class CfDatabaseStack extends Construct {
         // Writer Instance Configuration
         const auroraWriterInstance = new rds.CfnDBInstance(
             this,
-            "AuroraWriterInstance",
+            "auroraWriterInstance",
             {
                 dbInstanceIdentifier: `${commonProps.projectName}-${envProps.envName}-aurora-writer-instance`,
                 dbInstanceClass: "db.t4g.medium",
@@ -302,7 +304,7 @@ export class CfDatabaseStack extends Construct {
         // Reader Instance Configuration
         const auroraReaderInstance = new rds.CfnDBInstance(
             this,
-            "AuroraReaderInstance",
+            "auroraReaderInstance",
             {
                 dbInstanceIdentifier: `${commonProps.projectName}-${envProps.envName}-aurora-reader-instance`,
                 dbInstanceClass: "db.t4g.medium",
@@ -344,7 +346,7 @@ export class CfDatabaseStack extends Construct {
         // ------------------------------------------------------------
         const elasticacheSubnetGroup = new elasticache.CfnSubnetGroup(
             this,
-            "ElasticacheSubnetGroup",
+            "elasticacheSubnetGroup",
             {
                 description: "Subnet group for Amazon ElastiCache",
                 subnetIds: [networkingProps.subnetIds[1]],
@@ -364,7 +366,7 @@ export class CfDatabaseStack extends Construct {
         // ------------------------------------------------------------
         const elasticacheParameterGroup = new elasticache.CfnParameterGroup(
             this,
-            "ElasticacheParameterGroup",
+            "elasticacheParameterGroup",
             {
                 cacheParameterGroupFamily: "redis7",
                 description: "Parameter group for Amazon ElastiCache",
@@ -373,6 +375,7 @@ export class CfDatabaseStack extends Construct {
                 },
             },
         );
+
         cdk.Tags.of(elasticacheParameterGroup).add(
             "Name",
             `${commonProps.projectName}-${envProps.envName}-elasticache-parameter-group`,
@@ -385,7 +388,7 @@ export class CfDatabaseStack extends Construct {
         // ------------------------------------------------------------
         const elasticacheReplicationGroup = new elasticache.CfnReplicationGroup(
             this,
-            "ElasticacheReplicationGroup",
+            "elasticacheReplicationGroup",
             {
                 replicationGroupDescription:
                     "Replication group for Amazon ElastiCache",
