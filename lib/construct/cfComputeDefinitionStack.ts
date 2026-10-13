@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { aws_kms as kms } from "aws-cdk-lib";
+import type { aws_ecr as ecr, aws_kms as kms } from "aws-cdk-lib";
 import * as cdk from "aws-cdk-lib";
 import {
     aws_applicationautoscaling as applicationautoscaling,
@@ -147,11 +147,19 @@ export interface KmsProps {
 
 export interface NetworkingProps {
     vpcId: string;
-    subnetIds: string[];
+    publicSubnetIds: string[];
+    privateSubnetIds: string[];
 }
 
 export interface SgProps {
     ecsSecurityGroup: ec2.SecurityGroup;
+}
+
+export interface EcrProps {
+    ecrRepositoryWebBaseImage: ecr.IRepository;
+    ecrRepositoryAppBaseImage: ecr.IRepository;
+    ecrRepositoryWeb: ecr.IRepository;
+    ecrRepositoryApp: ecr.IRepository;
 }
 
 export interface EcsProps {
@@ -179,6 +187,7 @@ export class CfComputeDefinitionStack extends Construct {
         id: string,
         sgProps: SgProps,
         albProps: AlbProps,
+        ecrProps: EcrProps,
         ecsProps: EcsProps,
         kmsProps: KmsProps,
         commonProps: CommonProps,
@@ -290,10 +299,48 @@ export class CfComputeDefinitionStack extends Construct {
                 roles: [iamGithubActionsRole],
                 statements: [
                     new iam.PolicyStatement({
-                        sid: "PassRole",
+                        sid: "GetAuthenticationToken",
                         effect: iam.Effect.ALLOW,
-                        actions: ["iam:PassRole"],
-                        resources: [iamGithubActionsRole.roleArn],
+                        actions: ["ecr:GetAuthorizationToken"],
+                        resources: ["*"],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "PushImageOnly",
+                        effect: iam.Effect.ALLOW,
+                        actions: [
+                            "ecr:GetDownloadUrlForLayer",
+                            "ecr:BatchCheckLayerAvailability",
+                            "ecr:InitiateLayerUpload",
+                            "ecr:UploadLayerPart",
+                            "ecr:CompleteLayerUpload",
+                            "ecr:BatchGetImage",
+                            "ecr:PutImage",
+                        ],
+                        resources: [
+                            ecrProps.ecrRepositoryWebBaseImage.repositoryArn,
+                            ecrProps.ecrRepositoryAppBaseImage.repositoryArn,
+                            ecrProps.ecrRepositoryWeb.repositoryArn,
+                            ecrProps.ecrRepositoryApp.repositoryArn,
+                        ],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "S3Access",
+                        effect: iam.Effect.ALLOW,
+                        actions: [
+                            "s3:GetObject",
+                            "s3:PutObject",
+                            "s3:ListBucket",
+                        ],
+                        resources: [
+                            `arn:aws:s3:::${commonProps.projectName}-${envProps.envName}-*`,
+                            `arn:aws:s3:::${commonProps.projectName}-${envProps.envName}-*/*`,
+                        ],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "GlobalServiceCheck",
+                        effect: iam.Effect.ALLOW,
+                        actions: ["acm:DescribeCertificate", "wafv2:GetWebACL"],
+                        resources: ["*"],
                     }),
                 ],
             },
