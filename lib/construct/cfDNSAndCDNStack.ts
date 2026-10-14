@@ -327,6 +327,9 @@ export class CfDNSAndCDNStack extends Construct {
             "1234567890",
         );
 
+        // ------------------------------------------------------------
+        // Amazon CloudFront Response Headers Policy Configuration
+        // ------------------------------------------------------------
         const cloudFrontResponseHeadersPolicy =
             new cloudfront.ResponseHeadersPolicy(
                 this,
@@ -362,6 +365,9 @@ export class CfDNSAndCDNStack extends Construct {
             "1234567890",
         );
 
+        // ------------------------------------------------------------
+        // Amazon CloudFront Cache Policy Configuration
+        // ------------------------------------------------------------
         const cloudFrontCachePolicy = new cloudfront.CachePolicy(
             this,
             "cloudFrontCachePolicy",
@@ -386,6 +392,9 @@ export class CfDNSAndCDNStack extends Construct {
         cdk.Tags.of(cloudFrontCachePolicy).add("ProvisionedBy", "AWS");
         cdk.Tags.of(cloudFrontCachePolicy).add("ProjectCode", "1234567890");
 
+        // ------------------------------------------------------------
+        // Origin Access Control Configuration
+        // ------------------------------------------------------------
         const assetsOriginAccessControl = new cloudfront.S3OriginAccessControl(
             this,
             "assetsOriginAccessControl",
