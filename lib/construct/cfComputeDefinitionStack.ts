@@ -847,6 +847,9 @@ export class CfComputeDefinitionStack extends Construct {
             "1234567890",
         );
 
+        // ------------------------------------------------------------
+        // AWS SSM Parameter Store for JWT Secret Configuration
+        // ------------------------------------------------------------
         this.ssmParamenterStoreJwtSecret = new ssm.StringParameter(
             this,
             "ssmParamenterStoreJwtSecret",
@@ -870,6 +873,9 @@ export class CfComputeDefinitionStack extends Construct {
             "1234567890",
         );
 
+        // ------------------------------------------------------------
+        // AWS SSM Parameter Store for Aurora Writer Endpoint Configuration
+        // ------------------------------------------------------------
         this.ssmParameterStoreAuroraWriterEndPoint = new ssm.StringParameter(
             this,
             "ssmParameterStoreAuroraWriterEndPoint",
@@ -893,6 +899,9 @@ export class CfComputeDefinitionStack extends Construct {
             "1234567890",
         );
 
+        // ------------------------------------------------------------
+        // AWS SSM Parameter Store for Aurora Reader Endpoint Configuration
+        // ------------------------------------------------------------
         this.ssmParameterStoreAuroraReaderEndPoint = new ssm.StringParameter(
             this,
             "ssmParameterStoreAuroraReaderEndPoint",
@@ -916,6 +925,9 @@ export class CfComputeDefinitionStack extends Construct {
             "1234567890",
         );
 
+        // ------------------------------------------------------------
+        // AWS SSM Parameter Store for ElastiCache Writer Endpoint Configuration
+        // ------------------------------------------------------------
         this.ssmParameterStoreElastiCacheWriterEndPoint =
             new ssm.StringParameter(
                 this,
@@ -940,6 +952,9 @@ export class CfComputeDefinitionStack extends Construct {
             "1234567890",
         );
 
+        // ------------------------------------------------------------
+        // AWS SSM Parameter Store for ElastiCache Reader Endpoint Configuration
+        // ------------------------------------------------------------
         this.ssmParameterStoreElastiCacheReaderEndPoint =
             new ssm.StringParameter(
                 this,
