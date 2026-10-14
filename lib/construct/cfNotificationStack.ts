@@ -112,6 +112,9 @@ export class CfNotificationStack extends Construct {
             "1234567890",
         );
 
+        // ------------------------------------------------------------
+        // AWS Chatbot Configuration
+        // ------------------------------------------------------------
         new chatbot.SlackChannelConfiguration(
             this,
             "SlackChannelConfiguration",
