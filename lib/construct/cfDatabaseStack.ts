@@ -85,6 +85,9 @@ export class CfDatabaseStack extends Construct {
         cdk.Tags.of(auroraIamPolicy).add("ProvisionedBy", "AWS");
         cdk.Tags.of(auroraIamPolicy).add("ProjectCode", "1234567890");
 
+        // ------------------------------------------------------------
+        // AWS IAM for Amazon Aurora Performance Insights Configuration
+        // ------------------------------------------------------------
         const auroraIamPeformanceInsightRole = new iam.Role(
             this,
             "auroraIamPeformanceInsightRole",
