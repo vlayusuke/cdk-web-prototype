@@ -189,7 +189,7 @@ export class CfLoggingStack extends Construct {
         );
 
         // ------------------------------------------------------------
-        // Amazon CloudWatch Logs for Amazon Aurora (postgresql) Configuration
+        // Amazon CloudWatch Logs for Amazon Aurora (PostgreSQL) Configuration
         // ------------------------------------------------------------
         this.logGroupAuroraPostgresql = new logs.LogGroup(
             this,
