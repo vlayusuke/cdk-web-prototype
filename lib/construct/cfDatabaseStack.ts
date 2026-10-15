@@ -52,20 +52,20 @@ export class CfDatabaseStack extends Construct {
         // ------------------------------------------------------------
         // AWS IAM for Amazon Aurora Configuration
         // ------------------------------------------------------------
-        const auroraIamRole = new iam.Role(this, "auroraIamRole", {
+        const iamAuroraRole = new iam.Role(this, "iamAuroraRole", {
             roleName: `${commonProps.projectName}-${envProps.envName}-iam-aurora-role`,
             description: "IAM role for Amazon Aurora to access AWS resources",
             assumedBy: new iam.ServicePrincipal("rds.amazonaws.com"),
         });
 
-        cdk.Tags.of(auroraIamRole).add(
+        cdk.Tags.of(iamAuroraRole).add(
             "Name",
             `${commonProps.projectName}-${envProps.envName}-iam-aurora-role`,
         );
-        cdk.Tags.of(auroraIamRole).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(auroraIamRole).add("ProjectCode", "1234567890");
+        cdk.Tags.of(iamAuroraRole).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamAuroraRole).add("ProjectCode", "1234567890");
 
-        const auroraIamPolicy = new iam.Policy(this, "auroraIamPolicy", {
+        const iamAuroraPolicy = new iam.Policy(this, "iamAuroraPolicy", {
             statements: [
                 new iam.PolicyStatement({
                     sid: "AuroraRDSAccess",
@@ -78,19 +78,19 @@ export class CfDatabaseStack extends Construct {
             ],
         });
 
-        cdk.Tags.of(auroraIamPolicy).add(
+        cdk.Tags.of(iamAuroraPolicy).add(
             "Name",
             `${commonProps.projectName}-${envProps.envName}-iam-aurora-policy`,
         );
-        cdk.Tags.of(auroraIamPolicy).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(auroraIamPolicy).add("ProjectCode", "1234567890");
+        cdk.Tags.of(iamAuroraPolicy).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamAuroraPolicy).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // AWS IAM for Amazon Aurora Performance Insights Configuration
         // ------------------------------------------------------------
-        const auroraIamPeformanceInsightRole = new iam.Role(
+        const iamAuroraPeformanceInsightRole = new iam.Role(
             this,
-            "auroraIamPeformanceInsightRole",
+            "iamAuroraPeformanceInsightRole",
             {
                 roleName: `${commonProps.projectName}-${envProps.envName}-iam-aurora-performance-insight-role`,
                 description: "IAM role for Amazon Aurora Performance Insights",
@@ -98,27 +98,29 @@ export class CfDatabaseStack extends Construct {
             },
         );
 
-        cdk.Tags.of(auroraIamPeformanceInsightRole).add(
+        cdk.Tags.of(iamAuroraPeformanceInsightRole).add(
             "Name",
             `${commonProps.projectName}-${envProps.envName}-iam-aurora-performance-insight-role`,
         );
-        cdk.Tags.of(auroraIamPeformanceInsightRole).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(auroraIamPeformanceInsightRole).add(
+        cdk.Tags.of(iamAuroraPeformanceInsightRole).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamAuroraPeformanceInsightRole).add(
             "ProjectCode",
             "1234567890",
         );
 
-        const auroraIamPeformanceInsightPolicy = new iam.Policy(
+        const iamAuroraPeformanceInsightPolicy = new iam.Policy(
             this,
-            "auroraIamPeformanceInsightPolicy",
+            "iamAuroraPeformanceInsightPolicy",
             {
                 statements: [
                     new iam.PolicyStatement({
                         sid: "AuroraPerformanceInsightAccess",
                         effect: iam.Effect.ALLOW,
                         actions: [
-                            "rds:DescribeDBInstances",
                             "rds:DescribeDBClusters",
+                            "rds:DescribeDBInstances",
+                            "rds:DescribeDBPerformanceInsights",
+                            "rds:GetDBPerformanceInsights",
                         ],
                         resources: [
                             `arn:aws:rds:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:db:*`,
@@ -128,22 +130,22 @@ export class CfDatabaseStack extends Construct {
             },
         );
 
-        cdk.Tags.of(auroraIamPeformanceInsightPolicy).add(
+        cdk.Tags.of(iamAuroraPeformanceInsightPolicy).add(
             "Name",
             `${commonProps.projectName}-${envProps.envName}-iam-aurora-performance-insight-policy`,
         );
-        cdk.Tags.of(auroraIamPeformanceInsightPolicy).add(
+        cdk.Tags.of(iamAuroraPeformanceInsightPolicy).add(
             "ProvisionedBy",
             "AWS",
         );
-        cdk.Tags.of(auroraIamPeformanceInsightPolicy).add(
+        cdk.Tags.of(iamAuroraPeformanceInsightPolicy).add(
             "ProjectCode",
             "1234567890",
         );
 
-        auroraIamPolicy.attachToRole(auroraIamRole);
-        auroraIamPeformanceInsightPolicy.attachToRole(
-            auroraIamPeformanceInsightRole,
+        iamAuroraPolicy.attachToRole(iamAuroraRole);
+        iamAuroraPeformanceInsightPolicy.attachToRole(
+            iamAuroraPeformanceInsightRole,
         );
 
         // ------------------------------------------------------------
@@ -173,10 +175,14 @@ export class CfDatabaseStack extends Construct {
                         actions: [
                             "elasticache:DescribeCacheClusters",
                             "elasticache:DescribeCacheSubnetGroups",
+                            "elasticache:DescribeReplicationGroups",
+                            "elasticache:DescribeUsers",
                         ],
                         resources: [
                             `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:cluster:*`,
                             `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:subnet-group:*`,
+                            `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:replicationgroup:*`,
+                            `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:user:*`,
                         ],
                     }),
                 ],
@@ -239,8 +245,8 @@ export class CfDatabaseStack extends Construct {
         const auroraCluster = new rds.CfnDBCluster(this, "auroraCluster", {
             dbClusterIdentifier: `${commonProps.projectName}-${envProps.envName}-aurora-cluster`,
             associatedRoles: [
-                { roleArn: auroraIamRole.roleArn },
-                { roleArn: auroraIamPeformanceInsightRole.roleArn },
+                { roleArn: iamAuroraRole.roleArn },
+                { roleArn: iamAuroraPeformanceInsightRole.roleArn },
             ],
             availabilityZones: networkingProps.availabilityZones,
             dbSubnetGroupName: auroraSubnetGroup.ref,
@@ -260,7 +266,7 @@ export class CfDatabaseStack extends Construct {
             engineVersion: "15.10",
             kmsKeyId: kmsProps.auroraKey.keyId,
             manageMasterUserPassword: true,
-            masterUsername: auroraIamRole.roleName,
+            masterUsername: iamAuroraRole.roleName,
             port: 5432,
             preferredBackupWindow: "20:00-21:00",
             preferredMaintenanceWindow: "sat:21:30-sat:22:30",
