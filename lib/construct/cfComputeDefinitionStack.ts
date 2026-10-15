@@ -341,6 +341,20 @@ export class CfComputeDefinitionStack extends Construct {
                     ],
                 }),
                 new iam.PolicyStatement({
+                    sid: "S3Access",
+                    effect: iam.Effect.ALLOW,
+                    actions: [
+                        "s3:ListAllMyBuckets",
+                        "s3:ListBucket",
+                        "s3:GetObject",
+                        "s3:PutObject",
+                        "s3:DeleteObject",
+                    ],
+                    resources: [
+                        `arn:aws:s3:::${commonProps.projectName}-${envProps.envName}-*`,
+                    ],
+                }),
+                new iam.PolicyStatement({
                     sid: "AuroraAccess",
                     effect: iam.Effect.ALLOW,
                     actions: ["rds-db:connect", "rds-data:ExecuteStatement"],
@@ -359,6 +373,50 @@ export class CfComputeDefinitionStack extends Construct {
                     ],
                 }),
                 new iam.PolicyStatement({
+                    sid: "CloudWatchLogsAccess",
+                    effect: iam.Effect.ALLOW,
+                    actions: [
+                        "logs:CreateLogDelivery",
+                        "logs:GetLogDelivery",
+                        "logs:UpdateLogDelivery",
+                        "logs:DeleteLogDelivery",
+                        "logs:ListLogDeliveries",
+                        "logs:PutResourcePolicy",
+                        "logs:DescribeResourcePolicies",
+                        "logs:DescribeLogGroups",
+                    ],
+                    resources: [
+                        `arn:aws:logs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:log-group:*`,
+                    ],
+                }),
+                new iam.PolicyStatement({
+                    sid: "LogDeliveryWrite",
+                    effect: iam.Effect.ALLOW,
+                    actions: ["logs:CreateLogStream", "logs:PutLogEvents"],
+                    resources: [
+                        `arn:aws:logs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:log-group:*`,
+                    ],
+                }),
+                new iam.PolicyStatement({
+                    sid: "PutLogDestination",
+                    effect: iam.Effect.ALLOW,
+                    actions: [
+                        "logs:PutDestination",
+                        "logs:PutDestinationPolicy",
+                    ],
+                    resources: [
+                        `arn:aws:logs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:log-group:*`,
+                    ],
+                }),
+                new iam.PolicyStatement({
+                    sid: "ADFAccess",
+                    effect: iam.Effect.ALLOW,
+                    actions: ["firehose:PutRecord", "firehose:PutRecordBatch"],
+                    resources: [
+                        `arn:aws:firehose:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:deliverystream/*`,
+                    ],
+                }),
+                new iam.PolicyStatement({
                     sid: "AllowECSExec",
                     effect: iam.Effect.ALLOW,
                     actions: [
@@ -367,9 +425,7 @@ export class CfComputeDefinitionStack extends Construct {
                         "ssmmessages:OpenControlChannel",
                         "ssmmessages:OpenDataChannel",
                     ],
-                    resources: [
-                        `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task/*`,
-                    ],
+                    resources: ["*"],
                 }),
             ],
         });
