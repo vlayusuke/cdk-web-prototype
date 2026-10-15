@@ -22,7 +22,7 @@ cdk synth
 
 コマンドを実行して、 `.ts` ファイルの型チェックと、AWS CloudFormationスタックテンプレートの出力確認が正常に実行されることを確認しています。
 
-環境固有値は、ルート直下の `cdk.context.json` の `prd` 、 `stg` 及び `dev` contextに設定してください。このファイルは `.gitignore` 対象です。初回checkout後、[`cdk.context.example.json`](./cdk.context.example.json) を参考に両方の環境を設定してください。共通パラメータと環境別の既定値は `config/commonParameter.ts`、`config/prdParameter.ts`、`config/stgParameter.ts` にあります。
+環境固有値は、ルート直下の `cdk.context.json` の `prd` 、 `stg` 及び `dev` contextに設定してください。このファイルは `.gitignore` 対象です。初回checkout後、[`cdk.context.example.json`](./cdk.context.example.json) を参考に両方の環境を設定してください。共通パラメータと環境別の既定値は `config/commonParameter.ts`、`config/prdParameter.ts`、`config/stgParameter.ts`、`config/devParameter.ts` にあります。
 
 ```json
 {
@@ -119,7 +119,7 @@ cdk context --clear
 | Language    | Version    |
 | :---------- | ---------: |
 | TypeScript  |     v7.0.2 |
-| Python      |    v3.14.6 |
+| Python      |    v3.14.8 |
 
 ## リリース履歴
 
