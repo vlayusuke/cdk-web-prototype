@@ -185,6 +185,7 @@ export class CfComputeDefinitionStack extends Construct {
     constructor(
         scope: Construct,
         id: string,
+        networkingProps: NetworkingProps,
         sgProps: SgProps,
         albProps: AlbProps,
         ecrProps: EcrProps,
@@ -228,132 +229,6 @@ export class CfComputeDefinitionStack extends Construct {
         );
         cdk.Tags.of(oidcProvider).add("ProvisionedBy", "AWS");
         cdk.Tags.of(oidcProvider).add("ProjectCode", "1234567890");
-
-        // ------------------------------------------------------------
-        // AWS IAM for GitHub Actions Deployment Configuration
-        // ------------------------------------------------------------
-        const iamGithubActionsRole = new iam.Role(
-            this,
-            "iamGithubActionsRole",
-            {
-                roleName: `${commonProps.projectName}-${envProps.envName}-iam-github-actions-role`,
-                description: "IAM role for GitHub Actions deployment",
-                assumedBy: new iam.WebIdentityPrincipal(
-                    oidcProvider.openIdConnectProviderArn,
-                    {
-                        StringLike: {
-                            "token.actions.githubusercontent.com:sub": [
-                                `repo:${commonProps.dashboardName}:ref:refs/heads/main`,
-                                `repo:${commonProps.dashboardName}:ref:refs/heads/*`,
-                            ],
-                        },
-                    },
-                ),
-            },
-        );
-
-        cdk.Tags.of(iamGithubActionsRole).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-github-actions-role`,
-        );
-        cdk.Tags.of(iamGithubActionsRole).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(iamGithubActionsRole).add("ProjectCode", "1234567890");
-
-        const assumeRolePolicy = iamGithubActionsRole.assumeRolePolicy;
-
-        assumeRolePolicy?.addStatements(
-            new iam.PolicyStatement({
-                sid: "OIDCFederateRef",
-                effect: iam.Effect.ALLOW,
-                actions: ["sts:AssumeRoleWithWebIdentity"],
-                principals: [
-                    new iam.FederatedPrincipal(
-                        oidcProvider.openIdConnectProviderArn,
-                        {},
-                        "sts:AssumeRoleWithWebIdentity",
-                    ),
-                ],
-                conditions: {
-                    StringLike: {
-                        "token.actions.githubusercontent.com:sub": [
-                            `repo:${commonProps.dashboardName}:ref:refs/heads/main`,
-                            `repo:${commonProps.dashboardName}:ref:refs/heads/*`,
-                        ],
-                    },
-                },
-            }),
-        );
-
-        cdk.Tags.of(iamGithubActionsRole).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-github-actions-role`,
-        );
-        cdk.Tags.of(iamGithubActionsRole).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(iamGithubActionsRole).add("ProjectCode", "1234567890");
-
-        const iamGithubActionsPolicy = new iam.Policy(
-            this,
-            "iamGithubActionsPolicy",
-            {
-                policyName: `${commonProps.projectName}-${envProps.envName}-iam-github-actions-policy`,
-                roles: [iamGithubActionsRole],
-                statements: [
-                    new iam.PolicyStatement({
-                        sid: "GetAuthenticationToken",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["ecr:GetAuthorizationToken"],
-                        resources: ["*"],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "PushImageOnly",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "ecr:GetDownloadUrlForLayer",
-                            "ecr:BatchCheckLayerAvailability",
-                            "ecr:InitiateLayerUpload",
-                            "ecr:UploadLayerPart",
-                            "ecr:CompleteLayerUpload",
-                            "ecr:BatchGetImage",
-                            "ecr:PutImage",
-                        ],
-                        resources: [
-                            ecrProps.ecrRepositoryWebBaseImage.repositoryArn,
-                            ecrProps.ecrRepositoryAppBaseImage.repositoryArn,
-                            ecrProps.ecrRepositoryWeb.repositoryArn,
-                            ecrProps.ecrRepositoryApp.repositoryArn,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "S3Access",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "s3:GetObject",
-                            "s3:PutObject",
-                            "s3:ListBucket",
-                        ],
-                        resources: [
-                            `arn:aws:s3:::${commonProps.projectName}-${envProps.envName}-*`,
-                            `arn:aws:s3:::${commonProps.projectName}-${envProps.envName}-*/*`,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "GlobalServiceCheck",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["acm:DescribeCertificate", "wafv2:GetWebACL"],
-                        resources: ["*"],
-                    }),
-                ],
-            },
-        );
-
-        cdk.Tags.of(iamGithubActionsPolicy).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-github-actions-policy`,
-        );
-        cdk.Tags.of(iamGithubActionsPolicy).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(iamGithubActionsPolicy).add("ProjectCode", "1234567890");
-
-        iamGithubActionsPolicy.attachToRole(iamGithubActionsRole);
 
         // ------------------------------------------------------------
         // AWS IAM for Amazon ECS Service Configuration
@@ -507,6 +382,191 @@ export class CfComputeDefinitionStack extends Construct {
         cdk.Tags.of(iamEcsTaskPolicy).add("ProjectCode", "1234567890");
 
         iamEcsTaskPolicy.attachToRole(iamEcsTaskRole);
+
+        // ------------------------------------------------------------
+        // AWS IAM for GitHub Actions Deployment Configuration
+        // ------------------------------------------------------------
+        const iamGithubActionsRole = new iam.Role(
+            this,
+            "iamGithubActionsRole",
+            {
+                roleName: `${commonProps.projectName}-${envProps.envName}-iam-github-actions-role`,
+                description: "IAM role for GitHub Actions deployment",
+                assumedBy: new iam.WebIdentityPrincipal(
+                    oidcProvider.openIdConnectProviderArn,
+                    {
+                        StringLike: {
+                            "token.actions.githubusercontent.com:sub": [
+                                `repo:${commonProps.dashboardName}:ref:refs/heads/main`,
+                                `repo:${commonProps.dashboardName}:ref:refs/heads/*`,
+                            ],
+                        },
+                    },
+                ),
+            },
+        );
+
+        cdk.Tags.of(iamGithubActionsRole).add(
+            "Name",
+            `${commonProps.projectName}-${envProps.envName}-iam-github-actions-role`,
+        );
+        cdk.Tags.of(iamGithubActionsRole).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamGithubActionsRole).add("ProjectCode", "1234567890");
+
+        const assumeRolePolicy = iamGithubActionsRole.assumeRolePolicy;
+
+        assumeRolePolicy?.addStatements(
+            new iam.PolicyStatement({
+                sid: "OIDCFederateRef",
+                effect: iam.Effect.ALLOW,
+                actions: ["sts:AssumeRoleWithWebIdentity"],
+                principals: [
+                    new iam.FederatedPrincipal(
+                        oidcProvider.openIdConnectProviderArn,
+                        {},
+                        "sts:AssumeRoleWithWebIdentity",
+                    ),
+                ],
+                conditions: {
+                    StringLike: {
+                        "token.actions.githubusercontent.com:sub": [
+                            `repo:${commonProps.dashboardName}:ref:refs/heads/main`,
+                            `repo:${commonProps.dashboardName}:ref:refs/heads/*`,
+                        ],
+                    },
+                },
+            }),
+        );
+
+        cdk.Tags.of(iamGithubActionsRole).add(
+            "Name",
+            `${commonProps.projectName}-${envProps.envName}-iam-github-actions-role`,
+        );
+        cdk.Tags.of(iamGithubActionsRole).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamGithubActionsRole).add("ProjectCode", "1234567890");
+
+        const iamGithubActionsPolicy = new iam.Policy(
+            this,
+            "iamGithubActionsPolicy",
+            {
+                policyName: `${commonProps.projectName}-${envProps.envName}-iam-github-actions-policy`,
+                roles: [iamGithubActionsRole],
+                statements: [
+                    new iam.PolicyStatement({
+                        sid: "GetAuthenticationToken",
+                        effect: iam.Effect.ALLOW,
+                        actions: ["ecr:GetAuthorizationToken"],
+                        resources: ["*"],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "PushImageOnly",
+                        effect: iam.Effect.ALLOW,
+                        actions: [
+                            "ecr:GetDownloadUrlForLayer",
+                            "ecr:BatchCheckLayerAvailability",
+                            "ecr:InitiateLayerUpload",
+                            "ecr:UploadLayerPart",
+                            "ecr:CompleteLayerUpload",
+                            "ecr:BatchGetImage",
+                            "ecr:PutImage",
+                        ],
+                        resources: [
+                            ecrProps.ecrRepositoryWebBaseImage.repositoryArn,
+                            ecrProps.ecrRepositoryAppBaseImage.repositoryArn,
+                            ecrProps.ecrRepositoryWeb.repositoryArn,
+                            ecrProps.ecrRepositoryApp.repositoryArn,
+                        ],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "RegisterTaskDefinition",
+                        effect: iam.Effect.ALLOW,
+                        actions: [
+                            "iam:GetRole",
+                            "events:PutTargets",
+                            "ecs:RunTask",
+                            "ecs:RegisterTaskDefinition",
+                            "ecs:DescribeTaskDefinition",
+                            "ec2:DescribeSubnets",
+                            "ec2:DescribeSecurityGroups",
+                        ],
+                        resources: [
+                            iamEcsTaskRole.roleArn,
+                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task-definition/${commonProps.projectName}-${envProps.envName}-app:*`,
+                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task-definition/${commonProps.projectName}-${envProps.envName}-cron:*`,
+                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task-definition/${commonProps.projectName}-${envProps.envName}-queue:*`,
+                            networkingProps.privateSubnetIds[0],
+                            networkingProps.privateSubnetIds[1],
+                            sgProps.ecsSecurityGroup.securityGroupId,
+                        ],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "UpdateService",
+                        effect: iam.Effect.ALLOW,
+                        actions: [
+                            "ecs:DescribeClusters",
+                            "ecs:DescribeServices",
+                            "ecs:DescribeTasks",
+                            "ecs:UpdateServicePrimaryTaskSet",
+                            "ecs:UpdateService",
+                        ],
+                        resources: [
+                            ecsProps.ecsCluster.clusterArn,
+                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:service/${commonProps.projectName}-${envProps.envName}-app`,
+                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:service/${commonProps.projectName}-${envProps.envName}-cron`,
+                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:service/${commonProps.projectName}-${envProps.envName}-queue`,
+                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task-definition/${commonProps.projectName}-${envProps.envName}-app:*`,
+                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task-definition/${commonProps.projectName}-${envProps.envName}-cron:*`,
+                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task-definition/${commonProps.projectName}-${envProps.envName}-queue:*`,
+                        ],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "S3Access",
+                        effect: iam.Effect.ALLOW,
+                        actions: [
+                            "s3:GetObject",
+                            "s3:PutObject",
+                            "s3:ListBucket",
+                        ],
+                        resources: [
+                            `arn:aws:s3:::${commonProps.projectName}-${envProps.envName}-*`,
+                            `arn:aws:s3:::${commonProps.projectName}-${envProps.envName}-*/*`,
+                        ],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "IAMPassRole",
+                        effect: iam.Effect.ALLOW,
+                        actions: ["iam:PassRole"],
+                        resources: [
+                            iamEcsTaskRole.roleArn,
+                            iamEcsTaskExecutionRole.roleArn,
+                        ],
+                        conditions: {
+                            StringEquals: {
+                                "iam:PassedToService": [
+                                    "ecs-tasks.amazonaws.com",
+                                    "ecs.amazonaws.com",
+                                ],
+                            },
+                        },
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "GlobalServiceCheck",
+                        effect: iam.Effect.ALLOW,
+                        actions: ["acm:DescribeCertificate", "wafv2:GetWebACL"],
+                        resources: ["*"],
+                    }),
+                ],
+            },
+        );
+
+        cdk.Tags.of(iamGithubActionsPolicy).add(
+            "Name",
+            `${commonProps.projectName}-${envProps.envName}-iam-github-actions-policy`,
+        );
+        cdk.Tags.of(iamGithubActionsPolicy).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamGithubActionsPolicy).add("ProjectCode", "1234567890");
+
+        iamGithubActionsPolicy.attachToRole(iamGithubActionsRole);
 
         // ------------------------------------------------------------
         // Amazon ECS App Task Definition Configuration
