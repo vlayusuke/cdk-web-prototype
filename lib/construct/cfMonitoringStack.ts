@@ -458,7 +458,7 @@ export class CfMonitoringStack extends Construct {
             "ProvisionedBy",
             "AWS",
         );
-        cdk.Tags.of(this.memoryUtilizationHighAlarmEcsQueue).add(
+        cdk.Tags.of(this.cpuUtilizationHighAlarmEcsQueue).add(
             "ProjectCode",
             "1234567890",
         );
