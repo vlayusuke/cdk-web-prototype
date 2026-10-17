@@ -231,10 +231,10 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             "CfComputeBackendStack",
             {
                 vpcId: networkStack.Vpc.vpcId,
-                publicSubnetIds: networkStack.Vpc.publicSubnets.map(
+                privateSubnetIds: networkStack.Vpc.privateSubnets.map(
                     (subnet) => subnet.subnetId,
                 ),
-                publicSubnetRouteTableIds: networkStack.Vpc.publicSubnets.map(
+                privateSubnetRouteTableIds: networkStack.Vpc.privateSubnets.map(
                     (subnet) => subnet.routeTable.routeTableId,
                 ),
                 availabilityZones: commonProps.availabilityZones,
@@ -305,10 +305,27 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             this,
             "CfComputeDefinitionStack",
             {
+                vpcId: networkStack.Vpc.vpcId,
+                publicSubnetIds: networkStack.Vpc.publicSubnets.map(
+                    (subnet) => subnet.subnetId,
+                ),
+                privateSubnetIds: networkStack.Vpc.privateSubnets.map(
+                    (subnet) => subnet.subnetId,
+                ),
+            },
+            {
                 ecsSecurityGroup: sgFrameStack.ecsSecurityGroupFrame,
             },
             {
                 targetGroup: dnsAndCDNStack.albExternalTargetGroup,
+            },
+            {
+                ecrRepositoryWebBaseImage:
+                    storageStack.ecrRepositoryWebBaseImage,
+                ecrRepositoryAppBaseImage:
+                    storageStack.ecrRepositoryAppBaseImage,
+                ecrRepositoryWeb: storageStack.ecrRepositoryWeb,
+                ecrRepositoryApp: storageStack.ecrRepositoryApp,
             },
             {
                 ecsCluster: computeWebAPStack.ecsCluster,
