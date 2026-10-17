@@ -24,6 +24,13 @@ export interface SgProps {
     batchSecurityGroup: ec2.SecurityGroup;
 }
 
+export interface DatabaseProps {
+    auroraClusterArn: string;
+    auroraWriterInstanceArn: string;
+    auroraReaderInstanceArn: string;
+    elastiCacheReplicationGroupArn: string;
+}
+
 // ------------------------------------------------------------
 // [08] - Compute Backend Stack
 // ------------------------------------------------------------
@@ -33,6 +40,7 @@ export class CfComputeBackendStack extends Construct {
         id: string,
         networkingProps: NetworkingProps,
         sgProps: SgProps,
+        databaseProps: DatabaseProps,
         commonProps: CommonProps,
         envProps: EnvProps,
     ) {
@@ -73,7 +81,9 @@ export class CfComputeBackendStack extends Construct {
                         effect: iam.Effect.ALLOW,
                         actions: ["rds:DescribeDBInstances", "rds:Connect"],
                         resources: [
-                            `arn:aws:rds:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:db:*`,
+                            databaseProps.auroraClusterArn,
+                            databaseProps.auroraWriterInstanceArn,
+                            databaseProps.auroraReaderInstanceArn,
                         ],
                     }),
                 ],
