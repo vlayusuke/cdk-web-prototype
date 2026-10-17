@@ -1,3 +1,4 @@
+import type { aws_s3 as s3 } from "aws-cdk-lib";
 import * as cdk from "aws-cdk-lib";
 import { aws_ec2 as ec2, aws_ecs as ecs, aws_iam as iam } from "aws-cdk-lib";
 import { Construct } from "constructs";
@@ -25,6 +26,16 @@ export interface SgProps {
     bastionSecurityGroup: ec2.SecurityGroup;
 }
 
+export interface S3Props {
+    s3BucketEc2Logs: s3.IBucket;
+}
+
+export interface DatabaseProps {
+    auroraClusterArn: string;
+    auroraWriterInstanceArn: string;
+    auroraReaderInstanceArn: string;
+}
+
 // ------------------------------------------------------------
 // [07] - Compute WebAP Stack
 // ------------------------------------------------------------
@@ -36,6 +47,8 @@ export class CfComputeWebAPStack extends Construct {
         id: string,
         networkingProps: NetworkingProps,
         sgProps: SgProps,
+        s3Props: S3Props,
+        databaseProps: DatabaseProps,
         commonProps: CommonProps,
         envProps: EnvProps,
     ) {
@@ -81,15 +94,25 @@ export class CfComputeWebAPStack extends Construct {
                             "s3:ListBucket",
                             "s3:GetObject",
                             "s3:PutObject",
+                            "s3:DeleteObject",
                         ],
-                        resources: [`arn:aws:s3:::*`],
+                        resources: [
+                            s3Props.s3BucketEc2Logs.bucketArn,
+                            `${s3Props.s3BucketEc2Logs.bucketArn}/*`,
+                        ],
                     }),
                     new iam.PolicyStatement({
                         sid: "AuroraAccess",
                         effect: iam.Effect.ALLOW,
-                        actions: ["rds:DescribeDBInstances", "rds:Connect"],
+                        actions: [
+                            "rds:DescribeDBClusters",
+                            "rds:DescribeDBInstances",
+                            "rds:Connect",
+                        ],
                         resources: [
-                            `arn:aws:rds:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:db:*`,
+                            databaseProps.auroraClusterArn,
+                            databaseProps.auroraWriterInstanceArn,
+                            databaseProps.auroraReaderInstanceArn,
                         ],
                     }),
                 ],
