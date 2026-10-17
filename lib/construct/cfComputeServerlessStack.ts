@@ -7,6 +7,7 @@ import {
     aws_events_targets as targets,
 } from "aws-cdk-lib";
 import type * as kms from "aws-cdk-lib/aws-kms";
+import type * as logs from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
 export interface CommonProps {
@@ -25,6 +26,19 @@ export interface KmsProps {
     lambdaKey: kms.IKey;
 }
 
+export interface CloudWatchLogsProps {
+    logGroupLambdaRdsControl: logs.ILogGroup;
+    logGroupLambdaCloudWatchLogsAlert: logs.ILogGroup;
+    logGroupLambdaCloudWatchMetricsAlert: logs.ILogGroup;
+}
+
+export interface DatabaseProps {
+    auroraClusterArn: string;
+    auroraWriterInstanceArn: string;
+    auroraReaderInstanceArn: string;
+    elastiCacheReplicationGroupArn: string;
+}
+
 // ------------------------------------------------------------
 // [15] - Compute Serverless Stack
 // ------------------------------------------------------------
@@ -36,6 +50,8 @@ export class CfComputeServerlessStack extends Construct {
         scope: Construct,
         id: string,
         kmsProps: KmsProps,
+        cloudWatchLogsProps: CloudWatchLogsProps,
+        databaseProps: DatabaseProps,
         commonProps: CommonProps,
         envProps: EnvProps,
     ) {
@@ -82,7 +98,10 @@ export class CfComputeServerlessStack extends Construct {
                             "logs:CreateLogStream",
                             "logs:PutLogEvents",
                         ],
-                        resources: ["*"],
+                        resources: [
+                            cloudWatchLogsProps
+                                .logGroupLambdaCloudWatchLogsAlert.logGroupArn,
+                        ],
                     }),
                     new iam.PolicyStatement({
                         sid: "KMSAccess",
@@ -95,16 +114,23 @@ export class CfComputeServerlessStack extends Construct {
                         resources: [kmsProps.lambdaKey.keyArn],
                     }),
                     new iam.PolicyStatement({
-                        sid: "LambdaBasicExecution",
+                        sid: "ADFAccess",
                         effect: iam.Effect.ALLOW,
-                        actions: ["lambda:InvokeFunction"],
-                        resources: ["*"],
+                        actions: [
+                            "firehose:PutRecord",
+                            "firehose:PutRecordBatch",
+                        ],
+                        resources: [
+                            `arn:aws:firehose:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:*`,
+                        ],
                     }),
                     new iam.PolicyStatement({
-                        sid: "PublishSNS",
+                        sid: "SNSPublish",
                         effect: iam.Effect.ALLOW,
                         actions: ["sns:Publish"],
-                        resources: ["*"],
+                        resources: [
+                            `arn:aws:sns:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:*`,
+                        ],
                     }),
                 ],
             },
@@ -151,10 +177,47 @@ export class CfComputeServerlessStack extends Construct {
                 roles: [iamLambdaCloudWatchMetricsAlertRole],
                 statements: [
                     new iam.PolicyStatement({
-                        sid: "CloudWatchMetricsAccess",
+                        sid: "CloudWatchLogsAccess",
                         effect: iam.Effect.ALLOW,
-                        actions: ["cloudwatch:PutMetricData"],
-                        resources: ["*"],
+                        actions: [
+                            "logs:CreateLogGroup",
+                            "logs:CreateLogStream",
+                            "logs:PutLogEvents",
+                        ],
+                        resources: [
+                            cloudWatchLogsProps
+                                .logGroupLambdaCloudWatchMetricsAlert
+                                .logGroupArn,
+                        ],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "KMSAccess",
+                        effect: iam.Effect.ALLOW,
+                        actions: [
+                            "kms:Decrypt",
+                            "kms:Encrypt",
+                            "kms:GenerateDataKey",
+                        ],
+                        resources: [kmsProps.lambdaKey.keyArn],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "ADFAccess",
+                        effect: iam.Effect.ALLOW,
+                        actions: [
+                            "firehose:PutRecord",
+                            "firehose:PutRecordBatch",
+                        ],
+                        resources: [
+                            `arn:aws:firehose:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:*`,
+                        ],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "SNSPublish",
+                        effect: iam.Effect.ALLOW,
+                        actions: ["sns:Publish"],
+                        resources: [
+                            `arn:aws:sns:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:*`,
+                        ],
                     }),
                 ],
             },
@@ -201,13 +264,51 @@ export class CfComputeServerlessStack extends Construct {
                 roles: [iamLambdaRdsControlRole],
                 statements: [
                     new iam.PolicyStatement({
-                        sid: "RdsControlAccess",
+                        sid: "CloudWatchLogsAccess",
                         effect: iam.Effect.ALLOW,
                         actions: [
-                            "rds:DescribeDBInstances",
-                            "rds:ModifyDBInstance",
+                            "logs:CreateLogGroup",
+                            "logs:CreateLogStream",
+                            "logs:PutLogEvents",
                         ],
-                        resources: ["*"],
+                        resources: [
+                            `arn:aws:logs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:log-group:/aws/lambda/*`,
+                        ],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "RDSAccess",
+                        effect: iam.Effect.ALLOW,
+                        actions: [
+                            "rds:DescribeDBClusters",
+                            "rds:DescribeDBInstances",
+                            "rds:StartDBCluster",
+                            "rds:StopDBCluster",
+                            "rds:ListTagsForResource",
+                        ],
+                        resources: [
+                            databaseProps.auroraClusterArn,
+                            databaseProps.auroraWriterInstanceArn,
+                            databaseProps.auroraReaderInstanceArn,
+                        ],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "ADFAccess",
+                        effect: iam.Effect.ALLOW,
+                        actions: [
+                            "firehose:PutRecord",
+                            "firehose:PutRecordBatch",
+                        ],
+                        resources: [
+                            `arn:aws:firehose:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:*`,
+                        ],
+                    }),
+                    new iam.PolicyStatement({
+                        sid: "SNSPublish",
+                        effect: iam.Effect.ALLOW,
+                        actions: ["sns:Publish"],
+                        resources: [
+                            `arn:aws:sns:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:*`,
+                        ],
                     }),
                 ],
             },
