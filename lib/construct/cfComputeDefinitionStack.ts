@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { aws_ecr as ecr, aws_kms as kms } from "aws-cdk-lib";
+import type { aws_ecr as ecr, aws_kms as kms, aws_s3 as s3 } from "aws-cdk-lib";
 import * as cdk from "aws-cdk-lib";
 import {
     aws_applicationautoscaling as applicationautoscaling,
@@ -170,6 +170,17 @@ export interface AlbProps {
     targetGroup: elbv2.IApplicationTargetGroup;
 }
 
+export interface DatabaseProps {
+    auroraClusterArn: string;
+    auroraWriterInstanceArn: string;
+    auroraReaderInstanceArn: string;
+    elastiCacheReplicationGroupArn: string;
+}
+
+export interface S3Props {
+    s3BucketEcsLogs: s3.IBucket;
+}
+
 // ------------------------------------------------------------
 // [11] - Compute Definition Stack
 // ------------------------------------------------------------
@@ -191,6 +202,8 @@ export class CfComputeDefinitionStack extends Construct {
         ecrProps: EcrProps,
         ecsProps: EcsProps,
         kmsProps: KmsProps,
+        databaseProps: DatabaseProps,
+        s3Props: S3Props,
         commonProps: CommonProps,
         envProps: EnvProps,
     ) {
@@ -343,15 +356,21 @@ export class CfComputeDefinitionStack extends Construct {
                 new iam.PolicyStatement({
                     sid: "S3Access",
                     effect: iam.Effect.ALLOW,
+                    actions: ["s3:ListAllMyBuckets"],
+                    resources: ["*"],
+                }),
+                new iam.PolicyStatement({
+                    sid: "S3Access",
+                    effect: iam.Effect.ALLOW,
                     actions: [
-                        "s3:ListAllMyBuckets",
                         "s3:ListBucket",
                         "s3:GetObject",
                         "s3:PutObject",
                         "s3:DeleteObject",
                     ],
                     resources: [
-                        `arn:aws:s3:::${commonProps.projectName}-${envProps.envName}-*`,
+                        s3Props.s3BucketEcsLogs.bucketArn,
+                        `${s3Props.s3BucketEcsLogs.bucketArn}/*`,
                     ],
                 }),
                 new iam.PolicyStatement({
@@ -359,18 +378,16 @@ export class CfComputeDefinitionStack extends Construct {
                     effect: iam.Effect.ALLOW,
                     actions: ["rds-db:connect", "rds-data:ExecuteStatement"],
                     resources: [
-                        `arn:aws:rds:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:db:*`,
-                        `arn:aws:rds-db:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:dbuser:*/*`,
+                        databaseProps.auroraClusterArn,
+                        databaseProps.auroraWriterInstanceArn,
+                        databaseProps.auroraReaderInstanceArn,
                     ],
                 }),
                 new iam.PolicyStatement({
                     sid: "ElastiCacheConnect",
                     effect: iam.Effect.ALLOW,
                     actions: ["elasticache:Connect"],
-                    resources: [
-                        `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:replicationgroup:*`,
-                        `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:user:*`,
-                    ],
+                    resources: [databaseProps.elastiCacheReplicationGroupArn],
                 }),
                 new iam.PolicyStatement({
                     sid: "CloudWatchLogsAccess",
