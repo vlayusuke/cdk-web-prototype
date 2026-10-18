@@ -38,6 +38,11 @@ export interface SgProps {
 // [04] - Database Configuration Stack
 // ------------------------------------------------------------
 export class CfDatabaseStack extends Construct {
+    public readonly auroraCluster: rds.DatabaseCluster;
+    public readonly auroraWriterInstance: rds.CfnDBInstance;
+    public readonly auroraReaderInstance: rds.CfnDBInstance;
+    public readonly elastiCacheReplicationGroup: elasticache.CfnReplicationGroup;
+
     constructor(
         scope: Construct,
         id: string,
