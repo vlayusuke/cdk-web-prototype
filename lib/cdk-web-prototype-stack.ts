@@ -124,7 +124,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         // ------------------------------------------------------------
         // [04] - CfDatabaseStack
         // ------------------------------------------------------------
-        new CfDatabaseStack(
+        const databaseStack = new CfDatabaseStack(
             this,
             "CfDatabaseStack",
             {
@@ -145,6 +145,18 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             commonProps,
             envProps,
         );
+        const databaseProps = {
+            auroraClusterArn: databaseStack.auroraCluster.clusterArn,
+            auroraWriterInstanceArn:
+                databaseStack.auroraWriterInstance.attrDbInstanceArn,
+            auroraReaderInstanceArn:
+                databaseStack.auroraReaderInstance.attrDbInstanceArn,
+            elastiCacheReplicationGroupArn: this.formatArn({
+                service: "elasticache",
+                resource: "replicationgroup",
+                resourceName: databaseStack.elastiCacheReplicationGroup.ref,
+            }),
+        };
 
         // ------------------------------------------------------------
         // [05] - CfSecurityServiceStack
@@ -215,6 +227,14 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             {
                 bastionSecurityGroup: sgFrameStack.bastionSecurityGroupFrame,
             },
+            {
+                s3BucketEc2Logs: storageStack.s3BucketEc2Logs,
+            },
+            {
+                auroraClusterArn: databaseProps.auroraClusterArn,
+                auroraWriterInstanceArn: databaseProps.auroraWriterInstanceArn,
+                auroraReaderInstanceArn: databaseProps.auroraReaderInstanceArn,
+            },
             commonProps,
             {
                 envName: deploymentParameter.envName,
@@ -242,6 +262,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             {
                 batchSecurityGroup: sgFrameStack.batchSecurityGroupFrame,
             },
+            databaseProps,
             commonProps,
             {
                 envName: deploymentParameter.envName,
@@ -333,6 +354,10 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             {
                 applicationKey: securityConfigStack.applicationKey,
             },
+            databaseProps,
+            {
+                s3BucketEcsLogs: storageStack.s3BucketEcsLogs,
+            },
             commonProps,
             envProps,
         );
@@ -389,6 +414,14 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             {
                 lambdaKey: securityConfigStack.lambdaKey,
             },
+            {
+                logGroupLambdaRdsControl: loggingStack.logGroupLambdaRdsControl,
+                logGroupLambdaCloudWatchLogsAlert:
+                    loggingStack.logGroupLambdaLogsAlert,
+                logGroupLambdaCloudWatchMetricsAlert:
+                    loggingStack.logGroupLambdaMetricsAlert,
+            },
+            databaseProps,
             commonProps,
             envProps,
         );
