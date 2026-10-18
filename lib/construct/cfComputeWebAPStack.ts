@@ -219,6 +219,7 @@ export class CfComputeWebAPStack extends Construct {
                 disableApiTermination: true,
                 detailedMonitoring: true,
                 allowAllIpv6Outbound: false,
+                // Instance tags are propagated to every EBS block device volume.
                 propagateTagsToVolumeOnCreation: true,
                 ssmSessionPermissions: true,
                 keyPair: bastionKeyPair,
