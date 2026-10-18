@@ -5,10 +5,64 @@ import * as kms from "aws-cdk-lib/aws-kms";
 import { loadDevParameter } from "../config/devParameter";
 import { loadPrdParameter } from "../config/prdParameter";
 import { loadStgParameter } from "../config/stgParameter";
+import { CfComputeBackendStack } from "../lib/construct/cfComputeBackendStack";
 import { CfNetworkStack } from "../lib/construct/cfNetworkStack";
 import { CfSgFrameStack } from "../lib/construct/cfSgFrameStack";
 import { CfSgRuleStack } from "../lib/construct/cfSgRuleStack";
 import { CfStorageStack } from "../lib/construct/cfStorageStack";
+
+test("Batch EBS volumes inherit the instance resource tags", () => {
+    const app = new cdk.App();
+    const stack = new cdk.Stack(app, "ComputeBackendTestStack");
+    const batchVpc = new ec2.Vpc(stack, "BatchVpc", { maxAzs: 2 });
+    new CfComputeBackendStack(
+        stack,
+        "ComputeBackend",
+        {
+            vpcId: "vpc-12345678",
+            privateSubnetIds: ["subnet-12345678", "subnet-87654321"],
+            privateSubnetRouteTableIds: ["rtb-12345678", "rtb-87654321"],
+            availabilityZones: ["ap-northeast-1a", "ap-northeast-1c"],
+        },
+        {
+            batchSecurityGroup: new ec2.SecurityGroup(
+                stack,
+                "BatchSecurityGroup",
+                { vpc: batchVpc },
+            ),
+        },
+        {
+            auroraClusterArn:
+                "arn:aws:rds:ap-northeast-1:123456789012:cluster:test",
+            auroraWriterInstanceArn:
+                "arn:aws:rds:ap-northeast-1:123456789012:db:test-writer",
+            auroraReaderInstanceArn:
+                "arn:aws:rds:ap-northeast-1:123456789012:db:test-reader",
+            elastiCacheReplicationGroupArn:
+                "arn:aws:elasticache:ap-northeast-1:123456789012:replicationgroup:test",
+        },
+        { projectName: "test", dashboardName: "test" },
+        {
+            envName: "unit",
+            vpcCidr: "10.80.0.0/16",
+            defaultGatewayCidr: "0.0.0.0/0",
+        },
+    );
+
+    const instances = Object.values(
+        Template.fromStack(stack).findResources("AWS::EC2::Instance"),
+    );
+    expect(instances).toHaveLength(2);
+    for (const instance of instances) {
+        expect(instance.Properties.PropagateTagsToVolumeOnCreation).toBe(true);
+        expect(instance.Properties.Tags).toEqual(
+            expect.arrayContaining([
+                { Key: "ProvisionedBy", Value: "AWS" },
+                { Key: "ProjectCode", Value: "1234567890" },
+            ]),
+        );
+    }
+});
 
 test.each([
     ["prd", loadPrdParameter],
@@ -19,15 +73,13 @@ test.each([
     (_env, loadParameter) => {
         expect(
             loadParameter({
-                account: "123456789012",
-                region: "ap-northeast-1",
                 monitoringNotifyEmail: "alerts@example.com",
                 monitoringSlackWorkspaceId: "T1234567890",
                 monitoringSlackChannelId: "C1234567890",
                 slackHookUrl: "https://hooks.slack.com/services/test",
             }),
         ).toMatchObject({
-            env: { account: "123456789012", region: "ap-northeast-1" },
+            env: { account: "634989770450", region: "ap-northeast-1" },
             monitoringNotifyEmail: "alerts@example.com",
             monitoringSlackWorkspaceId: "T1234567890",
             monitoringSlackChannelId: "C1234567890",
