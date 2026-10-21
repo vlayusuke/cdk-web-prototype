@@ -146,7 +146,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             envProps,
         );
         const databaseProps = {
-            auroraClusterArn: databaseStack.auroraCluster.clusterArn,
+            auroraClusterArn: databaseStack.auroraCluster.attrDbClusterArn,
             auroraWriterInstanceArn:
                 databaseStack.auroraWriterInstance.attrDbInstanceArn,
             auroraReaderInstanceArn:
