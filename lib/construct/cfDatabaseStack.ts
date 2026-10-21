@@ -38,7 +38,7 @@ export interface SgProps {
 // [04] - Database Configuration Stack
 // ------------------------------------------------------------
 export class CfDatabaseStack extends Construct {
-    public readonly auroraCluster: rds.DatabaseCluster;
+    public readonly auroraCluster: rds.CfnDBCluster;
     public readonly auroraWriterInstance: rds.CfnDBInstance;
     public readonly auroraReaderInstance: rds.CfnDBInstance;
     public readonly elastiCacheReplicationGroup: elasticache.CfnReplicationGroup;
@@ -339,6 +339,10 @@ export class CfDatabaseStack extends Construct {
 
         auroraReaderInstance.addResourceDependency(auroraWriterInstance);
 
+        this.auroraCluster = auroraCluster;
+        this.auroraWriterInstance = auroraWriterInstance;
+        this.auroraReaderInstance = auroraReaderInstance;
+
         for (const instance of [auroraWriterInstance, auroraReaderInstance]) {
             instance.applyRemovalPolicy(cdk.RemovalPolicy.SNAPSHOT);
             cdk.Tags.of(instance).add("AutoStop", "true");
@@ -442,6 +446,8 @@ export class CfDatabaseStack extends Construct {
                 transitEncryptionEnabled: true,
             },
         );
+
+        this.elastiCacheReplicationGroup = elasticacheReplicationGroup;
 
         cdk.Tags.of(elasticacheReplicationGroup).add(
             "Name",
