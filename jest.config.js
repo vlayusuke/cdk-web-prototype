@@ -1,9 +1,15 @@
+/** @type {import('jest').Config} */
 module.exports = {
-    testEnvironment: "node",
-    roots: ["<rootDir>/test"],
-    testMatch: ["**/*.test.ts"],
-    transform: {
-        "^.+\\.tsx?$": ["@swc/jest"],
-    },
-    setupFilesAfterEnv: ["aws-cdk-lib/testhelpers/jest-autoclean"],
+  clearMocks: true,
+  collectCoverage: true,
+  coverageDirectory: "coverage",
+  coverageProvider: "v8",
+  testEnvironment: "node",
+  testMatch: ["**/test/**/*.test.ts"],
+  transform: {
+    "^.+\\.ts$": [
+      "@swc/jest",
+      { jsc: { parser: { syntax: "typescript" }, target: "es2022" } },
+    ],
+  },
 };
