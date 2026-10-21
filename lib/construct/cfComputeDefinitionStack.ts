@@ -354,7 +354,7 @@ export class CfComputeDefinitionStack extends Construct {
                     ],
                 }),
                 new iam.PolicyStatement({
-                    sid: "S3Access",
+                    sid: "S3ListAllBuckets",
                     effect: iam.Effect.ALLOW,
                     actions: ["s3:ListAllMyBuckets"],
                     resources: ["*"],
