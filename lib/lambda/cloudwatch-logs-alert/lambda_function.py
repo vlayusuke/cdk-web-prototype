@@ -3,16 +3,13 @@ import os
 import zlib
 import base64
 import logging
-from urllib import request
+
+import boto3
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-hook_url = os.environ['hook_url']
-
-headers = {
-    "Content-Type": "application/json"
-}
+sns_client = boto3.client("sns")
 
 
 def lambda_handler(event, context):
@@ -34,12 +31,7 @@ def lambda_handler(event, context):
             message=str(row['message'])
         ).strip()
 
-        params = {
-            'text': log_message
-        }
-
-        req = request.Request(hook_url, json.dumps(params).encode(), headers, method='POST')
-
-        with request.urlopen(req) as res:
-            content = res.read()
-            logger.info(content)
+        sns_client.publish(
+            TopicArn=os.environ["snsTopicArn"],
+            Message=log_message,
+        )
