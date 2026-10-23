@@ -391,6 +391,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
                 ecsAppScalableTarget:
                     computeDefinitionStack.ecsAppScalableTarget,
             },
+            { snsTopicMetricsAlarm: notificationStack.snsTopicMetricsAlarm },
             commonProps,
             envProps,
         );
@@ -401,6 +402,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         const loggingStack = new CfLoggingStack(
             this,
             "CfLoggingStack",
+            { snsTopicLogsAlarm: notificationStack.snsTopicLogsAlarm },
             commonProps,
             envProps,
         );
