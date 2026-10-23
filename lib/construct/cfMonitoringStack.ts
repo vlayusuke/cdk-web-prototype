@@ -2,8 +2,8 @@ import * as cdk from "aws-cdk-lib";
 import {
     aws_applicationautoscaling as applicationautoscaling,
     aws_cloudwatch as cloudwatch,
-    aws_cloudwatch_actions as cloudwatchActions,
     type aws_ecs as ecs,
+    type aws_sns as sns,
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
 
@@ -24,48 +24,53 @@ export interface EcsProps {
     ecsAppScalableTarget: ecs.ScalableTaskCount;
 }
 
+export interface SnsProps {
+    snsTopicMetricsAlarm: sns.Topic;
+}
+
 // ------------------------------------------------------------
 // [13] - cfMonitoringStack
 // ------------------------------------------------------------
 export class CfMonitoringStack extends Construct {
-    private readonly cpuUtilizationHighAlarmEcsApp: cloudwatch.Alarm;
-    private readonly cpuUtilizationLowAlarmEcsApp: cloudwatch.Alarm;
-    private readonly memoryUtilizationHighAlarmEcsApp: cloudwatch.Alarm;
-    private readonly memoryUtilizationLowAlarmEcsApp: cloudwatch.Alarm;
-    private readonly deploymentFailedAlarmEcsApp: cloudwatch.Alarm;
-    private readonly cpuUtilizationHighAlarmEcsCron: cloudwatch.Alarm;
-    private readonly memoryUtilizationHighAlarmEcsCron: cloudwatch.Alarm;
-    private readonly cpuUtilizationHighAlarmEcsQueue: cloudwatch.Alarm;
-    private readonly memoryUtilizationHighAlarmEcsQueue: cloudwatch.Alarm;
-    private readonly cpuUtilizationHighAlarmEc2Bastion: cloudwatch.Alarm;
-    private readonly memoryUtilizationHighAlarmEc2Bastion: cloudwatch.Alarm;
-    private readonly diskUtilizationHighAlarmEc2Bastion: cloudwatch.Alarm;
-    private readonly statusCheckFailedAlarmEc2Bastion: cloudwatch.Alarm;
-    private readonly cpuUtilizationHighAlarmEc2BatchAzA: cloudwatch.Alarm;
-    private readonly memoryUtilizationHighAlarmEc2BatchAzA: cloudwatch.Alarm;
-    private readonly diskUtilizationHighAlarmEc2BatchAzA: cloudwatch.Alarm;
-    private readonly statusCheckFailedAlarmEc2BatchAzA: cloudwatch.Alarm;
-    private readonly cpuUtilizationHighAlarmEc2BatchAzC: cloudwatch.Alarm;
-    private readonly memoryUtilizationHighAlarmEc2BatchAzC: cloudwatch.Alarm;
-    private readonly diskUtilizationHighAlarmEc2BatchAzC: cloudwatch.Alarm;
-    private readonly statusCheckFailedAlarmEc2BatchAzC: cloudwatch.Alarm;
-    private readonly healtyHostCounAlarmAlb: cloudwatch.Alarm;
-    private readonly unHealthyHostCountAlarmAlb: cloudwatch.Alarm;
-    private readonly rejectedConnectionCountAlarmAlb: cloudwatch.Alarm;
-    private readonly cpuUtilizationHighAlarmAurora: cloudwatch.Alarm;
-    private readonly memoryUtilizationHighAlarmAurora: cloudwatch.Alarm;
-    private readonly connectionHighAlarmAurora: cloudwatch.Alarm;
-    private readonly cpuUtilizationHighAlarmElastiCache: cloudwatch.Alarm;
-    private readonly memoryUtilizationHighAlarmElastiCache: cloudwatch.Alarm;
-    private readonly swapUsageHighAlarmElastiCache: cloudwatch.Alarm;
-    private readonly errorAlarmLambda: cloudwatch.Alarm;
-    private readonly throttlesAlarmLambda: cloudwatch.Alarm;
-    private readonly concurrentExecutionsAlarmLambda: cloudwatch.Alarm;
+    private readonly cpuUtilizationHighAlarmEcsApp: cloudwatch.CfnAlarm;
+    private readonly cpuUtilizationLowAlarmEcsApp: cloudwatch.CfnAlarm;
+    private readonly memoryUtilizationHighAlarmEcsApp: cloudwatch.CfnAlarm;
+    private readonly memoryUtilizationLowAlarmEcsApp: cloudwatch.CfnAlarm;
+    private readonly deploymentFailedAlarmEcsApp: cloudwatch.CfnAlarm;
+    private readonly cpuUtilizationHighAlarmEcsCron: cloudwatch.CfnAlarm;
+    private readonly memoryUtilizationHighAlarmEcsCron: cloudwatch.CfnAlarm;
+    private readonly cpuUtilizationHighAlarmEcsQueue: cloudwatch.CfnAlarm;
+    private readonly memoryUtilizationHighAlarmEcsQueue: cloudwatch.CfnAlarm;
+    private readonly cpuUtilizationHighAlarmEc2Bastion: cloudwatch.CfnAlarm;
+    private readonly memoryUtilizationHighAlarmEc2Bastion: cloudwatch.CfnAlarm;
+    private readonly diskUtilizationHighAlarmEc2Bastion: cloudwatch.CfnAlarm;
+    private readonly statusCheckFailedAlarmEc2Bastion: cloudwatch.CfnAlarm;
+    private readonly cpuUtilizationHighAlarmEc2BatchAzA: cloudwatch.CfnAlarm;
+    private readonly memoryUtilizationHighAlarmEc2BatchAzA: cloudwatch.CfnAlarm;
+    private readonly diskUtilizationHighAlarmEc2BatchAzA: cloudwatch.CfnAlarm;
+    private readonly statusCheckFailedAlarmEc2BatchAzA: cloudwatch.CfnAlarm;
+    private readonly cpuUtilizationHighAlarmEc2BatchAzC: cloudwatch.CfnAlarm;
+    private readonly memoryUtilizationHighAlarmEc2BatchAzC: cloudwatch.CfnAlarm;
+    private readonly diskUtilizationHighAlarmEc2BatchAzC: cloudwatch.CfnAlarm;
+    private readonly statusCheckFailedAlarmEc2BatchAzC: cloudwatch.CfnAlarm;
+    private readonly healtyHostCounAlarmAlb: cloudwatch.CfnAlarm;
+    private readonly unHealthyHostCountAlarmAlb: cloudwatch.CfnAlarm;
+    private readonly rejectedConnectionCountAlarmAlb: cloudwatch.CfnAlarm;
+    private readonly cpuUtilizationHighAlarmAurora: cloudwatch.CfnAlarm;
+    private readonly memoryUtilizationHighAlarmAurora: cloudwatch.CfnAlarm;
+    private readonly connectionHighAlarmAurora: cloudwatch.CfnAlarm;
+    private readonly cpuUtilizationHighAlarmElastiCache: cloudwatch.CfnAlarm;
+    private readonly memoryUtilizationHighAlarmElastiCache: cloudwatch.CfnAlarm;
+    private readonly swapUsageHighAlarmElastiCache: cloudwatch.CfnAlarm;
+    private readonly errorAlarmLambda: cloudwatch.CfnAlarm;
+    private readonly throttlesAlarmLambda: cloudwatch.CfnAlarm;
+    private readonly concurrentExecutionsAlarmLambda: cloudwatch.CfnAlarm;
 
     constructor(
         scope: Construct,
         id: string,
         ecsProps: EcsProps,
+        snsProps: SnsProps,
         commonProps: CommonProps,
         envProps: EnvProps,
     ) {
@@ -74,20 +79,24 @@ export class CfMonitoringStack extends Construct {
         // ------------------------------------------------------------
         // Amazon CloudWatch Metric Alarms for Amazon ECS (app) Configuration
         // ------------------------------------------------------------
-        this.cpuUtilizationHighAlarmEcsApp = new cloudwatch.Alarm(
+        this.cpuUtilizationHighAlarmEcsApp = new cloudwatch.CfnAlarm(
             this,
             "CpuUtilizationHighAlarmEcsApp",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ECS",
-                    metricName: "CPUUtilization",
-                    dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${envProps.envName}-app-service`,
+                namespace: "AWS/ECS",
+                metricName: "CPUUtilization",
+                dimensions: [
+                    {
+                        name: "ClusterName",
+                        value: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                    {
+                        name: "ServiceName",
+                        value: `${commonProps.projectName}-${envProps.envName}-app-service`,
+                    },
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -98,6 +107,8 @@ export class CfMonitoringStack extends Construct {
                 alarmDescription: "Alarm when CPU utilization exceeds 80%",
                 alarmName: "CpuUtilizationHighAlarmEcsApp",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -114,20 +125,24 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.cpuUtilizationLowAlarmEcsApp = new cloudwatch.Alarm(
+        this.cpuUtilizationLowAlarmEcsApp = new cloudwatch.CfnAlarm(
             this,
             "CpuUtilizationLowAlarmEcsApp",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ECS",
-                    metricName: "CPUUtilization",
-                    dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${envProps.envName}-app-service`,
+                namespace: "AWS/ECS",
+                metricName: "CPUUtilization",
+                dimensions: [
+                    {
+                        name: "ClusterName",
+                        value: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                    {
+                        name: "ServiceName",
+                        value: `${commonProps.projectName}-${envProps.envName}-app-service`,
+                    },
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 15,
                 evaluationPeriods: 10,
                 datapointsToAlarm: 10,
@@ -138,6 +153,8 @@ export class CfMonitoringStack extends Construct {
                 alarmDescription: "Alarm when CPU utilization falls below 15%",
                 alarmName: "CpuUtilizationLowAlarmEcsApp",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -154,20 +171,24 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.memoryUtilizationHighAlarmEcsApp = new cloudwatch.Alarm(
+        this.memoryUtilizationHighAlarmEcsApp = new cloudwatch.CfnAlarm(
             this,
             "MemoryUtilizationHighAlarmEcsApp",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ECS",
-                    metricName: "MemoryUtilization",
-                    dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${envProps.envName}-app-service`,
+                namespace: "AWS/ECS",
+                metricName: "MemoryUtilization",
+                dimensions: [
+                    {
+                        name: "ClusterName",
+                        value: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                    {
+                        name: "ServiceName",
+                        value: `${commonProps.projectName}-${envProps.envName}-app-service`,
+                    },
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -178,6 +199,8 @@ export class CfMonitoringStack extends Construct {
                 alarmDescription: "Alarm when Memory utilization exceeds 80%",
                 alarmName: "MemoryUtilizationHighAlarmEcsApp",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -194,20 +217,24 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.memoryUtilizationLowAlarmEcsApp = new cloudwatch.Alarm(
+        this.memoryUtilizationLowAlarmEcsApp = new cloudwatch.CfnAlarm(
             this,
             "MemoryUtilizationLowAlarmEcsApp",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ECS",
-                    metricName: "MemoryUtilization",
-                    dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${envProps.envName}-app-service`,
+                namespace: "AWS/ECS",
+                metricName: "MemoryUtilization",
+                dimensions: [
+                    {
+                        name: "ClusterName",
+                        value: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                    {
+                        name: "ServiceName",
+                        value: `${commonProps.projectName}-${envProps.envName}-app-service`,
+                    },
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 15,
                 evaluationPeriods: 10,
                 datapointsToAlarm: 10,
@@ -219,6 +246,8 @@ export class CfMonitoringStack extends Construct {
                     "Alarm when Memory utilization falls below 15%",
                 alarmName: "MemoryUtilizationLowAlarmEcsApp",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -235,20 +264,24 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.deploymentFailedAlarmEcsApp = new cloudwatch.Alarm(
+        this.deploymentFailedAlarmEcsApp = new cloudwatch.CfnAlarm(
             this,
             "DeploymentFailedAlarmEcsApp",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ECS",
-                    metricName: "DeploymentFailed",
-                    dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${envProps.envName}-app-service`,
+                namespace: "AWS/ECS",
+                metricName: "DeploymentFailed",
+                dimensions: [
+                    {
+                        name: "ClusterName",
+                        value: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                    {
+                        name: "ServiceName",
+                        value: `${commonProps.projectName}-${envProps.envName}-app-service`,
+                    },
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 1,
                 evaluationPeriods: 1,
                 datapointsToAlarm: 1,
@@ -259,6 +292,8 @@ export class CfMonitoringStack extends Construct {
                 alarmDescription: "Alarm when ECS deployment fails",
                 alarmName: "DeploymentFailedAlarmEcsApp",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -296,16 +331,13 @@ export class CfMonitoringStack extends Construct {
             lowerBound: 0,
         });
 
-        this.cpuUtilizationHighAlarmEcsApp.addAlarmAction(
-            new cloudwatchActions.ApplicationScalingAction(
-                ecsAppScaleOutAction,
-            ),
-        );
+        this.cpuUtilizationHighAlarmEcsApp.addPropertyOverride("AlarmActions", [
+            ecsAppScaleOutAction.scalingPolicyArn,
+        ]);
 
-        this.memoryUtilizationHighAlarmEcsApp.addAlarmAction(
-            new cloudwatchActions.ApplicationScalingAction(
-                ecsAppScaleOutAction,
-            ),
+        this.memoryUtilizationHighAlarmEcsApp.addPropertyOverride(
+            "AlarmActions",
+            [ecsAppScaleOutAction.scalingPolicyArn],
         );
 
         // ------------------------------------------------------------
@@ -329,31 +361,36 @@ export class CfMonitoringStack extends Construct {
             lowerBound: 0,
         });
 
-        this.cpuUtilizationLowAlarmEcsApp.addAlarmAction(
-            new cloudwatchActions.ApplicationScalingAction(ecsAppScaleInAction),
-        );
+        this.cpuUtilizationLowAlarmEcsApp.addPropertyOverride("AlarmActions", [
+            ecsAppScaleInAction.scalingPolicyArn,
+        ]);
 
-        this.memoryUtilizationLowAlarmEcsApp.addAlarmAction(
-            new cloudwatchActions.ApplicationScalingAction(ecsAppScaleInAction),
+        this.memoryUtilizationLowAlarmEcsApp.addPropertyOverride(
+            "AlarmActions",
+            [ecsAppScaleInAction.scalingPolicyArn],
         );
 
         // ------------------------------------------------------------
         // Amazon CloudWatch Metric Alarms for Amazon ECS (cron) Configuration
         // ------------------------------------------------------------
-        this.cpuUtilizationHighAlarmEcsCron = new cloudwatch.Alarm(
+        this.cpuUtilizationHighAlarmEcsCron = new cloudwatch.CfnAlarm(
             this,
             "CpuUtilizationHighAlarmEcsCron",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ECS",
-                    metricName: "CPUUtilization",
-                    dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${envProps.envName}-cron-service`,
+                namespace: "AWS/ECS",
+                metricName: "CPUUtilization",
+                dimensions: [
+                    {
+                        name: "ClusterName",
+                        value: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                    {
+                        name: "ServiceName",
+                        value: `${commonProps.projectName}-${envProps.envName}-cron-service`,
+                    },
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -364,6 +401,8 @@ export class CfMonitoringStack extends Construct {
                 alarmDescription: "Alarm when CPU utilization exceeds 80%",
                 alarmName: "CpuUtilizationHighAlarmEcsCron",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -380,20 +419,24 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.memoryUtilizationHighAlarmEcsCron = new cloudwatch.Alarm(
+        this.memoryUtilizationHighAlarmEcsCron = new cloudwatch.CfnAlarm(
             this,
             "MemoryUtilizationHighAlarmEcsCron",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ECS",
-                    metricName: "MemoryUtilization",
-                    dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${envProps.envName}-cron-service`,
+                namespace: "AWS/ECS",
+                metricName: "MemoryUtilization",
+                dimensions: [
+                    {
+                        name: "ClusterName",
+                        value: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                    {
+                        name: "ServiceName",
+                        value: `${commonProps.projectName}-${envProps.envName}-cron-service`,
+                    },
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -404,6 +447,8 @@ export class CfMonitoringStack extends Construct {
                 alarmDescription: "Alarm when Memory utilization exceeds 80%",
                 alarmName: "MemoryUtilizationHighAlarmEcsCron",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -423,20 +468,24 @@ export class CfMonitoringStack extends Construct {
         // ------------------------------------------------------------
         // Amazon CloudWatch Metric Alarms for Amazon ECS (queue) Configuration
         // ------------------------------------------------------------
-        this.cpuUtilizationHighAlarmEcsQueue = new cloudwatch.Alarm(
+        this.cpuUtilizationHighAlarmEcsQueue = new cloudwatch.CfnAlarm(
             this,
             "CpuUtilizationHighAlarmEcsQueue",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ECS",
-                    metricName: "CPUUtilization",
-                    dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${envProps.envName}-queue-service`,
+                namespace: "AWS/ECS",
+                metricName: "CPUUtilization",
+                dimensions: [
+                    {
+                        name: "ClusterName",
+                        value: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                    {
+                        name: "ServiceName",
+                        value: `${commonProps.projectName}-${envProps.envName}-queue-service`,
+                    },
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -447,6 +496,8 @@ export class CfMonitoringStack extends Construct {
                 alarmDescription: "Alarm when CPU utilization exceeds 80%",
                 alarmName: "CpuUtilizationHighAlarmEcsQueue",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -463,20 +514,24 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.memoryUtilizationHighAlarmEcsQueue = new cloudwatch.Alarm(
+        this.memoryUtilizationHighAlarmEcsQueue = new cloudwatch.CfnAlarm(
             this,
             "MemoryUtilizationHighAlarmEcsQueue",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ECS",
-                    metricName: "MemoryUtilization",
-                    dimensionsMap: {
-                        ClusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
-                        ServiceName: `${commonProps.projectName}-${envProps.envName}-queue-service`,
+                namespace: "AWS/ECS",
+                metricName: "MemoryUtilization",
+                dimensions: [
+                    {
+                        name: "ClusterName",
+                        value: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                    {
+                        name: "ServiceName",
+                        value: `${commonProps.projectName}-${envProps.envName}-queue-service`,
+                    },
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -487,6 +542,8 @@ export class CfMonitoringStack extends Construct {
                 alarmDescription: "Alarm when Memory utilization exceeds 80%",
                 alarmName: "MemoryUtilizationHighAlarmEcsQueue",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -506,19 +563,20 @@ export class CfMonitoringStack extends Construct {
         // ------------------------------------------------------------
         // Amazon CloudWatch Metrics for Amazon EC2 (bastion) Configuration
         // ------------------------------------------------------------
-        this.cpuUtilizationHighAlarmEc2Bastion = new cloudwatch.Alarm(
+        this.cpuUtilizationHighAlarmEc2Bastion = new cloudwatch.CfnAlarm(
             this,
             "CpuUtilizationHighAlarmBastion",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/EC2",
-                    metricName: "CPUUtilization",
-                    dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${envProps.envName}-bastion-instance`,
+                namespace: "AWS/EC2",
+                metricName: "CPUUtilization",
+                dimensions: [
+                    {
+                        name: "InstanceId",
+                        value: `${commonProps.projectName}-${envProps.envName}-bastion-instance`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -530,6 +588,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon EC2 (bastion) Alarm when CPU utilization exceeds 80%",
                 alarmName: "CpuUtilizationHighAlarmBastion",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -546,19 +606,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.memoryUtilizationHighAlarmEc2Bastion = new cloudwatch.Alarm(
+        this.memoryUtilizationHighAlarmEc2Bastion = new cloudwatch.CfnAlarm(
             this,
             "MemoryUtilizationHighAlarmBastion",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/EC2",
-                    metricName: "MemoryUtilization",
-                    dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${envProps.envName}-bastion-instance`,
+                namespace: "AWS/EC2",
+                metricName: "MemoryUtilization",
+                dimensions: [
+                    {
+                        name: "InstanceId",
+                        value: `${commonProps.projectName}-${envProps.envName}-bastion-instance`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -570,6 +631,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon EC2 (bastion) Alarm when Memory utilization exceeds 80%",
                 alarmName: "MemoryUtilizationHighAlarmBastion",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -586,19 +649,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.diskUtilizationHighAlarmEc2Bastion = new cloudwatch.Alarm(
+        this.diskUtilizationHighAlarmEc2Bastion = new cloudwatch.CfnAlarm(
             this,
             "DiskUtilizationHighAlarmBastion",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/EC2",
-                    metricName: "DiskUtilization",
-                    dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${envProps.envName}-bastion-instance`,
+                namespace: "AWS/EC2",
+                metricName: "DiskUtilization",
+                dimensions: [
+                    {
+                        name: "InstanceId",
+                        value: `${commonProps.projectName}-${envProps.envName}-bastion-instance`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -610,6 +674,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon EC2 (bastion) Alarm when Disk utilization exceeds 80%",
                 alarmName: "DiskUtilizationHighAlarmBastion",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -626,19 +692,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.statusCheckFailedAlarmEc2Bastion = new cloudwatch.Alarm(
+        this.statusCheckFailedAlarmEc2Bastion = new cloudwatch.CfnAlarm(
             this,
             "StatusCheckFailedAlarmBastion",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/EC2",
-                    metricName: "StatusCheckFailed",
-                    dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${envProps.envName}-bastion-instance`,
+                namespace: "AWS/EC2",
+                metricName: "StatusCheckFailed",
+                dimensions: [
+                    {
+                        name: "InstanceId",
+                        value: `${commonProps.projectName}-${envProps.envName}-bastion-instance`,
                     },
-                    statistic: "Minimum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Minimum",
+                period: 60,
                 threshold: 1,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -650,6 +717,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon EC2 (bastion) Alarm when Status Check Failed exceeds 1",
                 alarmName: "StatusCheckFailedAlarmBastion",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -669,19 +738,20 @@ export class CfMonitoringStack extends Construct {
         // ------------------------------------------------------------
         // Amazon CloudWatch Metrics for Amazon EC2 (batch) Configuration
         // ------------------------------------------------------------
-        this.cpuUtilizationHighAlarmEc2BatchAzA = new cloudwatch.Alarm(
+        this.cpuUtilizationHighAlarmEc2BatchAzA = new cloudwatch.CfnAlarm(
             this,
             "CpuUtilizationHighAlarmEc2BatchAzA",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/EC2",
-                    metricName: "CPUUtilization",
-                    dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-a-instance`,
+                namespace: "AWS/EC2",
+                metricName: "CPUUtilization",
+                dimensions: [
+                    {
+                        name: "InstanceId",
+                        value: `${commonProps.projectName}-${envProps.envName}-batch-az-a-instance`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -693,6 +763,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon EC2 (batch AZ-a) Alarm when CPU utilization exceeds 80%",
                 alarmName: "CpuUtilizationHighAlarmEc2BatchAzA",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -709,19 +781,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.memoryUtilizationHighAlarmEc2BatchAzA = new cloudwatch.Alarm(
+        this.memoryUtilizationHighAlarmEc2BatchAzA = new cloudwatch.CfnAlarm(
             this,
             "MemoryUtilizationHighAlarmEc2BatchAzA",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/EC2",
-                    metricName: "MemoryUtilization",
-                    dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-a-instance`,
+                namespace: "AWS/EC2",
+                metricName: "MemoryUtilization",
+                dimensions: [
+                    {
+                        name: "InstanceId",
+                        value: `${commonProps.projectName}-${envProps.envName}-batch-az-a-instance`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -733,6 +806,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon EC2 (batch AZ-a) Alarm when Memory utilization exceeds 80%",
                 alarmName: "MemoryUtilizationHighAlarmEc2BatchAzA",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -749,19 +824,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.diskUtilizationHighAlarmEc2BatchAzA = new cloudwatch.Alarm(
+        this.diskUtilizationHighAlarmEc2BatchAzA = new cloudwatch.CfnAlarm(
             this,
             "DiskUtilizationHighAlarmEc2BatchAzA",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/EC2",
-                    metricName: "DiskUtilization",
-                    dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-a-instance`,
+                namespace: "AWS/EC2",
+                metricName: "DiskUtilization",
+                dimensions: [
+                    {
+                        name: "InstanceId",
+                        value: `${commonProps.projectName}-${envProps.envName}-batch-az-a-instance`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -773,6 +849,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon EC2 (batch AZ-a) Alarm when Disk utilization exceeds 80%",
                 alarmName: "DiskUtilizationHighAlarmEc2BatchAzA",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -789,19 +867,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.statusCheckFailedAlarmEc2BatchAzA = new cloudwatch.Alarm(
+        this.statusCheckFailedAlarmEc2BatchAzA = new cloudwatch.CfnAlarm(
             this,
             "StatusCheckFailedAlarmEc2BatchAzA",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/EC2",
-                    metricName: "StatusCheckFailed",
-                    dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-a-instance`,
+                namespace: "AWS/EC2",
+                metricName: "StatusCheckFailed",
+                dimensions: [
+                    {
+                        name: "InstanceId",
+                        value: `${commonProps.projectName}-${envProps.envName}-batch-az-a-instance`,
                     },
-                    statistic: "Minimum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Minimum",
+                period: 60,
                 threshold: 1,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -813,6 +892,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon EC2 (batch AZ-a) Alarm when status check fails",
                 alarmName: "StatusCheckFailedAlarmEc2BatchAzA",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -829,19 +910,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.cpuUtilizationHighAlarmEc2BatchAzC = new cloudwatch.Alarm(
+        this.cpuUtilizationHighAlarmEc2BatchAzC = new cloudwatch.CfnAlarm(
             this,
             "CpuUtilizationHighAlarmEc2BatchAzC",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/EC2",
-                    metricName: "CPUUtilization",
-                    dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-c-instance`,
+                namespace: "AWS/EC2",
+                metricName: "CPUUtilization",
+                dimensions: [
+                    {
+                        name: "InstanceId",
+                        value: `${commonProps.projectName}-${envProps.envName}-batch-az-c-instance`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -853,6 +935,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon EC2 (batch AZ-c) Alarm when CPU utilization exceeds 80%",
                 alarmName: "CpuUtilizationHighAlarmEc2BatchAzC",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -869,19 +953,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.memoryUtilizationHighAlarmEc2BatchAzC = new cloudwatch.Alarm(
+        this.memoryUtilizationHighAlarmEc2BatchAzC = new cloudwatch.CfnAlarm(
             this,
             "MemoryUtilizationHighAlarmEc2BatchAzC",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/EC2",
-                    metricName: "MemoryUtilization",
-                    dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-c-instance`,
+                namespace: "AWS/EC2",
+                metricName: "MemoryUtilization",
+                dimensions: [
+                    {
+                        name: "InstanceId",
+                        value: `${commonProps.projectName}-${envProps.envName}-batch-az-c-instance`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -893,6 +978,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon EC2 (batch AZ-c) Alarm when Memory utilization exceeds 80%",
                 alarmName: "MemoryUtilizationHighAlarmEc2BatchAzC",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -909,19 +996,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.diskUtilizationHighAlarmEc2BatchAzC = new cloudwatch.Alarm(
+        this.diskUtilizationHighAlarmEc2BatchAzC = new cloudwatch.CfnAlarm(
             this,
             "DiskUtilizationHighAlarmEc2BatchAzC",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/EC2",
-                    metricName: "DiskUtilization",
-                    dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-c-instance`,
+                namespace: "AWS/EC2",
+                metricName: "DiskUtilization",
+                dimensions: [
+                    {
+                        name: "InstanceId",
+                        value: `${commonProps.projectName}-${envProps.envName}-batch-az-c-instance`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -933,6 +1021,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon EC2 (batch AZ-c) Alarm when Disk utilization exceeds 80%",
                 alarmName: "DiskUtilizationHighAlarmEc2BatchAzC",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -949,19 +1039,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.statusCheckFailedAlarmEc2BatchAzC = new cloudwatch.Alarm(
+        this.statusCheckFailedAlarmEc2BatchAzC = new cloudwatch.CfnAlarm(
             this,
             "StatusCheckFailedAlarmEc2BatchAzC",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/EC2",
-                    metricName: "StatusCheckFailed",
-                    dimensionsMap: {
-                        InstanceId: `${commonProps.projectName}-${envProps.envName}-batch-az-c-instance`,
+                namespace: "AWS/EC2",
+                metricName: "StatusCheckFailed",
+                dimensions: [
+                    {
+                        name: "InstanceId",
+                        value: `${commonProps.projectName}-${envProps.envName}-batch-az-c-instance`,
                     },
-                    statistic: "Minimum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Minimum",
+                period: 60,
                 threshold: 1,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -973,6 +1064,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon EC2 (batch AZ-c) Alarm when Status Check Failed exceeds 1",
                 alarmName: "StatusCheckFailedAlarmEc2BatchAzC",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -992,19 +1085,20 @@ export class CfMonitoringStack extends Construct {
         // ------------------------------------------------------------
         // Amazon CloudWatch Metrics for Application Load Balancer Configuration
         // ------------------------------------------------------------
-        this.healtyHostCounAlarmAlb = new cloudwatch.Alarm(
+        this.healtyHostCounAlarmAlb = new cloudwatch.CfnAlarm(
             this,
             "HealtyHostCounAlarmAlb",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ApplicationELB",
-                    metricName: "HealthyHostCount",
-                    dimensionsMap: {
-                        LoadBalancer: `${commonProps.projectName}-${envProps.envName}-alb`,
+                namespace: "AWS/ApplicationELB",
+                metricName: "HealthyHostCount",
+                dimensions: [
+                    {
+                        name: "LoadBalancer",
+                        value: `${commonProps.projectName}-${envProps.envName}-alb`,
                     },
-                    statistic: "Minimum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Minimum",
+                period: 60,
                 threshold: 0,
                 evaluationPeriods: 1,
                 datapointsToAlarm: 1,
@@ -1015,6 +1109,8 @@ export class CfMonitoringStack extends Construct {
                     "Application Load Balancer Alarm when Healthy Host Count is less than 1",
                 alarmName: "HealtyHostCounAlarmAlb",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -1028,19 +1124,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.unHealthyHostCountAlarmAlb = new cloudwatch.Alarm(
+        this.unHealthyHostCountAlarmAlb = new cloudwatch.CfnAlarm(
             this,
             "UnHealthyHostCountAlarmAlb",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ApplicationELB",
-                    metricName: "UnHealthyHostCount",
-                    dimensionsMap: {
-                        LoadBalancer: `${commonProps.projectName}-${envProps.envName}-alb`,
+                namespace: "AWS/ApplicationELB",
+                metricName: "UnHealthyHostCount",
+                dimensions: [
+                    {
+                        name: "LoadBalancer",
+                        value: `${commonProps.projectName}-${envProps.envName}-alb`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 1,
                 evaluationPeriods: 1,
                 datapointsToAlarm: 1,
@@ -1052,6 +1149,8 @@ export class CfMonitoringStack extends Construct {
                     "Application Load Balancer Alarm when UnHealthy Host Count is greater than or equal to 1",
                 alarmName: "UnHealthyHostCountAlarmAlb",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -1068,19 +1167,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.rejectedConnectionCountAlarmAlb = new cloudwatch.Alarm(
+        this.rejectedConnectionCountAlarmAlb = new cloudwatch.CfnAlarm(
             this,
             "RejectedConnectionCountAlarmAlb",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ApplicationELB",
-                    metricName: "RejectedConnectionCount",
-                    dimensionsMap: {
-                        LoadBalancer: `${commonProps.projectName}-${envProps.envName}-alb`,
+                namespace: "AWS/ApplicationELB",
+                metricName: "RejectedConnectionCount",
+                dimensions: [
+                    {
+                        name: "LoadBalancer",
+                        value: `${commonProps.projectName}-${envProps.envName}-alb`,
                     },
-                    statistic: "Sum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Sum",
+                period: 60,
                 threshold: 1,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -1092,6 +1192,8 @@ export class CfMonitoringStack extends Construct {
                     "Application Load Balancer Alarm when Rejected Connection Count is greater than or equal to 1",
                 alarmName: "RejectedConnectionCountAlarmAlb",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -1111,19 +1213,20 @@ export class CfMonitoringStack extends Construct {
         // ------------------------------------------------------------
         // Amazon CloudWatch Metrics for Amazon Aurora Configuration
         // ------------------------------------------------------------
-        this.cpuUtilizationHighAlarmAurora = new cloudwatch.Alarm(
+        this.cpuUtilizationHighAlarmAurora = new cloudwatch.CfnAlarm(
             this,
             "CpuUtilizationHighAlarmAurora",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/RDS",
-                    metricName: "CPUUtilization",
-                    dimensionsMap: {
-                        DBInstanceIdentifier: `${commonProps.projectName}-${envProps.envName}-aurora`,
+                namespace: "AWS/RDS",
+                metricName: "CPUUtilization",
+                dimensions: [
+                    {
+                        name: "DBInstanceIdentifier",
+                        value: `${commonProps.projectName}-${envProps.envName}-aurora`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -1135,6 +1238,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon RDS (Aurora) Alarm when CPU utilization exceeds 80%",
                 alarmName: "CpuUtilizationHighAlarmAurora",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -1151,19 +1256,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.memoryUtilizationHighAlarmAurora = new cloudwatch.Alarm(
+        this.memoryUtilizationHighAlarmAurora = new cloudwatch.CfnAlarm(
             this,
             "MemoryUtilizationHighAlarmAurora",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/RDS",
-                    metricName: "FreeableMemory",
-                    dimensionsMap: {
-                        DBInstanceIdentifier: `${commonProps.projectName}-${envProps.envName}-aurora`,
+                namespace: "AWS/RDS",
+                metricName: "FreeableMemory",
+                dimensions: [
+                    {
+                        name: "DBInstanceIdentifier",
+                        value: `${commonProps.projectName}-${envProps.envName}-aurora`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(300),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 300,
                 threshold: 256000000,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -1174,6 +1280,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon RDS (Aurora) Alarm when Freeable Memory is less than 256MB",
                 alarmName: "MemoryUtilizationHighAlarmAurora",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
         cdk.Tags.of(this.memoryUtilizationHighAlarmAurora).add(
@@ -1189,19 +1297,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.connectionHighAlarmAurora = new cloudwatch.Alarm(
+        this.connectionHighAlarmAurora = new cloudwatch.CfnAlarm(
             this,
             "ConnectionHighAlarmAurora",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/RDS",
-                    metricName: "DatabaseConnections",
-                    dimensionsMap: {
-                        DBInstanceIdentifier: `${commonProps.projectName}-${envProps.envName}-aurora`,
+                namespace: "AWS/RDS",
+                metricName: "DatabaseConnections",
+                dimensions: [
+                    {
+                        name: "DBInstanceIdentifier",
+                        value: `${commonProps.projectName}-${envProps.envName}-aurora`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: commonProps.auroraMaxConnections * 0.8,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -1213,6 +1322,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon RDS (Aurora) Alarm when Database Connections exceed 80% of the maximum",
                 alarmName: "ConnectionHighAlarmAurora",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
         cdk.Tags.of(this.connectionHighAlarmAurora).add(
@@ -1228,19 +1339,20 @@ export class CfMonitoringStack extends Construct {
         // ------------------------------------------------------------
         // Amazon CloudWatch Metrics for Amazon ElastiCache Configuration
         // ------------------------------------------------------------
-        this.cpuUtilizationHighAlarmElastiCache = new cloudwatch.Alarm(
+        this.cpuUtilizationHighAlarmElastiCache = new cloudwatch.CfnAlarm(
             this,
             "CpuUtilizationHighAlarmElastiCache",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ElastiCache",
-                    metricName: "CPUUtilization",
-                    dimensionsMap: {
-                        CacheClusterId: `${commonProps.projectName}-${envProps.envName}-redis`,
+                namespace: "AWS/ElastiCache",
+                metricName: "CPUUtilization",
+                dimensions: [
+                    {
+                        name: "CacheClusterId",
+                        value: `${commonProps.projectName}-${envProps.envName}-redis`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -1252,6 +1364,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon ElastiCache (Redis) Alarm when CPU utilization exceeds 80%",
                 alarmName: "CpuUtilizationHighAlarmElastiCache",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -1268,19 +1382,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.memoryUtilizationHighAlarmElastiCache = new cloudwatch.Alarm(
+        this.memoryUtilizationHighAlarmElastiCache = new cloudwatch.CfnAlarm(
             this,
             "MemoryUtilizationHighAlarmElastiCache",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ElastiCache",
-                    metricName: "MemoryUtilization",
-                    dimensionsMap: {
-                        CacheClusterId: `${commonProps.projectName}-${envProps.envName}-redis`,
+                namespace: "AWS/ElastiCache",
+                metricName: "MemoryUtilization",
+                dimensions: [
+                    {
+                        name: "CacheClusterId",
+                        value: `${commonProps.projectName}-${envProps.envName}-redis`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 60,
                 threshold: 80,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -1292,6 +1407,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon ElastiCache (Redis) Alarm when Memory utilization exceeds 80%",
                 alarmName: "MemoryUtilizationHighAlarmElastiCache",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -1308,19 +1425,20 @@ export class CfMonitoringStack extends Construct {
             "1234567890",
         );
 
-        this.swapUsageHighAlarmElastiCache = new cloudwatch.Alarm(
+        this.swapUsageHighAlarmElastiCache = new cloudwatch.CfnAlarm(
             this,
             "SwapUsageHighAlarmElastiCache",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ElastiCache",
-                    metricName: "SwapUsage",
-                    dimensionsMap: {
-                        CacheClusterId: `${commonProps.projectName}-${envProps.envName}-redis`,
+                namespace: "AWS/ElastiCache",
+                metricName: "SwapUsage",
+                dimensions: [
+                    {
+                        name: "CacheClusterId",
+                        value: `${commonProps.projectName}-${envProps.envName}-redis`,
                     },
-                    statistic: "Maximum",
-                    period: cdk.Duration.seconds(300),
-                }),
+                ],
+                statistic: "Maximum",
+                period: 300,
                 threshold: 50000000,
                 evaluationPeriods: 2,
                 datapointsToAlarm: 2,
@@ -1332,6 +1450,8 @@ export class CfMonitoringStack extends Construct {
                     "Amazon ElastiCache (Redis) Alarm when Swap usage exceeds 50000000 bytes",
                 alarmName: "SwapUsageHighAlarmElastiCache",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -1351,27 +1471,34 @@ export class CfMonitoringStack extends Construct {
         // ------------------------------------------------------------
         // Amazon CloudWatch Metrics for AWS Lambda Configuration
         // ------------------------------------------------------------
-        this.errorAlarmLambda = new cloudwatch.Alarm(this, "ErrorAlarmLambda", {
-            metric: new cloudwatch.Metric({
+        this.errorAlarmLambda = new cloudwatch.CfnAlarm(
+            this,
+            "ErrorAlarmLambda",
+            {
                 namespace: "AWS/Lambda",
                 metricName: "Errors",
-                dimensionsMap: {
-                    FunctionName: `${commonProps.projectName}-${envProps.envName}-lambda`,
-                },
+                dimensions: [
+                    {
+                        name: "FunctionName",
+                        value: `${commonProps.projectName}-${envProps.envName}-lambda`,
+                    },
+                ],
                 statistic: "Sum",
-                period: cdk.Duration.seconds(60),
-            }),
-            threshold: 1,
-            evaluationPeriods: 1,
-            datapointsToAlarm: 1,
-            treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-            comparisonOperator:
-                cloudwatch.ComparisonOperator
-                    .GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-            alarmDescription: "AWS Lambda Alarm when Errors exceed 1",
-            alarmName: "ErrorAlarmLambda",
-            actionsEnabled: true,
-        });
+                period: 60,
+                threshold: 1,
+                evaluationPeriods: 1,
+                datapointsToAlarm: 1,
+                treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+                comparisonOperator:
+                    cloudwatch.ComparisonOperator
+                        .GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+                alarmDescription: "AWS Lambda Alarm when Errors exceed 1",
+                alarmName: "ErrorAlarmLambda",
+                actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+            },
+        );
 
         cdk.Tags.of(this.errorAlarmLambda).add(
             "Name",
@@ -1380,19 +1507,20 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.errorAlarmLambda).add("ProvisionedBy", "AWS");
         cdk.Tags.of(this.errorAlarmLambda).add("ProjectCode", "1234567890");
 
-        this.throttlesAlarmLambda = new cloudwatch.Alarm(
+        this.throttlesAlarmLambda = new cloudwatch.CfnAlarm(
             this,
             "ThrottlesAlarmLambda",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/Lambda",
-                    metricName: "Throttles",
-                    dimensionsMap: {
-                        FunctionName: `${commonProps.projectName}-${envProps.envName}-lambda`,
+                namespace: "AWS/Lambda",
+                metricName: "Throttles",
+                dimensions: [
+                    {
+                        name: "FunctionName",
+                        value: `${commonProps.projectName}-${envProps.envName}-lambda`,
                     },
-                    statistic: "Sum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Sum",
+                period: 60,
                 threshold: 1,
                 evaluationPeriods: 1,
                 datapointsToAlarm: 1,
@@ -1403,6 +1531,8 @@ export class CfMonitoringStack extends Construct {
                 alarmDescription: "AWS Lambda Alarm when Throttles exceed 1",
                 alarmName: "ThrottlesAlarmLambda",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
@@ -1413,19 +1543,20 @@ export class CfMonitoringStack extends Construct {
         cdk.Tags.of(this.throttlesAlarmLambda).add("ProvisionedBy", "AWS");
         cdk.Tags.of(this.throttlesAlarmLambda).add("ProjectCode", "1234567890");
 
-        this.concurrentExecutionsAlarmLambda = new cloudwatch.Alarm(
+        this.concurrentExecutionsAlarmLambda = new cloudwatch.CfnAlarm(
             this,
             "ConcurrentExecutionsAlarmLambda",
             {
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/Lambda",
-                    metricName: "ConcurrentExecutions",
-                    dimensionsMap: {
-                        FunctionName: `${commonProps.projectName}-${envProps.envName}-lambda`,
+                namespace: "AWS/Lambda",
+                metricName: "ConcurrentExecutions",
+                dimensions: [
+                    {
+                        name: "FunctionName",
+                        value: `${commonProps.projectName}-${envProps.envName}-lambda`,
                     },
-                    statistic: "Sum",
-                    period: cdk.Duration.seconds(60),
-                }),
+                ],
+                statistic: "Sum",
+                period: 60,
                 threshold: commonProps.lambdaConcurrentExecutions * 0.8,
                 evaluationPeriods: 1,
                 datapointsToAlarm: 1,
@@ -1436,6 +1567,8 @@ export class CfMonitoringStack extends Construct {
                 alarmDescription: `AWS Lambda Alarm when Concurrent Executions exceed 80% of the ${commonProps.lambdaConcurrentExecutions} concurrent executions quota`,
                 alarmName: "ConcurrentExecutionsAlarmLambda",
                 actionsEnabled: true,
+                alarmActions: [snsProps.snsTopicMetricsAlarm.topicArn],
+                okActions: [snsProps.snsTopicMetricsAlarm.topicArn],
             },
         );
 
