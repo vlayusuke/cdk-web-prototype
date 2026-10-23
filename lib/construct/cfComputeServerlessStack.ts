@@ -27,9 +27,9 @@ export interface KmsProps {
 }
 
 export interface CloudWatchLogsProps {
-    logGroupLambdaRdsControl: logs.ILogGroup;
-    logGroupLambdaCloudWatchLogsAlert: logs.ILogGroup;
-    logGroupLambdaCloudWatchMetricsAlert: logs.ILogGroup;
+    logGroupLambdaRdsControl: logs.CfnLogGroup;
+    logGroupLambdaCloudWatchLogsAlert: logs.CfnLogGroup;
+    logGroupLambdaCloudWatchMetricsAlert: logs.CfnLogGroup;
 }
 
 export interface DatabaseProps {
@@ -100,7 +100,7 @@ export class CfComputeServerlessStack extends Construct {
                         ],
                         resources: [
                             cloudWatchLogsProps
-                                .logGroupLambdaCloudWatchLogsAlert.logGroupArn,
+                                .logGroupLambdaCloudWatchLogsAlert.attrArn,
                         ],
                     }),
                     new iam.PolicyStatement({
@@ -122,14 +122,6 @@ export class CfComputeServerlessStack extends Construct {
                         ],
                         resources: [
                             `arn:aws:firehose:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:*`,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "SNSPublish",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["sns:Publish"],
-                        resources: [
-                            `arn:aws:sns:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:*`,
                         ],
                     }),
                 ],
@@ -186,8 +178,7 @@ export class CfComputeServerlessStack extends Construct {
                         ],
                         resources: [
                             cloudWatchLogsProps
-                                .logGroupLambdaCloudWatchMetricsAlert
-                                .logGroupArn,
+                                .logGroupLambdaCloudWatchMetricsAlert.attrArn,
                         ],
                     }),
                     new iam.PolicyStatement({
@@ -340,9 +331,6 @@ export class CfComputeServerlessStack extends Construct {
                 timeout: cdk.Duration.seconds(30),
                 role: iamLambdaCloudWatchLogsAlertRole,
                 environmentEncryption: kmsProps.lambdaKey,
-                environment: {
-                    hookUrl: envProps.slackHookUrl,
-                },
             },
         );
         this.lambdaCloudWatchLogsAlert = lambdaCloudWatchLogsAlert;
