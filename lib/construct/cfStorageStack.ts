@@ -50,10 +50,10 @@ export class CfStorageStack extends Construct {
     public readonly vpcEndpointSSMEC2Messages: ec2.CfnVPCEndpoint;
     public readonly vpcEndpointCloudWatchLogs: ec2.CfnVPCEndpoint;
     public readonly vpcEndpointS3: ec2.CfnVPCEndpoint;
-    public readonly ecrRepositoryWebBaseImage: ecr.Repository;
-    public readonly ecrRepositoryAppBaseImage: ecr.Repository;
-    public readonly ecrRepositoryWeb: ecr.Repository;
-    public readonly ecrRepositoryApp: ecr.Repository;
+    public readonly ecrRepositoryWebBaseImage: ecr.CfnRepository;
+    public readonly ecrRepositoryAppBaseImage: ecr.CfnRepository;
+    public readonly ecrRepositoryWeb: ecr.CfnRepository;
+    public readonly ecrRepositoryApp: ecr.CfnRepository;
     public readonly s3BucketAlbLogs: s3.Bucket;
     public readonly s3BucketAuroraLogs: s3.Bucket;
     public readonly s3BucketEcsLogs: s3.Bucket;
@@ -511,16 +511,28 @@ export class CfStorageStack extends Construct {
             "utf8",
         );
 
-        this.ecrRepositoryWebBaseImage = new ecr.Repository(
+        this.ecrRepositoryWebBaseImage = new ecr.CfnRepository(
             this,
             "ecrRepositoryWebBaseImage",
             {
                 repositoryName: "web-baseimage",
-                imageTagMutability: ecr.TagMutability.IMMUTABLE,
-                imageScanOnPush: true,
-                encryption: ecr.RepositoryEncryption.KMS,
-                encryptionKey: kmsProps.ecrKey,
+                imageTagMutability: "IMMUTABLE",
+                imageScanningConfiguration: { scanOnPush: true },
+                encryptionConfiguration: {
+                    encryptionType: "KMS",
+                    kmsKey: kmsProps.ecrKey.keyArn,
+                },
+                lifecyclePolicy: { lifecyclePolicyText },
             },
+        );
+
+        this.ecrRepositoryWebBaseImage.applyRemovalPolicy(
+            cdk.RemovalPolicy.RETAIN,
+        );
+
+        // Keep the logical ID used by the former L2 construct to avoid replacement
+        this.ecrRepositoryWebBaseImage.overrideLogicalId(
+            "CfStorageStackecrRepositoryWebBaseImageB4974E01",
         );
 
         cdk.Tags.of(this.ecrRepositoryWebBaseImage).add(
@@ -533,25 +545,31 @@ export class CfStorageStack extends Construct {
             "1234567890",
         );
 
-        const cfnRepositoryWebBaseImage = this.ecrRepositoryWebBaseImage.node
-            .defaultChild as ecr.CfnRepository;
-        cfnRepositoryWebBaseImage.lifecyclePolicy = {
-            lifecyclePolicyText: lifecyclePolicyText,
-        };
-
         // ------------------------------------------------------------
         // Amazon ECR Repository for Application BaseImage Configuration
         // ------------------------------------------------------------
-        this.ecrRepositoryAppBaseImage = new ecr.Repository(
+        this.ecrRepositoryAppBaseImage = new ecr.CfnRepository(
             this,
             "ecrRepositoryAppBaseImage",
             {
                 repositoryName: "app-baseimage",
-                imageTagMutability: ecr.TagMutability.IMMUTABLE,
-                imageScanOnPush: true,
-                encryption: ecr.RepositoryEncryption.KMS,
-                encryptionKey: kmsProps.ecrKey,
+                imageTagMutability: "IMMUTABLE",
+                imageScanningConfiguration: { scanOnPush: true },
+                encryptionConfiguration: {
+                    encryptionType: "KMS",
+                    kmsKey: kmsProps.ecrKey.keyArn,
+                },
+                lifecyclePolicy: { lifecyclePolicyText },
             },
+        );
+
+        this.ecrRepositoryAppBaseImage.applyRemovalPolicy(
+            cdk.RemovalPolicy.RETAIN,
+        );
+
+        // Keep the logical ID used by the former L2 construct to avoid replacement
+        this.ecrRepositoryAppBaseImage.overrideLogicalId(
+            "CfStorageStackecrRepositoryAppBaseImageEF26B016",
         );
 
         cdk.Tags.of(this.ecrRepositoryAppBaseImage).add(
@@ -564,22 +582,30 @@ export class CfStorageStack extends Construct {
             "1234567890",
         );
 
-        const cfnRepositoryAppBaseImage = this.ecrRepositoryAppBaseImage.node
-            .defaultChild as ecr.CfnRepository;
-        cfnRepositoryAppBaseImage.lifecyclePolicy = {
-            lifecyclePolicyText: lifecyclePolicyText,
-        };
-
         // ------------------------------------------------------------
         // Amazon ECR Repository for Web Configuration
         // ------------------------------------------------------------
-        this.ecrRepositoryWeb = new ecr.Repository(this, "ecrRepositoryWeb", {
-            repositoryName: "web",
-            imageTagMutability: ecr.TagMutability.IMMUTABLE,
-            imageScanOnPush: true,
-            encryption: ecr.RepositoryEncryption.KMS,
-            encryptionKey: kmsProps.ecrKey,
-        });
+        this.ecrRepositoryWeb = new ecr.CfnRepository(
+            this,
+            "ecrRepositoryWeb",
+            {
+                repositoryName: "web",
+                imageTagMutability: "IMMUTABLE",
+                imageScanningConfiguration: { scanOnPush: true },
+                encryptionConfiguration: {
+                    encryptionType: "KMS",
+                    kmsKey: kmsProps.ecrKey.keyArn,
+                },
+                lifecyclePolicy: { lifecyclePolicyText },
+            },
+        );
+
+        this.ecrRepositoryWeb.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
+
+        // Keep the logical ID used by the former L2 construct to avoid replacement
+        this.ecrRepositoryWeb.overrideLogicalId(
+            "CfStorageStackecrRepositoryWebB412D58E",
+        );
 
         cdk.Tags.of(this.ecrRepositoryWeb).add(
             "Name",
@@ -588,22 +614,30 @@ export class CfStorageStack extends Construct {
         cdk.Tags.of(this.ecrRepositoryWeb).add("ProvisionedBy", "AWS");
         cdk.Tags.of(this.ecrRepositoryWeb).add("ProjectCode", "1234567890");
 
-        const cfnRepositoryWeb = this.ecrRepositoryWeb.node
-            .defaultChild as ecr.CfnRepository;
-        cfnRepositoryWeb.lifecyclePolicy = {
-            lifecyclePolicyText: lifecyclePolicyText,
-        };
-
         // ------------------------------------------------------------
         // Amazon ECR Repository for Application Configuration
         // ------------------------------------------------------------
-        this.ecrRepositoryApp = new ecr.Repository(this, "ecrRepositoryApp", {
-            repositoryName: "app",
-            imageTagMutability: ecr.TagMutability.IMMUTABLE,
-            imageScanOnPush: true,
-            encryption: ecr.RepositoryEncryption.KMS,
-            encryptionKey: kmsProps.ecrKey,
-        });
+        this.ecrRepositoryApp = new ecr.CfnRepository(
+            this,
+            "ecrRepositoryApp",
+            {
+                repositoryName: "app",
+                imageTagMutability: "IMMUTABLE",
+                imageScanningConfiguration: { scanOnPush: true },
+                encryptionConfiguration: {
+                    encryptionType: "KMS",
+                    kmsKey: kmsProps.ecrKey.keyArn,
+                },
+                lifecyclePolicy: { lifecyclePolicyText },
+            },
+        );
+
+        this.ecrRepositoryApp.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
+
+        // Keep the logical ID used by the former L2 construct to avoid replacement
+        this.ecrRepositoryApp.overrideLogicalId(
+            "CfStorageStackecrRepositoryApp23FE683C",
+        );
 
         cdk.Tags.of(this.ecrRepositoryApp).add(
             "Name",
@@ -611,12 +645,6 @@ export class CfStorageStack extends Construct {
         );
         cdk.Tags.of(this.ecrRepositoryApp).add("ProvisionedBy", "AWS");
         cdk.Tags.of(this.ecrRepositoryApp).add("ProjectCode", "1234567890");
-
-        const cfnRepositoryApp = this.ecrRepositoryApp.node
-            .defaultChild as ecr.CfnRepository;
-        cfnRepositoryApp.lifecyclePolicy = {
-            lifecyclePolicyText: lifecyclePolicyText,
-        };
 
         // ------------------------------------------------------------
         // Amazon S3 Bucket for ALB Logs Configuration
