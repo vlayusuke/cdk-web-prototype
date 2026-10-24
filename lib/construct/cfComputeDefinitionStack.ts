@@ -156,10 +156,10 @@ export interface SgProps {
 }
 
 export interface EcrProps {
-    ecrRepositoryWebBaseImage: ecr.IRepository;
-    ecrRepositoryAppBaseImage: ecr.IRepository;
-    ecrRepositoryWeb: ecr.IRepository;
-    ecrRepositoryApp: ecr.IRepository;
+    ecrRepositoryWebBaseImage: ecr.CfnRepository;
+    ecrRepositoryAppBaseImage: ecr.CfnRepository;
+    ecrRepositoryWeb: ecr.CfnRepository;
+    ecrRepositoryApp: ecr.CfnRepository;
 }
 
 export interface EcsProps {
@@ -544,10 +544,10 @@ export class CfComputeDefinitionStack extends Construct {
                             "ecr:PutImage",
                         ],
                         resources: [
-                            ecrProps.ecrRepositoryWebBaseImage.repositoryArn,
-                            ecrProps.ecrRepositoryAppBaseImage.repositoryArn,
-                            ecrProps.ecrRepositoryWeb.repositoryArn,
-                            ecrProps.ecrRepositoryApp.repositoryArn,
+                            ecrProps.ecrRepositoryWebBaseImage.attrArn,
+                            ecrProps.ecrRepositoryAppBaseImage.attrArn,
+                            ecrProps.ecrRepositoryWeb.attrArn,
+                            ecrProps.ecrRepositoryApp.attrArn,
                         ],
                     }),
                     new iam.PolicyStatement({
