@@ -2,7 +2,6 @@ import * as cdk from "aws-cdk-lib";
 import {
     aws_applicationautoscaling as applicationautoscaling,
     aws_cloudwatch as cloudwatch,
-    type aws_ecs as ecs,
     type aws_sns as sns,
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
@@ -21,7 +20,7 @@ export interface EnvProps {
 }
 
 export interface EcsProps {
-    ecsAppScalableTarget: ecs.ScalableTaskCount;
+    ecsAppScalableTarget: applicationautoscaling.IScalableTarget;
 }
 
 export interface SnsProps {
