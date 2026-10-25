@@ -381,6 +381,9 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             envProps,
         );
 
+        // Services use FARGATE_SPOT, so the cluster capacity providers must exist first.
+        computeDefinitionStack.node.addDependency(computeWebAPStack);
+
         // ------------------------------------------------------------
         // [13] - CfMonitoringStack
         // ------------------------------------------------------------
