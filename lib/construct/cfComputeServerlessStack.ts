@@ -4,7 +4,6 @@ import {
     aws_events as events,
     aws_iam as iam,
     aws_lambda as lambda,
-    aws_events_targets as targets,
 } from "aws-cdk-lib";
 import type * as kms from "aws-cdk-lib/aws-kms";
 import type * as logs from "aws-cdk-lib/aws-logs";
@@ -57,6 +56,50 @@ export class CfComputeServerlessStack extends Construct {
     ) {
         super(scope, id);
 
+        const stack = cdk.Stack.of(this);
+        const prefix = `${commonProps.projectName}-${envProps.envName}`;
+
+        // L1 resources live under a wrapper scope with the id "Resource" so that
+        // construct paths (and logical IDs) match the former L2 constructs.
+        const wrap = (wrapperId: string, name: string): Construct => {
+            const wrapper = new Construct(this, wrapperId);
+            cdk.Tags.of(wrapper).add("Name", name);
+            cdk.Tags.of(wrapper).add("ProvisionedBy", "AWS");
+            cdk.Tags.of(wrapper).add("ProjectCode", "1234567890");
+            return wrapper;
+        };
+
+        const allow = (
+            sid: string,
+            actions: string[],
+            resources: string[],
+        ) => ({
+            Sid: sid,
+            Effect: "Allow",
+            Action: actions,
+            Resource: resources,
+        });
+
+        const logsActions = [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents",
+        ];
+
+        const kmsActions = [
+            "kms:Decrypt",
+            "kms:Encrypt",
+            "kms:GenerateDataKey",
+        ];
+
+        const firehoseActions = [
+            "firehose:PutRecord",
+            "firehose:PutRecordBatch",
+        ];
+
+        const firehoseArn = `arn:aws:firehose:${stack.region}:${stack.account}:*`;
+        const snsArn = `arn:aws:sns:${stack.region}:${stack.account}:*`;
+
         // ------------------------------------------------------------
         // AWS IAM for AWS Lambda (cloudwatch-log-alert) Configuration
         // ------------------------------------------------------------
@@ -83,57 +126,30 @@ export class CfComputeServerlessStack extends Construct {
             "1234567890",
         );
 
-        const lambdaPolicy = new iam.Policy(
-            this,
-            "iamLambdaCloudWatchLogsAlertPolicy",
+        new iam.CfnPolicy(
+            wrap(
+                "iamLambdaCloudWatchLogsAlertPolicy",
+                `${prefix}-iam-lambda-policy`,
+            ),
+            "Resource",
             {
-                policyName: `${commonProps.projectName}-${envProps.envName}-LambdaPolicy`,
-                roles: [iamLambdaCloudWatchLogsAlertRole],
-                statements: [
-                    new iam.PolicyStatement({
-                        sid: "CloudWatchLogsAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "logs:CreateLogGroup",
-                            "logs:CreateLogStream",
-                            "logs:PutLogEvents",
-                        ],
-                        resources: [
+                policyName: `${prefix}-LambdaPolicy`,
+                roles: [iamLambdaCloudWatchLogsAlertRole.roleName],
+                policyDocument: {
+                    Version: "2012-10-17",
+                    Statement: [
+                        allow("CloudWatchLogsAccess", logsActions, [
                             cloudWatchLogsProps
                                 .logGroupLambdaCloudWatchLogsAlert.attrArn,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "KMSAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "kms:Decrypt",
-                            "kms:Encrypt",
-                            "kms:GenerateDataKey",
-                        ],
-                        resources: [kmsProps.lambdaKey.keyArn],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "ADFAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "firehose:PutRecord",
-                            "firehose:PutRecordBatch",
-                        ],
-                        resources: [
-                            `arn:aws:firehose:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:*`,
-                        ],
-                    }),
-                ],
+                        ]),
+                        allow("KMSAccess", kmsActions, [
+                            kmsProps.lambdaKey.keyArn,
+                        ]),
+                        allow("ADFAccess", firehoseActions, [firehoseArn]),
+                    ],
+                },
             },
         );
-
-        cdk.Tags.of(lambdaPolicy).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-lambda-policy`,
-        );
-        cdk.Tags.of(lambdaPolicy).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(lambdaPolicy).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // AWS IAM for AWS Lambda (cloudwatch-metrics-alert) Configuration
@@ -161,156 +177,93 @@ export class CfComputeServerlessStack extends Construct {
             "1234567890",
         );
 
-        const lambdaCloudWatchMetricsAlertPolicy = new iam.Policy(
-            this,
-            "lambdaCloudWatchMetricsAlertPolicy",
+        new iam.CfnPolicy(
+            wrap(
+                "lambdaCloudWatchMetricsAlertPolicy",
+                `${prefix}-lambda-cloudwatch-metrics-alert-policy`,
+            ),
+            "Resource",
             {
-                policyName: `${commonProps.projectName}-${envProps.envName}-lambda-cloudwatch-metrics-alert-policy`,
-                roles: [iamLambdaCloudWatchMetricsAlertRole],
-                statements: [
-                    new iam.PolicyStatement({
-                        sid: "CloudWatchLogsAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "logs:CreateLogGroup",
-                            "logs:CreateLogStream",
-                            "logs:PutLogEvents",
-                        ],
-                        resources: [
+                policyName: `${prefix}-lambda-cloudwatch-metrics-alert-policy`,
+                roles: [iamLambdaCloudWatchMetricsAlertRole.roleName],
+                policyDocument: {
+                    Version: "2012-10-17",
+                    Statement: [
+                        allow("CloudWatchLogsAccess", logsActions, [
                             cloudWatchLogsProps
                                 .logGroupLambdaCloudWatchMetricsAlert.attrArn,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "KMSAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "kms:Decrypt",
-                            "kms:Encrypt",
-                            "kms:GenerateDataKey",
-                        ],
-                        resources: [kmsProps.lambdaKey.keyArn],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "ADFAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "firehose:PutRecord",
-                            "firehose:PutRecordBatch",
-                        ],
-                        resources: [
-                            `arn:aws:firehose:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:*`,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "SNSPublish",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["sns:Publish"],
-                        resources: [
-                            `arn:aws:sns:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:*`,
-                        ],
-                    }),
-                ],
+                        ]),
+                        allow("KMSAccess", kmsActions, [
+                            kmsProps.lambdaKey.keyArn,
+                        ]),
+                        allow("ADFAccess", firehoseActions, [firehoseArn]),
+                        allow("SNSPublish", ["sns:Publish"], [snsArn]),
+                    ],
+                },
             },
-        );
-
-        cdk.Tags.of(lambdaCloudWatchMetricsAlertPolicy).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-lambda-cloudwatch-metrics-alert-policy`,
-        );
-        cdk.Tags.of(lambdaCloudWatchMetricsAlertPolicy).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(lambdaCloudWatchMetricsAlertPolicy).add(
-            "ProjectCode",
-            "1234567890",
         );
 
         // ------------------------------------------------------------
         // AWS IAM for AWS Lambda (rds-control) Configuration
         // ------------------------------------------------------------
-        const iamLambdaRdsControlRole = new iam.Role(
-            this,
-            "iamLambdaRdsControlRole",
+        const iamLambdaRdsControlRole = new iam.CfnRole(
+            wrap(
+                "iamLambdaRdsControlRole",
+                `${prefix}-iam-lambda-rds-control-role`,
+            ),
+            "Resource",
             {
-                roleName: `${commonProps.projectName}-${envProps.envName}-lambda-rds-control-role`,
+                roleName: `${prefix}-lambda-rds-control-role`,
                 description: `IAM role for Lambda functions (rds-control) in the ${commonProps.projectName} project`,
-                assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
+                assumeRolePolicyDocument: {
+                    Version: "2012-10-17",
+                    Statement: [
+                        {
+                            Effect: "Allow",
+                            Principal: { Service: "lambda.amazonaws.com" },
+                            Action: "sts:AssumeRole",
+                        },
+                    ],
+                },
             },
         );
 
-        cdk.Tags.of(iamLambdaRdsControlRole).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-lambda-rds-control-role`,
-        );
-        cdk.Tags.of(iamLambdaRdsControlRole).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(iamLambdaRdsControlRole).add("ProjectCode", "1234567890");
-
-        const lambdaRdsControlPolicy = new iam.Policy(
-            this,
-            "lambdaRdsControlPolicy",
+        new iam.CfnPolicy(
+            wrap(
+                "lambdaRdsControlPolicy",
+                `${prefix}-lambda-rds-control-policy`,
+            ),
+            "Resource",
             {
-                policyName: `${commonProps.projectName}-${envProps.envName}-lambda-rds-control-policy`,
-                roles: [iamLambdaRdsControlRole],
-                statements: [
-                    new iam.PolicyStatement({
-                        sid: "CloudWatchLogsAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "logs:CreateLogGroup",
-                            "logs:CreateLogStream",
-                            "logs:PutLogEvents",
-                        ],
-                        resources: [
-                            `arn:aws:logs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:log-group:/aws/lambda/*`,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "RDSAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "rds:DescribeDBClusters",
-                            "rds:DescribeDBInstances",
-                            "rds:StartDBCluster",
-                            "rds:StopDBCluster",
-                            "rds:ListTagsForResource",
-                        ],
-                        resources: [
-                            databaseProps.auroraClusterArn,
-                            databaseProps.auroraWriterInstanceArn,
-                            databaseProps.auroraReaderInstanceArn,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "ADFAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "firehose:PutRecord",
-                            "firehose:PutRecordBatch",
-                        ],
-                        resources: [
-                            `arn:aws:firehose:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:*`,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "SNSPublish",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["sns:Publish"],
-                        resources: [
-                            `arn:aws:sns:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:*`,
-                        ],
-                    }),
-                ],
+                policyName: `${prefix}-lambda-rds-control-policy`,
+                roles: [iamLambdaRdsControlRole.ref],
+                policyDocument: {
+                    Version: "2012-10-17",
+                    Statement: [
+                        allow("CloudWatchLogsAccess", logsActions, [
+                            `arn:aws:logs:${stack.region}:${stack.account}:log-group:/aws/lambda/*`,
+                        ]),
+                        allow(
+                            "RDSAccess",
+                            [
+                                "rds:DescribeDBClusters",
+                                "rds:DescribeDBInstances",
+                                "rds:StartDBCluster",
+                                "rds:StopDBCluster",
+                                "rds:ListTagsForResource",
+                            ],
+                            [
+                                databaseProps.auroraClusterArn,
+                                databaseProps.auroraWriterInstanceArn,
+                                databaseProps.auroraReaderInstanceArn,
+                            ],
+                        ),
+                        allow("ADFAccess", firehoseActions, [firehoseArn]),
+                        allow("SNSPublish", ["sns:Publish"], [snsArn]),
+                    ],
+                },
             },
         );
-
-        cdk.Tags.of(lambdaRdsControlPolicy).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-lambda-rds-control-policy`,
-        );
-        cdk.Tags.of(lambdaRdsControlPolicy).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(lambdaRdsControlPolicy).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // AWS Lambda (cloudwatch-log-alert) Configuration
@@ -333,6 +286,7 @@ export class CfComputeServerlessStack extends Construct {
                 environmentEncryption: kmsProps.lambdaKey,
             },
         );
+
         this.lambdaCloudWatchLogsAlert = lambdaCloudWatchLogsAlert;
 
         this.lambdaCloudWatchLogsAlert.addPermission(
@@ -375,6 +329,7 @@ export class CfComputeServerlessStack extends Construct {
                 },
             },
         );
+
         this.lambdaCloudWatchMetricsAlert = lambdaCloudWatchMetricsAlert;
 
         this.lambdaCloudWatchMetricsAlert.addPermission(
@@ -398,81 +353,91 @@ export class CfComputeServerlessStack extends Construct {
         // ------------------------------------------------------------
         // AWS Lambda (rds-control) Configuration
         // ------------------------------------------------------------
-        const lambdaRdsControl = new lambda.Function(this, "lambdaRdsControl", {
-            functionName: `${commonProps.projectName}-${envProps.envName}-rds-control`,
-            description: `Lambda function (rds-control) in the ${commonProps.projectName} project`,
-            code: lambda.Code.fromAsset(
-                join(__dirname, "../lambda/rds-control"),
-            ),
-            handler: "lambda_function.lambda_handler",
-            runtime: lambda.Runtime.PYTHON_3_11,
-            architecture: lambda.Architecture.ARM_64,
-            memorySize: 128,
-            timeout: cdk.Duration.seconds(30),
-            role: iamLambdaRdsControlRole,
-            environmentEncryption: kmsProps.lambdaKey,
-            environment: {
-                hookUrl: envProps.slackHookUrl,
-            },
-        });
+        const codeConfig = lambda.Code.fromAsset(
+            join(__dirname, "../lambda/rds-control"),
+        ).bind(this);
 
-        lambdaRdsControl.addPermission("AllowExecutionFromCloudWatch", {
-            principal: new iam.ServicePrincipal("logs.amazonaws.com"),
-            action: "lambda:InvokeFunction",
-        });
-
-        cdk.Tags.of(lambdaRdsControl).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-rds-control`,
+        const lambdaRdsControlScope = wrap(
+            "lambdaRdsControl",
+            `${prefix}-rds-control`,
         );
-        cdk.Tags.of(lambdaRdsControl).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(lambdaRdsControl).add("ProjectCode", "1234567890");
+
+        const lambdaRdsControl = new lambda.CfnFunction(
+            lambdaRdsControlScope,
+            "Resource",
+            {
+                functionName: `${prefix}-rds-control`,
+                description: `Lambda function (rds-control) in the ${commonProps.projectName} project`,
+                code: {
+                    s3Bucket: codeConfig.s3Location?.bucketName,
+                    s3Key: codeConfig.s3Location?.objectKey,
+                },
+                handler: "lambda_function.lambda_handler",
+                runtime: "python3.11",
+                architectures: ["arm64"],
+                memorySize: 128,
+                timeout: 30,
+                role: iamLambdaRdsControlRole.attrArn,
+                kmsKeyArn: kmsProps.lambdaKey.keyArn,
+                environment: { variables: { hookUrl: envProps.slackHookUrl } },
+            },
+        );
+
+        new lambda.CfnPermission(
+            lambdaRdsControlScope,
+            "AllowExecutionFromCloudWatch",
+            {
+                functionName: lambdaRdsControl.ref,
+                principal: "logs.amazonaws.com",
+                action: "lambda:InvokeFunction",
+            },
+        );
 
         // ------------------------------------------------------------
         // Amazon EventBridge Rule Configuration
         // ------------------------------------------------------------
-        const rdsControlStartRule = new events.Rule(
-            this,
+        const createRdsControlRule = (
+            ruleId: string,
+            action: "start" | "stop",
+            description: string,
+            cron: string,
+        ) => {
+            const ruleScope = wrap(ruleId, `${prefix}-rds-control-${action}`);
+
+            const rule = new events.CfnRule(ruleScope, "Resource", {
+                name: `${prefix}-rds-control-${action}`,
+                description,
+                scheduleExpression: cron,
+                state: "ENABLED",
+                targets: [
+                    {
+                        id: "Target0",
+                        arn: lambdaRdsControl.attrArn,
+                        input: JSON.stringify({ Action: action }),
+                    },
+                ],
+            });
+
+            new lambda.CfnPermission(ruleScope, "AllowEventRuleInvoke", {
+                functionName: lambdaRdsControl.ref,
+                principal: "events.amazonaws.com",
+                action: "lambda:InvokeFunction",
+                sourceArn: rule.attrArn,
+            });
+        };
+
+        createRdsControlRule(
             "RdsControlStartRule",
-            {
-                ruleName: `${commonProps.projectName}-${envProps.envName}-rds-control-start`,
-                description:
-                    "Starts Aurora clusters tagged AutoStop at 09:00 JST (00:00 UTC) on weekdays",
-                schedule: events.Schedule.expression("cron(0 0 ? * MON-FRI *)"),
-            },
+            "start",
+            "Starts Aurora clusters tagged AutoStop at 09:00 JST (00:00 UTC) on weekdays",
+            "cron(0 0 ? * MON-FRI *)",
         );
 
-        rdsControlStartRule.addTarget(
-            new targets.LambdaFunction(lambdaRdsControl, {
-                event: events.RuleTargetInput.fromObject({ Action: "start" }),
-            }),
+        createRdsControlRule(
+            "RdsControlStopRule",
+            "stop",
+            "Stops Aurora clusters tagged AutoStop at 18:00 JST (09:00 UTC) on weekdays",
+            "cron(0 9 ? * MON-FRI *)",
         );
-
-        cdk.Tags.of(rdsControlStartRule).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-rds-control-start`,
-        );
-        cdk.Tags.of(rdsControlStartRule).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(rdsControlStartRule).add("ProjectCode", "1234567890");
-
-        const rdsControlStopRule = new events.Rule(this, "RdsControlStopRule", {
-            ruleName: `${commonProps.projectName}-${envProps.envName}-rds-control-stop`,
-            description:
-                "Stops Aurora clusters tagged AutoStop at 18:00 JST (09:00 UTC) on weekdays",
-            schedule: events.Schedule.expression("cron(0 9 ? * MON-FRI *)"),
-        });
-
-        rdsControlStopRule.addTarget(
-            new targets.LambdaFunction(lambdaRdsControl, {
-                event: events.RuleTargetInput.fromObject({ Action: "stop" }),
-            }),
-        );
-
-        cdk.Tags.of(rdsControlStopRule).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-rds-control-stop`,
-        );
-        cdk.Tags.of(rdsControlStopRule).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(rdsControlStopRule).add("ProjectCode", "1234567890");
     }
 }
