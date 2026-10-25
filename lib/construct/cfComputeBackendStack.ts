@@ -46,219 +46,174 @@ export class CfComputeBackendStack extends Construct {
     ) {
         super(scope, id);
 
+        const tagAll = (target: Construct, name: string) => {
+            cdk.Tags.of(target).add("Name", name);
+            cdk.Tags.of(target).add("ProvisionedBy", "AWS");
+            cdk.Tags.of(target).add("ProjectCode", "1234567890");
+        };
+
+        const prefix = `${commonProps.projectName}-${envProps.envName}`;
+
+        // Wrapper scopes keep the construct paths (and logical IDs) identical to the former L2 constructs.
         // ------------------------------------------------------------
         // AWS IAM EC2 Instance Profile for Batch Configuration
         // ------------------------------------------------------------
-        const ec2IamRoleForBatch = new iam.Role(this, "ec2IamRoleForBatch", {
-            roleName: "ec2IamRoleForBatch",
-            description: "IAM EC2 instance profile for Batch",
-            assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
-        });
-
-        cdk.Tags.of(ec2IamRoleForBatch).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-role-for-batch`,
-        );
-        cdk.Tags.of(ec2IamRoleForBatch).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ec2IamRoleForBatch).add("ProjectCode", "1234567890");
-
-        const ec2IamPolicyForBatch = new iam.Policy(
+        const ec2IamRoleForBatchScope = new Construct(
             this,
-            "ec2IamPolicyForBatch",
+            "ec2IamRoleForBatch",
+        );
+
+        const ec2IamRoleForBatch = new iam.CfnRole(
+            ec2IamRoleForBatchScope,
+            "Resource",
             {
-                policyName: "ec2IamPolicyForBatch",
-                statements: [
-                    new iam.PolicyStatement({
-                        sid: "SSMAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["ssm:StartSession", "ssm:SendCommand"],
-                        resources: [
-                            `arn:aws:ssm:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:document/AWS-StartSession`,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "AuroraAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["rds:DescribeDBInstances", "rds:Connect"],
-                        resources: [
-                            databaseProps.auroraClusterArn,
-                            databaseProps.auroraWriterInstanceArn,
-                            databaseProps.auroraReaderInstanceArn,
-                        ],
-                    }),
+                roleName: "ec2IamRoleForBatch",
+                description: "IAM EC2 instance profile for Batch",
+                assumeRolePolicyDocument: {
+                    Version: "2012-10-17",
+                    Statement: [
+                        {
+                            Effect: "Allow",
+                            Principal: { Service: "ec2.amazonaws.com" },
+                            Action: "sts:AssumeRole",
+                        },
+                    ],
+                },
+                managedPolicyArns: [
+                    `arn:${cdk.Aws.PARTITION}:iam::aws:policy/AmazonSSMManagedInstanceCore`,
                 ],
             },
         );
 
-        cdk.Tags.of(ec2IamPolicyForBatch).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-policy-for-batch`,
-        );
-        cdk.Tags.of(ec2IamPolicyForBatch).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ec2IamPolicyForBatch).add("ProjectCode", "1234567890");
+        tagAll(ec2IamRoleForBatchScope, `${prefix}-iam-role-for-batch`);
 
-        ec2IamPolicyForBatch.attachToRole(ec2IamRoleForBatch);
-
-        ec2IamRoleForBatch.addManagedPolicy(
-            iam.ManagedPolicy.fromAwsManagedPolicyName(
-                "AmazonSSMManagedInstanceCore",
-            ),
+        const ec2IamPolicyForBatchScope = new Construct(
+            this,
+            "ec2IamPolicyForBatch",
         );
 
-        const ec2IamInstanceProfileForBatch = new iam.InstanceProfile(
+        new iam.CfnPolicy(ec2IamPolicyForBatchScope, "Resource", {
+            policyName: "ec2IamPolicyForBatch",
+            roles: [ec2IamRoleForBatch.ref],
+            policyDocument: {
+                Version: "2012-10-17",
+                Statement: [
+                    {
+                        Sid: "SSMAccess",
+                        Effect: "Allow",
+                        Action: ["ssm:StartSession", "ssm:SendCommand"],
+                        Resource: [
+                            `arn:aws:ssm:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:document/AWS-StartSession`,
+                        ],
+                    },
+                    {
+                        Sid: "AuroraAccess",
+                        Effect: "Allow",
+                        Action: ["rds:DescribeDBInstances", "rds:Connect"],
+                        Resource: [
+                            databaseProps.auroraClusterArn,
+                            databaseProps.auroraWriterInstanceArn,
+                            databaseProps.auroraReaderInstanceArn,
+                        ],
+                    },
+                ],
+            },
+        });
+
+        tagAll(ec2IamPolicyForBatchScope, `${prefix}-iam-policy-for-batch`);
+
+        const ec2IamInstanceProfileScope = new Construct(
             this,
             "ec2IamInstanceProfileForBatch",
+        );
+
+        const ec2IamInstanceProfileForBatch = new iam.CfnInstanceProfile(
+            ec2IamInstanceProfileScope,
+            "Resource",
             {
                 instanceProfileName: "ec2IamInstanceProfileForBatch",
-                role: ec2IamRoleForBatch,
+                roles: [ec2IamRoleForBatch.ref],
             },
         );
 
-        cdk.Tags.of(ec2IamInstanceProfileForBatch).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-instance-profile-for-batch`,
-        );
-        cdk.Tags.of(ec2IamInstanceProfileForBatch).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ec2IamInstanceProfileForBatch).add(
-            "ProjectCode",
-            "1234567890",
+        tagAll(
+            ec2IamInstanceProfileScope,
+            `${prefix}-iam-instance-profile-for-batch`,
         );
 
         // ------------------------------------------------------------
         // Amazon EC2 Batch Key Pair Configuration
         // ------------------------------------------------------------
-        const batchKeyPair = new ec2.KeyPair(this, "batchKeyPair", {
-            keyPairName: `${commonProps.projectName}-${envProps.envName}-batch-key-pair`,
-            type: ec2.KeyPairType.ED25519,
-            format: ec2.KeyPairFormat.PEM,
+        const batchKeyPairScope = new Construct(this, "batchKeyPair");
+
+        const batchKeyPair = new ec2.CfnKeyPair(batchKeyPairScope, "Resource", {
+            keyName: `${prefix}-batch-key-pair`,
+            keyType: "ed25519",
+            keyFormat: "pem",
         });
 
-        cdk.Tags.of(batchKeyPair).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-batch-key-pair`,
-        );
-        cdk.Tags.of(batchKeyPair).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(batchKeyPair).add("ProjectCode", "1234567890");
+        tagAll(batchKeyPairScope, `${prefix}-batch-key-pair`);
 
         // ------------------------------------------------------------
-        // Amazon EC2 Batch (AZ-a) Configuration
+        // Amazon EC2 Batch Configuration (AZ-a / AZ-c)
         // ------------------------------------------------------------
-        const ec2InstanceBatchAZa = new ec2.Instance(
-            this,
+        const createBatchInstance = (
+            id: string,
+            azSuffix: "a" | "c",
+            index: 0 | 1,
+        ) => {
+            const scope = new Construct(this, id);
+
+            const instance = new ec2.CfnInstance(scope, "Resource", {
+                imageId:
+                    "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64}}",
+                instanceType: "t4g.small",
+                subnetId: networkingProps.privateSubnetIds[index],
+                securityGroupIds: [sgProps.batchSecurityGroup.securityGroupId],
+                iamInstanceProfile: ec2IamInstanceProfileForBatch.ref,
+                keyName: batchKeyPair.ref,
+                disableApiTermination: true,
+                monitoring: true,
+                // Instance tags are propagated to every EBS block device volume.
+                propagateTagsToVolumeOnCreation: true,
+                creditSpecification: { cpuCredits: "standard" },
+                blockDeviceMappings: [
+                    {
+                        deviceName: "/dev/xvda",
+                        ebs: {
+                            volumeType: "gp3",
+                            volumeSize: 8,
+                            encrypted: true,
+                            deleteOnTermination: false,
+                        },
+                    },
+                    {
+                        deviceName: "/dev/xvdb",
+                        ebs: {
+                            volumeType: "gp3",
+                            volumeSize: 256,
+                            encrypted: true,
+                            deleteOnTermination: false,
+                        },
+                    },
+                ],
+            });
+
+            tagAll(scope, `${prefix}-ec2-instance-batch-az-${azSuffix}`);
+            return instance;
+        };
+
+        const ec2InstanceBatchAZa = createBatchInstance(
             "ec2InstanceBatchAZa",
-            {
-                instanceName: `${commonProps.projectName}-${envProps.envName}-ec2-instance-batch-az-a`,
-                instanceType: new ec2.InstanceType("t4g.small"),
-                machineImage: ec2.MachineImage.latestAmazonLinux2023({
-                    cpuType: ec2.AmazonLinuxCpuType.ARM_64,
-                }),
-                vpc: ec2.Vpc.fromVpcAttributes(this, "vpc", {
-                    vpcId: networkingProps.vpcId,
-                    availabilityZones: [networkingProps.availabilityZones[0]],
-                    privateSubnetIds: [networkingProps.privateSubnetIds[0]],
-                    privateSubnetRouteTableIds: [
-                        networkingProps.privateSubnetRouteTableIds[0],
-                    ],
-                }),
-                securityGroup: sgProps.batchSecurityGroup,
-                instanceProfile: ec2IamInstanceProfileForBatch,
-                disableApiTermination: true,
-                detailedMonitoring: true,
-                allowAllIpv6Outbound: false,
-                // Instance tags are propagated to every EBS block device volume.
-                propagateTagsToVolumeOnCreation: true,
-                ssmSessionPermissions: true,
-                keyPair: batchKeyPair,
-                creditSpecification: ec2.CpuCredits.STANDARD,
-                blockDevices: [
-                    {
-                        mappingEnabled: true,
-                        deviceName: "/dev/xvda",
-                        volume: ec2.BlockDeviceVolume.ebs(8, {
-                            volumeType: ec2.EbsDeviceVolumeType.GP3,
-                            encrypted: true,
-                            deleteOnTermination: false,
-                        }),
-                    },
-                    {
-                        mappingEnabled: true,
-                        deviceName: "/dev/xvdb",
-                        volume: ec2.BlockDeviceVolume.ebs(256, {
-                            volumeType: ec2.EbsDeviceVolumeType.GP3,
-                            encrypted: true,
-                            deleteOnTermination: false,
-                        }),
-                    },
-                ],
-            },
+            "a",
+            0,
         );
 
-        cdk.Tags.of(ec2InstanceBatchAZa).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-ec2-instance-batch-az-a`,
-        );
-        cdk.Tags.of(ec2InstanceBatchAZa).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ec2InstanceBatchAZa).add("ProjectCode", "1234567890");
-
-        // ------------------------------------------------------------
-        // Amazon EC2 Batch (AZ-c) Configuration
-        // ------------------------------------------------------------
-        const ec2InstanceBatchAZc = new ec2.Instance(
-            this,
+        const ec2InstanceBatchAZc = createBatchInstance(
             "ec2InstanceBatchAZc",
-            {
-                instanceName: `${commonProps.projectName}-${envProps.envName}-ec2-instance-batch-az-c`,
-                instanceType: new ec2.InstanceType("t4g.small"),
-                machineImage: ec2.MachineImage.latestAmazonLinux2023({
-                    cpuType: ec2.AmazonLinuxCpuType.ARM_64,
-                }),
-                vpc: ec2.Vpc.fromVpcAttributes(this, "vpcAZc", {
-                    vpcId: networkingProps.vpcId,
-                    availabilityZones: [networkingProps.availabilityZones[1]],
-                    privateSubnetIds: [networkingProps.privateSubnetIds[1]],
-                    privateSubnetRouteTableIds: [
-                        networkingProps.privateSubnetRouteTableIds[1],
-                    ],
-                }),
-                securityGroup: sgProps.batchSecurityGroup,
-                instanceProfile: ec2IamInstanceProfileForBatch,
-                disableApiTermination: true,
-                detailedMonitoring: true,
-                allowAllIpv6Outbound: false,
-                // Instance tags are propagated to every EBS block device volume.
-                propagateTagsToVolumeOnCreation: true,
-                ssmSessionPermissions: true,
-                keyPair: batchKeyPair,
-                creditSpecification: ec2.CpuCredits.STANDARD,
-                blockDevices: [
-                    {
-                        mappingEnabled: true,
-                        deviceName: "/dev/xvda",
-                        volume: ec2.BlockDeviceVolume.ebs(8, {
-                            volumeType: ec2.EbsDeviceVolumeType.GP3,
-                            encrypted: true,
-                            deleteOnTermination: false,
-                        }),
-                    },
-                    {
-                        mappingEnabled: true,
-                        deviceName: "/dev/xvdb",
-                        volume: ec2.BlockDeviceVolume.ebs(256, {
-                            volumeType: ec2.EbsDeviceVolumeType.GP3,
-                            encrypted: true,
-                            deleteOnTermination: false,
-                        }),
-                    },
-                ],
-            },
+            "c",
+            1,
         );
-
-        cdk.Tags.of(ec2InstanceBatchAZc).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-ec2-instance-batch-az-c`,
-        );
-        cdk.Tags.of(ec2InstanceBatchAZc).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ec2InstanceBatchAZc).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // EIP for Amazon EC2 Batch (AZ-a) Configuration
@@ -276,7 +231,7 @@ export class CfComputeBackendStack extends Construct {
 
         new ec2.CfnEIPAssociation(this, "batchEipAssociationAZa", {
             allocationId: batchEipAZa.attrAllocationId,
-            instanceId: ec2InstanceBatchAZa.instanceId,
+            instanceId: ec2InstanceBatchAZa.ref,
         });
 
         // ------------------------------------------------------------
@@ -295,7 +250,7 @@ export class CfComputeBackendStack extends Construct {
 
         new ec2.CfnEIPAssociation(this, "batchEipAssociationAZc", {
             allocationId: batchEipAZc.attrAllocationId,
-            instanceId: ec2InstanceBatchAZc.instanceId,
+            instanceId: ec2InstanceBatchAZc.ref,
         });
     }
 }
