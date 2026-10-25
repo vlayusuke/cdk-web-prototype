@@ -5,43 +5,18 @@ import * as cdk from "aws-cdk-lib";
 import {
     aws_applicationautoscaling as applicationautoscaling,
     aws_cloudwatch as cloudwatch,
-    aws_ec2 as ec2,
+    type aws_ec2 as ec2,
     aws_ecs as ecs,
     aws_iam as iam,
-    aws_logs as logs,
-    aws_secretsmanager as secretsmanager,
     aws_ssm as ssm,
 } from "aws-cdk-lib";
 import type * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import { Construct } from "constructs";
 
-interface JsonContainerDefinition {
-    name: string;
-    image: string;
-    repositoryCredentials?: { credentialsParameter: string };
-    cpu?: number;
-    memoryReservation?: number;
-    essential?: boolean;
-    readonlyRootFilesystem?: boolean;
-    portMappings?: {
-        containerPort: number;
-        hostPort?: number;
-        protocol?: string;
-    }[];
-    environment?: { name: string; value: string }[];
-    logConfiguration?: {
-        logDriver: string;
-        options: Record<string, string>;
-    };
-    ulimits?: { softLimit: number; hardLimit: number; name: string }[];
-    entryPoint?: string[];
-    command?: string[];
-}
-
 const loadContainerDefinitions = (
     fileName: string,
     replacements: Record<string, string>,
-): JsonContainerDefinition[] => {
+): ecs.CfnTaskDefinition.ContainerDefinitionProperty[] => {
     const replacePlaceholders = (value: unknown): unknown => {
         if (typeof value === "string") {
             return value.replace(
@@ -66,68 +41,7 @@ const loadContainerDefinitions = (
 
     return replacePlaceholders(
         JSON.parse(readFileSync(join(__dirname, "../json", fileName), "utf8")),
-    ) as JsonContainerDefinition[];
-};
-
-const addJsonContainerDefinitions = (
-    scope: Construct,
-    taskDefinition: ecs.FargateTaskDefinition,
-    containerDefinitions: JsonContainerDefinition[],
-): void => {
-    for (const definition of containerDefinitions) {
-        const registryCredentials = definition.repositoryCredentials
-            ? secretsmanager.Secret.fromSecretCompleteArn(
-                  scope,
-                  `${definition.name}RegistryCredentials`,
-                  definition.repositoryCredentials.credentialsParameter,
-              )
-            : undefined;
-        registryCredentials?.grantRead(taskDefinition.obtainExecutionRole());
-        const logOptions = definition.logConfiguration?.options;
-        taskDefinition.addContainer(definition.name, {
-            image: ecs.ContainerImage.fromRegistry(definition.image, {
-                credentials: registryCredentials,
-            }),
-            cpu: definition.cpu,
-            memoryReservationMiB: definition.memoryReservation,
-            essential: definition.essential,
-            readonlyRootFilesystem: definition.readonlyRootFilesystem,
-            portMappings: definition.portMappings?.map((mapping) => ({
-                containerPort: mapping.containerPort,
-                hostPort: mapping.hostPort,
-                protocol:
-                    mapping.protocol?.toLowerCase() === "udp"
-                        ? ecs.Protocol.UDP
-                        : ecs.Protocol.TCP,
-            })),
-            environment: definition.environment?.reduce<Record<string, string>>(
-                (variables, variable) => {
-                    variables[variable.name] = variable.value;
-                    return variables;
-                },
-                {},
-            ),
-            logging:
-                definition.logConfiguration?.logDriver === "awslogs" &&
-                logOptions
-                    ? ecs.LogDriver.awsLogs({
-                          streamPrefix: logOptions["awslogs-stream-prefix"],
-                          logGroup: logs.LogGroup.fromLogGroupName(
-                              scope,
-                              `${definition.name}LogGroup`,
-                              logOptions["awslogs-group"],
-                          ),
-                      })
-                    : undefined,
-            ulimits: definition.ulimits?.map((ulimit) => ({
-                name: ulimit.name as ecs.UlimitName,
-                softLimit: ulimit.softLimit,
-                hardLimit: ulimit.hardLimit,
-            })),
-            entryPoint: definition.entryPoint,
-            command: definition.command,
-        });
-    }
+    ) as ecs.CfnTaskDefinition.ContainerDefinitionProperty[];
 };
 
 export interface CommonProps {
@@ -163,7 +77,7 @@ export interface EcrProps {
 }
 
 export interface EcsProps {
-    ecsCluster: ecs.Cluster;
+    ecsCluster: ecs.CfnCluster;
 }
 
 export interface AlbProps {
@@ -185,13 +99,13 @@ export interface S3Props {
 // [11] - Compute Definition Stack
 // ------------------------------------------------------------
 export class CfComputeDefinitionStack extends Construct {
-    public readonly ecsAppScalableTarget: ecs.ScalableTaskCount;
-    public readonly ssmParameterStoreAppKey: ssm.StringParameter;
-    public readonly ssmParamenterStoreJwtSecret: ssm.StringParameter;
-    public readonly ssmParameterStoreAuroraWriterEndPoint: ssm.StringParameter;
-    public readonly ssmParameterStoreAuroraReaderEndPoint: ssm.StringParameter;
-    public readonly ssmParameterStoreElastiCacheWriterEndPoint: ssm.StringParameter;
-    public readonly ssmParameterStoreElastiCacheReaderEndPoint: ssm.StringParameter;
+    public readonly ecsAppScalableTarget: applicationautoscaling.ScalableTarget;
+    public readonly ssmParameterStoreAppKey: ssm.CfnParameter;
+    public readonly ssmParamenterStoreJwtSecret: ssm.CfnParameter;
+    public readonly ssmParameterStoreAuroraWriterEndPoint: ssm.CfnParameter;
+    public readonly ssmParameterStoreAuroraReaderEndPoint: ssm.CfnParameter;
+    public readonly ssmParameterStoreElastiCacheWriterEndPoint: ssm.CfnParameter;
+    public readonly ssmParameterStoreElastiCacheReaderEndPoint: ssm.CfnParameter;
 
     constructor(
         scope: Construct,
@@ -209,6 +123,33 @@ export class CfComputeDefinitionStack extends Construct {
     ) {
         super(scope, id);
 
+        const stack = cdk.Stack.of(this);
+        const prefix = `${commonProps.projectName}-${envProps.envName}`;
+        const arnPrefix = `arn:aws:ecs:${stack.region}:${stack.account}`;
+
+        // Each L1 resource lives under a wrapper scope with the id "Resource"
+        // so that construct paths (and logical IDs) match the former L2 constructs.
+        const wrap = (wrapperId: string, name: string): Construct => {
+            const wrapper = new Construct(this, wrapperId);
+            cdk.Tags.of(wrapper).add("Name", name);
+            cdk.Tags.of(wrapper).add("ProvisionedBy", "AWS");
+            cdk.Tags.of(wrapper).add("ProjectCode", "1234567890");
+            return wrapper;
+        };
+
+        const allow = (
+            sid: string,
+            actions: string[],
+            resources: string[],
+            condition?: Record<string, unknown>,
+        ) => ({
+            Sid: sid,
+            Effect: "Allow",
+            Action: actions,
+            Resource: resources,
+            ...(condition ? { Condition: condition } : {}),
+        });
+
         const dockerRegistryCredentialsArn = new cdk.CfnParameter(
             this,
             "DockerRegistryCredentialsArn",
@@ -224,317 +165,348 @@ export class CfComputeDefinitionStack extends Construct {
                 dockerRegistryCredentialsArn.valueAsString,
             project: commonProps.projectName,
             env: envProps.envName,
-            region: cdk.Stack.of(this).region,
+            region: stack.region,
             log_group_prefix: `/ecs/${commonProps.projectName}/${envProps.envName}`,
         };
+
+        const appContainers = loadContainerDefinitions(
+            "amazon-ecs-task-definition-app.json",
+            containerDefinitionReplacements,
+        );
+
+        const cronContainers = loadContainerDefinitions(
+            "amazon-ecs-task-definition-cron.json",
+            containerDefinitionReplacements,
+        );
+
+        const queueContainers = loadContainerDefinitions(
+            "amazon-ecs-task-definition-queue.json",
+            containerDefinitionReplacements,
+        );
+
+        const registryCredentialArns = [
+            ...new Set(
+                [...appContainers, ...cronContainers, ...queueContainers]
+                    .map(
+                        (container) =>
+                            (
+                                container.repositoryCredentials as
+                                    | ecs.CfnTaskDefinition.RepositoryCredentialsProperty
+                                    | undefined
+                            )?.credentialsParameter,
+                    )
+                    .filter((arn): arn is string => arn !== undefined),
+            ),
+        ];
 
         // ------------------------------------------------------------
         // OpenID Connect Provider for GitHub Actions Configuration
         // ------------------------------------------------------------
-        const oidcProvider = new iam.OidcProviderNative(this, "oidcProvider", {
-            url: "https://token.actions.githubusercontent.com",
-            clientIds: ["sts.amazonaws.com"],
-        });
-
-        cdk.Tags.of(oidcProvider).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-oidc-provider`,
+        const oidcProviderScope = wrap(
+            "oidcProvider",
+            `${prefix}-oidc-provider`,
         );
-        cdk.Tags.of(oidcProvider).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(oidcProvider).add("ProjectCode", "1234567890");
+
+        const oidcProvider = new iam.CfnOIDCProvider(
+            oidcProviderScope,
+            "Resource",
+            {
+                url: "https://token.actions.githubusercontent.com",
+                clientIdList: ["sts.amazonaws.com"],
+            },
+        );
 
         // ------------------------------------------------------------
         // AWS IAM for Amazon ECS Service Configuration
         // ------------------------------------------------------------
-        const iamEcsTaskExecutionRole = new iam.Role(
-            this,
+        const iamEcsTaskExecutionRoleScope = wrap(
             "iamEcsTaskExecutionRole",
+            `${prefix}-iam-ecs-task-execution-role`,
+        );
+
+        const iamEcsTaskExecutionRole = new iam.CfnRole(
+            iamEcsTaskExecutionRoleScope,
+            "Resource",
             {
-                roleName: `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-execution-role`,
+                roleName: `${prefix}-iam-ecs-task-execution-role`,
                 description: "IAM role for ECS task execution",
-                assumedBy: new iam.CompositePrincipal(
-                    new iam.ServicePrincipal("ecs.amazonaws.com"),
-                    new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-                ),
-            },
-        );
-
-        cdk.Tags.of(iamEcsTaskExecutionRole).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-execution-role`,
-        );
-        cdk.Tags.of(iamEcsTaskExecutionRole).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(iamEcsTaskExecutionRole).add("ProjectCode", "1234567890");
-
-        const iamEcsTaskExectionPolicy = new iam.Policy(
-            this,
-            "iamEcsTaskExectionPolicy",
-            {
-                policyName: `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-execution-policy`,
-                roles: [iamEcsTaskExecutionRole],
-                statements: [
-                    new iam.PolicyStatement({
-                        sid: "PassRole",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["iam:PassRole"],
-                        resources: [iamEcsTaskExecutionRole.roleArn],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "GetKeyAndSecrets",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "kms:Decrypt",
-                            "ssm:GetParameters",
-                            "ssm:GetParameter",
-                            "secretsmanager:GetSecretValue",
-                        ],
-                        resources: [kmsProps.applicationKey.keyArn],
-                    }),
+                assumeRolePolicyDocument: {
+                    Version: "2012-10-17",
+                    Statement: [
+                        {
+                            Effect: "Allow",
+                            Principal: {
+                                Service: [
+                                    "ecs.amazonaws.com",
+                                    "ecs-tasks.amazonaws.com",
+                                ],
+                            },
+                            Action: "sts:AssumeRole",
+                        },
+                    ],
+                },
+                managedPolicyArns: [
+                    `arn:${stack.partition}:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy`,
                 ],
             },
         );
 
-        cdk.Tags.of(iamEcsTaskExectionPolicy).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-execution-policy`,
-        );
-        cdk.Tags.of(iamEcsTaskExectionPolicy).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(iamEcsTaskExectionPolicy).add("ProjectCode", "1234567890");
-
-        iamEcsTaskExecutionRole.addManagedPolicy(
-            iam.ManagedPolicy.fromAwsManagedPolicyName(
-                "service-role/AmazonECSTaskExecutionRolePolicy",
-            ),
+        const iamEcsTaskExectionPolicyScope = wrap(
+            "iamEcsTaskExectionPolicy",
+            `${prefix}-iam-ecs-task-execution-policy`,
         );
 
-        iamEcsTaskExectionPolicy.attachToRole(iamEcsTaskExecutionRole);
+        const iamEcsTaskExectionPolicy = new iam.CfnPolicy(
+            iamEcsTaskExectionPolicyScope,
+            "Resource",
+            {
+                policyName: `${prefix}-iam-ecs-task-execution-policy`,
+                roles: [iamEcsTaskExecutionRole.ref],
+                policyDocument: {
+                    Version: "2012-10-17",
+                    Statement: [
+                        allow(
+                            "PassRole",
+                            ["iam:PassRole"],
+                            [iamEcsTaskExecutionRole.attrArn],
+                        ),
+                        allow(
+                            "GetKeyAndSecrets",
+                            [
+                                "kms:Decrypt",
+                                "ssm:GetParameters",
+                                "ssm:GetParameter",
+                                "secretsmanager:GetSecretValue",
+                            ],
+                            [kmsProps.applicationKey.keyArn],
+                        ),
+                        allow(
+                            "GetRegistryCredentials",
+                            [
+                                "secretsmanager:GetSecretValue",
+                                "secretsmanager:DescribeSecret",
+                            ],
+                            registryCredentialArns,
+                        ),
+                    ],
+                },
+            },
+        );
 
         // ------------------------------------------------------------
         // AWS IAM for Amazon ECS Task Configuration
         // ------------------------------------------------------------
-        const iamEcsTaskRole = new iam.Role(this, "iamEcsTaskRole", {
-            roleName: `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-role`,
-            description: "IAM role for ECS task",
-            assumedBy: new iam.CompositePrincipal(
-                new iam.ServicePrincipal("ecs.amazonaws.com"),
-                new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-                new iam.ServicePrincipal("delivery.logs.amazonaws.com"),
-            ),
-        });
-
-        cdk.Tags.of(iamEcsTaskRole).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-role`,
+        const iamEcsTaskRoleScope = wrap(
+            "iamEcsTaskRole",
+            `${prefix}-iam-ecs-task-role`,
         );
-        cdk.Tags.of(iamEcsTaskRole).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(iamEcsTaskRole).add("ProjectCode", "1234567890");
 
-        const iamEcsTaskPolicy = new iam.Policy(this, "iamEcsTaskPolicy", {
-            policyName: `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-policy`,
-            statements: [
-                new iam.PolicyStatement({
-                    sid: "PassRole",
-                    effect: iam.Effect.ALLOW,
-                    actions: ["iam:PassRole"],
-                    resources: [
-                        iamEcsTaskRole.roleArn,
-                        iamEcsTaskExecutionRole.roleArn,
+        const iamEcsTaskRole = new iam.CfnRole(
+            iamEcsTaskRoleScope,
+            "Resource",
+            {
+                roleName: `${prefix}-iam-ecs-task-role`,
+                description: "IAM role for ECS task",
+                assumeRolePolicyDocument: {
+                    Version: "2012-10-17",
+                    Statement: [
+                        {
+                            Effect: "Allow",
+                            Principal: {
+                                Service: [
+                                    "ecs.amazonaws.com",
+                                    "ecs-tasks.amazonaws.com",
+                                    "delivery.logs.amazonaws.com",
+                                ],
+                            },
+                            Action: "sts:AssumeRole",
+                        },
                     ],
-                }),
-                new iam.PolicyStatement({
-                    sid: "ECSAccess",
-                    effect: iam.Effect.ALLOW,
-                    actions: [
-                        "ecs:RunTask",
-                        "ecs:ListTaskDefinitions",
-                        "ecs:DescribeServices",
-                    ],
-                    resources: [
-                        `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task/*`,
-                    ],
-                }),
-                new iam.PolicyStatement({
-                    sid: "S3ListAllBuckets",
-                    effect: iam.Effect.ALLOW,
-                    actions: ["s3:ListAllMyBuckets"],
-                    resources: ["*"],
-                }),
-                new iam.PolicyStatement({
-                    sid: "S3Access",
-                    effect: iam.Effect.ALLOW,
-                    actions: [
-                        "s3:ListBucket",
-                        "s3:GetObject",
-                        "s3:PutObject",
-                        "s3:DeleteObject",
-                    ],
-                    resources: [
-                        s3Props.s3BucketEcsLogs.bucketArn,
-                        `${s3Props.s3BucketEcsLogs.bucketArn}/*`,
-                    ],
-                }),
-                new iam.PolicyStatement({
-                    sid: "AuroraAccess",
-                    effect: iam.Effect.ALLOW,
-                    actions: ["rds-db:connect", "rds-data:ExecuteStatement"],
-                    resources: [
-                        databaseProps.auroraClusterArn,
-                        databaseProps.auroraWriterInstanceArn,
-                        databaseProps.auroraReaderInstanceArn,
-                    ],
-                }),
-                new iam.PolicyStatement({
-                    sid: "ElastiCacheConnect",
-                    effect: iam.Effect.ALLOW,
-                    actions: ["elasticache:Connect"],
-                    resources: [databaseProps.elastiCacheReplicationGroupArn],
-                }),
-                new iam.PolicyStatement({
-                    sid: "CloudWatchLogsAccess",
-                    effect: iam.Effect.ALLOW,
-                    actions: [
-                        "logs:CreateLogDelivery",
-                        "logs:GetLogDelivery",
-                        "logs:UpdateLogDelivery",
-                        "logs:DeleteLogDelivery",
-                        "logs:ListLogDeliveries",
-                        "logs:PutResourcePolicy",
-                        "logs:DescribeResourcePolicies",
-                        "logs:DescribeLogGroups",
-                    ],
-                    resources: [
-                        `arn:aws:logs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:log-group:*`,
-                    ],
-                }),
-                new iam.PolicyStatement({
-                    sid: "LogDeliveryWrite",
-                    effect: iam.Effect.ALLOW,
-                    actions: ["logs:CreateLogStream", "logs:PutLogEvents"],
-                    resources: [
-                        `arn:aws:logs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:log-group:*`,
-                    ],
-                }),
-                new iam.PolicyStatement({
-                    sid: "PutLogDestination",
-                    effect: iam.Effect.ALLOW,
-                    actions: [
-                        "logs:PutDestination",
-                        "logs:PutDestinationPolicy",
-                    ],
-                    resources: [
-                        `arn:aws:logs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:log-group:*`,
-                    ],
-                }),
-                new iam.PolicyStatement({
-                    sid: "ADFAccess",
-                    effect: iam.Effect.ALLOW,
-                    actions: ["firehose:PutRecord", "firehose:PutRecordBatch"],
-                    resources: [
-                        `arn:aws:firehose:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:deliverystream/*`,
-                    ],
-                }),
-                new iam.PolicyStatement({
-                    sid: "AllowECSExec",
-                    effect: iam.Effect.ALLOW,
-                    actions: [
-                        "ssmmessages:CreateControlChannel",
-                        "ssmmessages:CreateDataChannel",
-                        "ssmmessages:OpenControlChannel",
-                        "ssmmessages:OpenDataChannel",
-                    ],
-                    resources: ["*"],
-                }),
-            ],
-        });
-
-        cdk.Tags.of(iamEcsTaskPolicy).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-ecs-task-policy`,
+                },
+            },
         );
-        cdk.Tags.of(iamEcsTaskPolicy).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(iamEcsTaskPolicy).add("ProjectCode", "1234567890");
 
-        iamEcsTaskPolicy.attachToRole(iamEcsTaskRole);
+        const logGroupArn = `arn:aws:logs:${stack.region}:${stack.account}:log-group:*`;
+
+        const iamEcsTaskPolicyScope = wrap(
+            "iamEcsTaskPolicy",
+            `${prefix}-iam-ecs-task-policy`,
+        );
+
+        const iamEcsTaskPolicy = new iam.CfnPolicy(
+            iamEcsTaskPolicyScope,
+            "Resource",
+            {
+                policyName: `${prefix}-iam-ecs-task-policy`,
+                roles: [iamEcsTaskRole.ref],
+                policyDocument: {
+                    Version: "2012-10-17",
+                    Statement: [
+                        allow(
+                            "PassRole",
+                            ["iam:PassRole"],
+                            [
+                                iamEcsTaskRole.attrArn,
+                                iamEcsTaskExecutionRole.attrArn,
+                            ],
+                        ),
+                        allow(
+                            "ECSAccess",
+                            [
+                                "ecs:RunTask",
+                                "ecs:ListTaskDefinitions",
+                                "ecs:DescribeServices",
+                            ],
+                            [`${arnPrefix}:task/*`],
+                        ),
+                        allow(
+                            "S3ListAllBuckets",
+                            ["s3:ListAllMyBuckets"],
+                            ["*"],
+                        ),
+                        allow(
+                            "S3Access",
+                            [
+                                "s3:ListBucket",
+                                "s3:GetObject",
+                                "s3:PutObject",
+                                "s3:DeleteObject",
+                            ],
+                            [
+                                s3Props.s3BucketEcsLogs.bucketArn,
+                                `${s3Props.s3BucketEcsLogs.bucketArn}/*`,
+                            ],
+                        ),
+                        allow(
+                            "AuroraAccess",
+                            ["rds-db:connect", "rds-data:ExecuteStatement"],
+                            [
+                                databaseProps.auroraClusterArn,
+                                databaseProps.auroraWriterInstanceArn,
+                                databaseProps.auroraReaderInstanceArn,
+                            ],
+                        ),
+                        allow(
+                            "ElastiCacheConnect",
+                            ["elasticache:Connect"],
+                            [databaseProps.elastiCacheReplicationGroupArn],
+                        ),
+                        allow(
+                            "CloudWatchLogsAccess",
+                            [
+                                "logs:CreateLogDelivery",
+                                "logs:GetLogDelivery",
+                                "logs:UpdateLogDelivery",
+                                "logs:DeleteLogDelivery",
+                                "logs:ListLogDeliveries",
+                                "logs:PutResourcePolicy",
+                                "logs:DescribeResourcePolicies",
+                                "logs:DescribeLogGroups",
+                            ],
+                            [logGroupArn],
+                        ),
+                        allow(
+                            "LogDeliveryWrite",
+                            ["logs:CreateLogStream", "logs:PutLogEvents"],
+                            [logGroupArn],
+                        ),
+                        allow(
+                            "PutLogDestination",
+                            [
+                                "logs:PutDestination",
+                                "logs:PutDestinationPolicy",
+                            ],
+                            [logGroupArn],
+                        ),
+                        allow(
+                            "ADFAccess",
+                            ["firehose:PutRecord", "firehose:PutRecordBatch"],
+                            [
+                                `arn:aws:firehose:${stack.region}:${stack.account}:deliverystream/*`,
+                            ],
+                        ),
+                        allow(
+                            "AllowECSExec",
+                            [
+                                "ssmmessages:CreateControlChannel",
+                                "ssmmessages:CreateDataChannel",
+                                "ssmmessages:OpenControlChannel",
+                                "ssmmessages:OpenDataChannel",
+                            ],
+                            ["*"],
+                        ),
+                    ],
+                },
+            },
+        );
 
         // ------------------------------------------------------------
         // AWS IAM for GitHub Actions Deployment Configuration
         // ------------------------------------------------------------
-        const iamGithubActionsRole = new iam.Role(
-            this,
+        const githubSubjectCondition = {
+            StringLike: {
+                "token.actions.githubusercontent.com:sub": [
+                    `repo:${commonProps.dashboardName}:ref:refs/heads/main`,
+                    `repo:${commonProps.dashboardName}:ref:refs/heads/*`,
+                ],
+            },
+        };
+
+        const iamGithubActionsRoleScope = wrap(
             "iamGithubActionsRole",
+            `${prefix}-iam-github-actions-role`,
+        );
+
+        const iamGithubActionsRole = new iam.CfnRole(
+            iamGithubActionsRoleScope,
+            "Resource",
             {
-                roleName: `${commonProps.projectName}-${envProps.envName}-iam-github-actions-role`,
+                roleName: `${prefix}-iam-github-actions-role`,
                 description: "IAM role for GitHub Actions deployment",
-                assumedBy: new iam.WebIdentityPrincipal(
-                    oidcProvider.openIdConnectProviderArn,
-                    {
-                        StringLike: {
-                            "token.actions.githubusercontent.com:sub": [
-                                `repo:${commonProps.dashboardName}:ref:refs/heads/main`,
-                                `repo:${commonProps.dashboardName}:ref:refs/heads/*`,
-                            ],
+                assumeRolePolicyDocument: {
+                    Version: "2012-10-17",
+                    Statement: [
+                        {
+                            Effect: "Allow",
+                            Principal: { Federated: oidcProvider.attrArn },
+                            Action: "sts:AssumeRoleWithWebIdentity",
+                            Condition: githubSubjectCondition,
                         },
-                    },
-                ),
+                        {
+                            Sid: "OIDCFederateRef",
+                            Effect: "Allow",
+                            Principal: { Federated: oidcProvider.attrArn },
+                            Action: "sts:AssumeRoleWithWebIdentity",
+                            Condition: githubSubjectCondition,
+                        },
+                    ],
+                },
             },
         );
 
-        cdk.Tags.of(iamGithubActionsRole).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-github-actions-role`,
-        );
-        cdk.Tags.of(iamGithubActionsRole).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(iamGithubActionsRole).add("ProjectCode", "1234567890");
-
-        const assumeRolePolicy = iamGithubActionsRole.assumeRolePolicy;
-
-        assumeRolePolicy?.addStatements(
-            new iam.PolicyStatement({
-                sid: "OIDCFederateRef",
-                effect: iam.Effect.ALLOW,
-                actions: ["sts:AssumeRoleWithWebIdentity"],
-                principals: [
-                    new iam.FederatedPrincipal(
-                        oidcProvider.openIdConnectProviderArn,
-                        {},
-                        "sts:AssumeRoleWithWebIdentity",
-                    ),
-                ],
-                conditions: {
-                    StringLike: {
-                        "token.actions.githubusercontent.com:sub": [
-                            `repo:${commonProps.dashboardName}:ref:refs/heads/main`,
-                            `repo:${commonProps.dashboardName}:ref:refs/heads/*`,
-                        ],
-                    },
-                },
-            }),
+        const taskDefinitionArns = ["app", "cron", "queue"].map(
+            (family) => `${arnPrefix}:task-definition/${prefix}-${family}:*`,
         );
 
-        cdk.Tags.of(iamGithubActionsRole).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-github-actions-role`,
-        );
-        cdk.Tags.of(iamGithubActionsRole).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(iamGithubActionsRole).add("ProjectCode", "1234567890");
-
-        const iamGithubActionsPolicy = new iam.Policy(
-            this,
+        const iamGithubActionsPolicyScope = wrap(
             "iamGithubActionsPolicy",
-            {
-                policyName: `${commonProps.projectName}-${envProps.envName}-iam-github-actions-policy`,
-                roles: [iamGithubActionsRole],
-                statements: [
-                    new iam.PolicyStatement({
-                        sid: "GetAuthenticationToken",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["ecr:GetAuthorizationToken"],
-                        resources: ["*"],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "PushImageOnly",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
+            `${prefix}-iam-github-actions-policy`,
+        );
+
+        new iam.CfnPolicy(iamGithubActionsPolicyScope, "Resource", {
+            policyName: `${prefix}-iam-github-actions-policy`,
+            roles: [iamGithubActionsRole.ref],
+            policyDocument: {
+                Version: "2012-10-17",
+                Statement: [
+                    allow(
+                        "GetAuthenticationToken",
+                        ["ecr:GetAuthorizationToken"],
+                        ["*"],
+                    ),
+                    allow(
+                        "PushImageOnly",
+                        [
                             "ecr:GetDownloadUrlForLayer",
                             "ecr:BatchCheckLayerAvailability",
                             "ecr:InitiateLayerUpload",
@@ -543,17 +515,16 @@ export class CfComputeDefinitionStack extends Construct {
                             "ecr:BatchGetImage",
                             "ecr:PutImage",
                         ],
-                        resources: [
+                        [
                             ecrProps.ecrRepositoryWebBaseImage.attrArn,
                             ecrProps.ecrRepositoryAppBaseImage.attrArn,
                             ecrProps.ecrRepositoryWeb.attrArn,
                             ecrProps.ecrRepositoryApp.attrArn,
                         ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "RegisterTaskDefinition",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
+                    ),
+                    allow(
+                        "RegisterTaskDefinition",
+                        [
                             "iam:GetRole",
                             "events:PutTargets",
                             "ecs:RunTask",
@@ -562,58 +533,47 @@ export class CfComputeDefinitionStack extends Construct {
                             "ec2:DescribeSubnets",
                             "ec2:DescribeSecurityGroups",
                         ],
-                        resources: [
-                            iamEcsTaskRole.roleArn,
-                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task-definition/${commonProps.projectName}-${envProps.envName}-app:*`,
-                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task-definition/${commonProps.projectName}-${envProps.envName}-cron:*`,
-                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task-definition/${commonProps.projectName}-${envProps.envName}-queue:*`,
+                        [
+                            iamEcsTaskRole.attrArn,
+                            ...taskDefinitionArns,
                             networkingProps.privateSubnetIds[0],
                             networkingProps.privateSubnetIds[1],
                             sgProps.ecsSecurityGroup.securityGroupId,
                         ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "UpdateService",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
+                    ),
+                    allow(
+                        "UpdateService",
+                        [
                             "ecs:DescribeClusters",
                             "ecs:DescribeServices",
                             "ecs:DescribeTasks",
                             "ecs:UpdateServicePrimaryTaskSet",
                             "ecs:UpdateService",
                         ],
-                        resources: [
-                            ecsProps.ecsCluster.clusterArn,
-                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:service/${commonProps.projectName}-${envProps.envName}-app`,
-                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:service/${commonProps.projectName}-${envProps.envName}-cron`,
-                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:service/${commonProps.projectName}-${envProps.envName}-queue`,
-                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task-definition/${commonProps.projectName}-${envProps.envName}-app:*`,
-                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task-definition/${commonProps.projectName}-${envProps.envName}-cron:*`,
-                            `arn:aws:ecs:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:task-definition/${commonProps.projectName}-${envProps.envName}-queue:*`,
+                        [
+                            ecsProps.ecsCluster.attrArn,
+                            `${arnPrefix}:service/${prefix}-app`,
+                            `${arnPrefix}:service/${prefix}-cron`,
+                            `${arnPrefix}:service/${prefix}-queue`,
+                            ...taskDefinitionArns,
                         ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "S3Access",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "s3:GetObject",
-                            "s3:PutObject",
-                            "s3:ListBucket",
+                    ),
+                    allow(
+                        "S3Access",
+                        ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+                        [
+                            `arn:aws:s3:::${prefix}-*`,
+                            `arn:aws:s3:::${prefix}-*/*`,
                         ],
-                        resources: [
-                            `arn:aws:s3:::${commonProps.projectName}-${envProps.envName}-*`,
-                            `arn:aws:s3:::${commonProps.projectName}-${envProps.envName}-*/*`,
+                    ),
+                    allow(
+                        "IAMPassRole",
+                        ["iam:PassRole"],
+                        [
+                            iamEcsTaskRole.attrArn,
+                            iamEcsTaskExecutionRole.attrArn,
                         ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "IAMPassRole",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["iam:PassRole"],
-                        resources: [
-                            iamEcsTaskRole.roleArn,
-                            iamEcsTaskExecutionRole.roleArn,
-                        ],
-                        conditions: {
+                        {
                             StringEquals: {
                                 "iam:PassedToService": [
                                     "ecs-tasks.amazonaws.com",
@@ -621,208 +581,226 @@ export class CfComputeDefinitionStack extends Construct {
                                 ],
                             },
                         },
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "GlobalServiceCheck",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["acm:DescribeCertificate", "wafv2:GetWebACL"],
-                        resources: ["*"],
-                    }),
+                    ),
+                    allow(
+                        "GlobalServiceCheck",
+                        ["acm:DescribeCertificate", "wafv2:GetWebACL"],
+                        ["*"],
+                    ),
                 ],
             },
-        );
-
-        cdk.Tags.of(iamGithubActionsPolicy).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-github-actions-policy`,
-        );
-        cdk.Tags.of(iamGithubActionsPolicy).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(iamGithubActionsPolicy).add("ProjectCode", "1234567890");
-
-        iamGithubActionsPolicy.attachToRole(iamGithubActionsRole);
-
-        // ------------------------------------------------------------
-        // Amazon ECS App Task Definition Configuration
-        // ------------------------------------------------------------
-        const ecsAppTaskDefinition = new ecs.FargateTaskDefinition(
-            this,
-            "ecsAppTaskDefinition",
-            {
-                family: "app",
-                cpu: 512,
-                memoryLimitMiB: 1024,
-                taskRole: iamEcsTaskRole,
-                executionRole: iamEcsTaskExecutionRole,
-                runtimePlatform: {
-                    operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
-                    cpuArchitecture: ecs.CpuArchitecture.ARM64,
-                },
-            },
-        );
-
-        cdk.Tags.of(ecsAppTaskDefinition).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-ecs-app-task-definition`,
-        );
-        cdk.Tags.of(ecsAppTaskDefinition).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ecsAppTaskDefinition).add("ProjectCode", "1234567890");
-
-        addJsonContainerDefinitions(
-            this,
-            ecsAppTaskDefinition,
-            loadContainerDefinitions(
-                "amazon-ecs-task-definition-app.json",
-                containerDefinitionReplacements,
-            ),
-        );
-
-        // ------------------------------------------------------------
-        // Amazon ECS Cron Task Definition Configuration
-        // ------------------------------------------------------------
-        const ecsCronTaskDefinition = new ecs.FargateTaskDefinition(
-            this,
-            "ecsCronTaskDefinition",
-            {
-                family: "cron",
-                taskRole: iamEcsTaskRole,
-                executionRole: iamEcsTaskExecutionRole,
-                runtimePlatform: {
-                    operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
-                    cpuArchitecture: ecs.CpuArchitecture.ARM64,
-                },
-            },
-        );
-
-        cdk.Tags.of(ecsCronTaskDefinition).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-ecs-cron-task-definition`,
-        );
-        cdk.Tags.of(ecsCronTaskDefinition).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ecsCronTaskDefinition).add("ProjectCode", "1234567890");
-
-        addJsonContainerDefinitions(
-            this,
-            ecsCronTaskDefinition,
-            loadContainerDefinitions(
-                "amazon-ecs-task-definition-cron.json",
-                containerDefinitionReplacements,
-            ),
-        );
-
-        // ------------------------------------------------------------
-        // Amazon ECS Queue Task Definition Configuration
-        // ------------------------------------------------------------
-        const ecsQueueTaskDefinition = new ecs.FargateTaskDefinition(
-            this,
-            "ecsQueueTaskDefinition",
-            {
-                family: "queue",
-                taskRole: iamEcsTaskRole,
-                executionRole: iamEcsTaskExecutionRole,
-                runtimePlatform: {
-                    operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
-                    cpuArchitecture: ecs.CpuArchitecture.ARM64,
-                },
-            },
-        );
-
-        cdk.Tags.of(ecsQueueTaskDefinition).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-ecs-queue-task-definition`,
-        );
-        cdk.Tags.of(ecsQueueTaskDefinition).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ecsQueueTaskDefinition).add("ProjectCode", "1234567890");
-
-        addJsonContainerDefinitions(
-            this,
-            ecsQueueTaskDefinition,
-            loadContainerDefinitions(
-                "amazon-ecs-task-definition-queue.json",
-                containerDefinitionReplacements,
-            ),
-        );
-
-        // ------------------------------------------------------------
-        // Amazon ECS App Service Configuration
-        // ------------------------------------------------------------
-        const ecsAppService = new ecs.FargateService(
-            this,
-            "ecsAppServiceConfiguration",
-            {
-                cluster: ecsProps.ecsCluster,
-                serviceName: "ecsAppService",
-                taskDefinition: ecsAppTaskDefinition,
-                desiredCount: 2,
-                maxHealthyPercent: 200,
-                minHealthyPercent: 50,
-                platformVersion: ecs.FargatePlatformVersion.VERSION1_4,
-                capacityProviderStrategies: [
-                    {
-                        capacityProvider: "FARGATE",
-                        base: 1,
-                        weight: 0,
-                    },
-                    {
-                        capacityProvider: "FARGATE_SPOT",
-                        base: 0,
-                        weight: 1,
-                    },
-                ],
-                availabilityZoneRebalancing:
-                    ecs.AvailabilityZoneRebalancing.ENABLED,
-                circuitBreaker: {
-                    rollback: true,
-                },
-                deploymentController: {
-                    type: ecs.DeploymentControllerType.ECS,
-                },
-                deploymentStrategy: ecs.DeploymentStrategy.ROLLING,
-                enableExecuteCommand: true,
-                forceNewDeployment: {
-                    enabled: true,
-                },
-                vpcSubnets: {
-                    subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-                },
-                securityGroups: [sgProps.ecsSecurityGroup],
-            },
-        );
-
-        ecsAppService.attachToApplicationTargetGroup(albProps.targetGroup);
-
-        cdk.Tags.of(ecsAppService).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-ecs-app-service`,
-        );
-        cdk.Tags.of(ecsAppService).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ecsAppService).add("ProjectCode", "1234567890");
-
-        this.ecsAppScalableTarget = ecsAppService.autoScaleTaskCount({
-            minCapacity: 2,
-            maxCapacity: 4,
         });
+
+        // ------------------------------------------------------------
+        // Amazon ECS Task Definition Configuration (app / cron / queue)
+        // ------------------------------------------------------------
+        const createTaskDefinition = (
+            wrapperId: string,
+            family: "app" | "cron" | "queue",
+            containers: ecs.CfnTaskDefinition.ContainerDefinitionProperty[],
+            size: { cpu: string; memory: string },
+        ) => {
+            const taskDefinitionScope = wrap(
+                wrapperId,
+                `${prefix}-ecs-${family}-task-definition`,
+            );
+
+            return new ecs.CfnTaskDefinition(taskDefinitionScope, "Resource", {
+                family,
+                cpu: size.cpu,
+                memory: size.memory,
+                networkMode: "awsvpc",
+                requiresCompatibilities: ["FARGATE"],
+                taskRoleArn: iamEcsTaskRole.attrArn,
+                executionRoleArn: iamEcsTaskExecutionRole.attrArn,
+                runtimePlatform: {
+                    operatingSystemFamily: "LINUX",
+                    cpuArchitecture: "ARM64",
+                },
+                containerDefinitions: containers,
+            });
+        };
+
+        const ecsAppTaskDefinition = createTaskDefinition(
+            "ecsAppTaskDefinition",
+            "app",
+            appContainers,
+            { cpu: "512", memory: "1024" },
+        );
+
+        const ecsCronTaskDefinition = createTaskDefinition(
+            "ecsCronTaskDefinition",
+            "cron",
+            cronContainers,
+            { cpu: "256", memory: "512" },
+        );
+
+        const ecsQueueTaskDefinition = createTaskDefinition(
+            "ecsQueueTaskDefinition",
+            "queue",
+            queueContainers,
+            { cpu: "256", memory: "512" },
+        );
+
+        // ------------------------------------------------------------
+        // Amazon ECS Service Configuration (app / cron / queue)
+        // ------------------------------------------------------------
+        const createService = (
+            wrapperId: string,
+            name: "app" | "cron" | "queue",
+            taskDefinition: ecs.CfnTaskDefinition,
+            options: {
+                serviceName?: string;
+                desiredCount: number;
+                capacityProviderStrategy: ecs.CfnService.CapacityProviderStrategyItemProperty[];
+                loadBalancers?: ecs.CfnService.LoadBalancerProperty[];
+            },
+        ) => {
+            const serviceScope = wrap(
+                wrapperId,
+                `${prefix}-ecs-${name}-service`,
+            );
+
+            const service = new ecs.CfnService(serviceScope, "Service", {
+                cluster: ecsProps.ecsCluster.ref,
+                serviceName: options.serviceName,
+                taskDefinition: taskDefinition.ref,
+                desiredCount: options.desiredCount,
+                platformVersion: "1.4.0",
+                capacityProviderStrategy: options.capacityProviderStrategy,
+                availabilityZoneRebalancing: "ENABLED",
+                deploymentConfiguration: {
+                    maximumPercent: 200,
+                    minimumHealthyPercent: options.serviceName ? 50 : 100,
+                    deploymentCircuitBreaker: { enable: true, rollback: true },
+                    strategy: "ROLLING",
+                },
+                deploymentController: { type: "ECS" },
+                enableExecuteCommand: true,
+                forceNewDeployment: { enableForceNewDeployment: true },
+                loadBalancers: options.loadBalancers,
+                networkConfiguration: {
+                    awsvpcConfiguration: {
+                        assignPublicIp: "DISABLED",
+                        subnets: networkingProps.privateSubnetIds,
+                        securityGroups: [
+                            sgProps.ecsSecurityGroup.securityGroupId,
+                        ],
+                    },
+                },
+            });
+
+            // The task roles must have their policies attached before tasks start.
+            service.node.addDependency(
+                iamEcsTaskExectionPolicy,
+                iamEcsTaskPolicy,
+            );
+
+            return { service, serviceScope };
+        };
+
+        // Register the first essential container (and its first port) with the ALB target group.
+        const albContainer =
+            appContainers.find((container) => container.essential) ??
+            appContainers[0];
+
+        const albContainerPort = (
+            albContainer.portMappings as
+                | ecs.CfnTaskDefinition.PortMappingProperty[]
+                | undefined
+        )?.[0]?.containerPort;
+
+        const { service: ecsAppService, serviceScope: ecsAppServiceScope } =
+            createService(
+                "ecsAppServiceConfiguration",
+                "app",
+                ecsAppTaskDefinition,
+                {
+                    serviceName: "ecsAppService",
+                    desiredCount: 2,
+                    capacityProviderStrategy: [
+                        { capacityProvider: "FARGATE", base: 1, weight: 0 },
+                        {
+                            capacityProvider: "FARGATE_SPOT",
+                            base: 0,
+                            weight: 1,
+                        },
+                    ],
+                    loadBalancers: [
+                        {
+                            containerName: albContainer.name,
+                            containerPort: albContainerPort,
+                            targetGroupArn: albProps.targetGroup.targetGroupArn,
+                        },
+                    ],
+                },
+            );
+
+        ecsAppService.node.addDependency(
+            albProps.targetGroup.loadBalancerAttached,
+        );
+
+        const fargateOnly = [
+            { capacityProvider: "FARGATE", base: 1, weight: 1 },
+        ];
+
+        createService(
+            "ecsCronServiceConfiguration",
+            "cron",
+            ecsCronTaskDefinition,
+            { desiredCount: 1, capacityProviderStrategy: fargateOnly },
+        );
+
+        createService(
+            "ecsQueueServiceConfiguration",
+            "queue",
+            ecsQueueTaskDefinition,
+            { desiredCount: 1, capacityProviderStrategy: fargateOnly },
+        );
+
+        // ------------------------------------------------------------
+        // Application Auto Scaling for Amazon ECS App Service
+        // L2 is kept here because the monitoring stack consumes the scalable
+        // target through the L2 StepScalingAction / StepScalingPolicy APIs.
+        // ------------------------------------------------------------
+        const ecsAppTaskCountScope = new Construct(
+            ecsAppServiceScope,
+            "TaskCount",
+        );
+
+        this.ecsAppScalableTarget = new applicationautoscaling.ScalableTarget(
+            ecsAppTaskCountScope,
+            "Target",
+            {
+                serviceNamespace: applicationautoscaling.ServiceNamespace.ECS,
+                scalableDimension: "ecs:service:DesiredCount",
+                resourceId: `service/${ecsProps.ecsCluster.ref}/${ecsAppService.attrName}`,
+                minCapacity: 2,
+                maxCapacity: 4,
+            },
+        );
 
         cdk.Tags.of(this.ecsAppScalableTarget).add(
             "Name",
-            `${commonProps.projectName}-${envProps.envName}-ecs-app-autoscaling-target`,
+            `${prefix}-ecs-app-autoscaling-target`,
         );
         cdk.Tags.of(this.ecsAppScalableTarget).add("ProvisionedBy", "AWS");
         cdk.Tags.of(this.ecsAppScalableTarget).add("ProjectCode", "1234567890");
+
+        const cpuMetric = new cloudwatch.Metric({
+            namespace: "AWS/ECS",
+            metricName: "CPUUtilization",
+            dimensionsMap: { TaskDefinitionFamily: "app" },
+            statistic: "Average",
+            period: cdk.Duration.seconds(60),
+        });
 
         new applicationautoscaling.StepScalingPolicy(
             this,
             "AutoScaleOutEcsApp",
             {
                 scalingTarget: this.ecsAppScalableTarget,
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ECS",
-                    metricName: "CPUUtilization",
-                    dimensionsMap: {
-                        TaskDefinitionFamily: ecsAppTaskDefinition.family,
-                    },
-                    statistic: "Average",
-                    period: cdk.Duration.seconds(60),
-                }),
+                metric: cpuMetric,
                 adjustmentType:
                     applicationautoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
                 scalingSteps: [
@@ -838,15 +816,7 @@ export class CfComputeDefinitionStack extends Construct {
             "AutoScaleInEcsApp",
             {
                 scalingTarget: this.ecsAppScalableTarget,
-                metric: new cloudwatch.Metric({
-                    namespace: "AWS/ECS",
-                    metricName: "CPUUtilization",
-                    dimensionsMap: {
-                        TaskDefinitionFamily: ecsAppTaskDefinition.family,
-                    },
-                    statistic: "Average",
-                    period: cdk.Duration.seconds(60),
-                }),
+                metric: cpuMetric,
                 adjustmentType:
                     applicationautoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
                 scalingSteps: [
@@ -858,258 +828,57 @@ export class CfComputeDefinitionStack extends Construct {
         );
 
         // ------------------------------------------------------------
-        // Amazon ECS Cron Service Configuration
+        // AWS SSM Parameter Store Configuration
         // ------------------------------------------------------------
-        const ecsCronServiceConfiguration = new ecs.FargateService(
-            this,
-            "ecsCronServiceConfiguration",
-            {
-                cluster: ecsProps.ecsCluster,
-                taskDefinition: ecsCronTaskDefinition,
-                desiredCount: 1,
-                minHealthyPercent: 100,
-                maxHealthyPercent: 200,
-                platformVersion: ecs.FargatePlatformVersion.VERSION1_4,
-                capacityProviderStrategies: [
-                    {
-                        capacityProvider: "FARGATE",
-                        base: 1,
-                        weight: 1,
-                    },
-                ],
-                availabilityZoneRebalancing:
-                    ecs.AvailabilityZoneRebalancing.ENABLED,
-                circuitBreaker: {
-                    rollback: true,
-                },
-                deploymentController: {
-                    type: ecs.DeploymentControllerType.ECS,
-                },
-                deploymentStrategy: ecs.DeploymentStrategy.ROLLING,
-                enableExecuteCommand: true,
-                forceNewDeployment: {
-                    enabled: true,
-                },
-                vpcSubnets: {
-                    subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-                },
-                securityGroups: [sgProps.ecsSecurityGroup],
-            },
-        );
+        const createParameter = (
+            wrapperId: string,
+            key: string,
+            label: string,
+        ) => {
+            const parameterScope = wrap(wrapperId, `${prefix}-${key}`);
 
-        cdk.Tags.of(ecsCronServiceConfiguration).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-ecs-cron-service`,
-        );
-        cdk.Tags.of(ecsCronServiceConfiguration).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ecsCronServiceConfiguration).add(
-            "ProjectCode",
-            "1234567890",
-        );
+            return new ssm.CfnParameter(parameterScope, "Resource", {
+                name: `/${commonProps.projectName}/${envProps.envName}/${key}`,
+                description: `The parameter for ${prefix} ${label}`,
+                type: "String",
+                value: "PleaseChangeMe",
+            });
+        };
 
-        // ------------------------------------------------------------
-        // Amazon ECS Queue Service Configuration
-        // ------------------------------------------------------------
-        const ecsQueueServiceConfiguration = new ecs.FargateService(
-            this,
-            "ecsQueueServiceConfiguration",
-            {
-                cluster: ecsProps.ecsCluster,
-                taskDefinition: ecsQueueTaskDefinition,
-                desiredCount: 1,
-                minHealthyPercent: 100,
-                maxHealthyPercent: 200,
-                platformVersion: ecs.FargatePlatformVersion.VERSION1_4,
-                capacityProviderStrategies: [
-                    {
-                        capacityProvider: "FARGATE",
-                        base: 1,
-                        weight: 1,
-                    },
-                ],
-                availabilityZoneRebalancing:
-                    ecs.AvailabilityZoneRebalancing.ENABLED,
-                circuitBreaker: {
-                    rollback: true,
-                },
-                deploymentController: {
-                    type: ecs.DeploymentControllerType.ECS,
-                },
-                deploymentStrategy: ecs.DeploymentStrategy.ROLLING,
-                enableExecuteCommand: true,
-                forceNewDeployment: {
-                    enabled: true,
-                },
-                vpcSubnets: {
-                    subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-                },
-                securityGroups: [sgProps.ecsSecurityGroup],
-            },
-        );
-
-        cdk.Tags.of(ecsQueueServiceConfiguration).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-ecs-queue-service`,
-        );
-        cdk.Tags.of(ecsQueueServiceConfiguration).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ecsQueueServiceConfiguration).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // AWS SSM Parameter Store for Application Configuration
-        // ------------------------------------------------------------
-        this.ssmParameterStoreAppKey = new ssm.StringParameter(
-            this,
+        this.ssmParameterStoreAppKey = createParameter(
             "ssmParameterStoreAppKey",
-            {
-                parameterName: `/${commonProps.projectName}/${envProps.envName}/app-key`,
-                description: `The parameter for ${commonProps.projectName}-${envProps.envName} app key`,
-                stringValue: "PleaseChangeMe",
-            },
+            "app-key",
+            "app key",
         );
 
-        cdk.Tags.of(this.ssmParameterStoreAppKey).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-app-key`,
-        );
-        cdk.Tags.of(this.ssmParameterStoreAppKey).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.ssmParameterStoreAppKey).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // AWS SSM Parameter Store for JWT Secret Configuration
-        // ------------------------------------------------------------
-        this.ssmParamenterStoreJwtSecret = new ssm.StringParameter(
-            this,
+        this.ssmParamenterStoreJwtSecret = createParameter(
             "ssmParamenterStoreJwtSecret",
-            {
-                parameterName: `/${commonProps.projectName}/${envProps.envName}/jwt-secret`,
-                description: `The parameter for ${commonProps.projectName}-${envProps.envName} jwt secret`,
-                stringValue: "PleaseChangeMe",
-            },
+            "jwt-secret",
+            "jwt secret",
         );
 
-        cdk.Tags.of(this.ssmParamenterStoreJwtSecret).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-jwt-secret`,
-        );
-        cdk.Tags.of(this.ssmParamenterStoreJwtSecret).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(this.ssmParamenterStoreJwtSecret).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // AWS SSM Parameter Store for Aurora Writer Endpoint Configuration
-        // ------------------------------------------------------------
-        this.ssmParameterStoreAuroraWriterEndPoint = new ssm.StringParameter(
-            this,
+        this.ssmParameterStoreAuroraWriterEndPoint = createParameter(
             "ssmParameterStoreAuroraWriterEndPoint",
-            {
-                parameterName: `/${commonProps.projectName}/${envProps.envName}/aurora-writer-endpoint`,
-                description: `The parameter for ${commonProps.projectName}-${envProps.envName} aurora writer endpoint`,
-                stringValue: "PleaseChangeMe",
-            },
+            "aurora-writer-endpoint",
+            "aurora writer endpoint",
         );
 
-        cdk.Tags.of(this.ssmParameterStoreAuroraWriterEndPoint).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-aurora-writer-endpoint`,
-        );
-        cdk.Tags.of(this.ssmParameterStoreAuroraWriterEndPoint).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(this.ssmParameterStoreAuroraWriterEndPoint).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // AWS SSM Parameter Store for Aurora Reader Endpoint Configuration
-        // ------------------------------------------------------------
-        this.ssmParameterStoreAuroraReaderEndPoint = new ssm.StringParameter(
-            this,
+        this.ssmParameterStoreAuroraReaderEndPoint = createParameter(
             "ssmParameterStoreAuroraReaderEndPoint",
-            {
-                parameterName: `/${commonProps.projectName}/${envProps.envName}/aurora-reader-endpoint`,
-                description: `The parameter for ${commonProps.projectName}-${envProps.envName} aurora reader endpoint`,
-                stringValue: "PleaseChangeMe",
-            },
+            "aurora-reader-endpoint",
+            "aurora reader endpoint",
         );
 
-        cdk.Tags.of(this.ssmParameterStoreAuroraReaderEndPoint).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-aurora-reader-endpoint`,
-        );
-        cdk.Tags.of(this.ssmParameterStoreAuroraReaderEndPoint).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(this.ssmParameterStoreAuroraReaderEndPoint).add(
-            "ProjectCode",
-            "1234567890",
+        this.ssmParameterStoreElastiCacheWriterEndPoint = createParameter(
+            "ssmParameterStoreElastiCacheWriterEndPoint",
+            "elasticache-writer-endpoint",
+            "elasticache writer endpoint",
         );
 
-        // ------------------------------------------------------------
-        // AWS SSM Parameter Store for ElastiCache Writer Endpoint Configuration
-        // ------------------------------------------------------------
-        this.ssmParameterStoreElastiCacheWriterEndPoint =
-            new ssm.StringParameter(
-                this,
-                "ssmParameterStoreElastiCacheWriterEndPoint",
-                {
-                    parameterName: `/${commonProps.projectName}/${envProps.envName}/elasticache-writer-endpoint`,
-                    description: `The parameter for ${commonProps.projectName}-${envProps.envName} elasticache writer endpoint`,
-                    stringValue: "PleaseChangeMe",
-                },
-            );
-
-        cdk.Tags.of(this.ssmParameterStoreElastiCacheWriterEndPoint).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-elasticache-writer-endpoint`,
-        );
-        cdk.Tags.of(this.ssmParameterStoreElastiCacheWriterEndPoint).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(this.ssmParameterStoreElastiCacheWriterEndPoint).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // AWS SSM Parameter Store for ElastiCache Reader Endpoint Configuration
-        // ------------------------------------------------------------
-        this.ssmParameterStoreElastiCacheReaderEndPoint =
-            new ssm.StringParameter(
-                this,
-                "ssmParameterStoreElastiCacheReaderEndPoint",
-                {
-                    parameterName: `/${commonProps.projectName}/${envProps.envName}/elasticache-reader-endpoint`,
-                    description: `The parameter for ${commonProps.projectName}-${envProps.envName} elasticache reader endpoint`,
-                    stringValue: "PleaseChangeMe",
-                },
-            );
-
-        cdk.Tags.of(this.ssmParameterStoreElastiCacheReaderEndPoint).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-elasticache-reader-endpoint`,
-        );
-        cdk.Tags.of(this.ssmParameterStoreElastiCacheReaderEndPoint).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(this.ssmParameterStoreElastiCacheReaderEndPoint).add(
-            "ProjectCode",
-            "1234567890",
+        this.ssmParameterStoreElastiCacheReaderEndPoint = createParameter(
+            "ssmParameterStoreElastiCacheReaderEndPoint",
+            "elasticache-reader-endpoint",
+            "elasticache reader endpoint",
         );
     }
 }
