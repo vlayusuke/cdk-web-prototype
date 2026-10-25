@@ -1,7 +1,6 @@
 import type { aws_kms as kms } from "aws-cdk-lib";
 import * as cdk from "aws-cdk-lib";
 import { aws_ec2 as ec2, aws_s3 as s3 } from "aws-cdk-lib";
-import { IpAddresses } from "aws-cdk-lib/aws-ec2";
 import { Construct } from "constructs";
 
 export interface CommonProps {
@@ -35,83 +34,116 @@ export class CfNetworkStack extends Construct {
     ) {
         super(scope, id);
 
+        const prefix = `${commonProps.projectName}-${envProps.envName}`;
+
+        const tagAll = (target: Construct, name: string) => {
+            cdk.Tags.of(target).add("Name", name);
+            cdk.Tags.of(target).add("ProvisionedBy", "AWS");
+            cdk.Tags.of(target).add("ProjectCode", "1234567890");
+        };
+
         // ------------------------------------------------------------
         // Amazon VPC Configuration
+        // L1 resources live under the "Vpc" wrapper scope using the same ids as
+        // the former L2 ec2.Vpc, so that logical IDs are preserved.
         // ------------------------------------------------------------
-        const Vpc = new ec2.Vpc(this, "Vpc", {
-            ipAddresses: IpAddresses.cidr(envProps.vpcCidr),
-            availabilityZones: envProps.availabilityZones,
-            natGateways: 2,
+        const vpcScope = new Construct(this, "Vpc");
 
-            subnetConfiguration: [
-                {
-                    cidrMask: 24,
-                    name: "PublicSubnet",
-                    subnetType: ec2.SubnetType.PUBLIC,
-                },
-                {
-                    cidrMask: 24,
-                    name: "PrivateSubnet",
-                    subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-                },
-                {
-                    cidrMask: 24,
-                    name: "ProtectedSubnet",
-                    subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-                },
-            ],
+        const cfnVpc = new ec2.CfnVPC(vpcScope, "Resource", {
+            cidrBlock: envProps.vpcCidr,
+            enableDnsHostnames: true,
+            enableDnsSupport: true,
+            instanceTenancy: "default",
         });
 
-        this.Vpc = Vpc;
+        tagAll(cfnVpc, `${prefix}-vpc`);
 
-        cdk.Tags.of(Vpc).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-vpc`,
-        );
-        cdk.Tags.of(Vpc).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(Vpc).add("ProjectCode", "1234567890");
+        // Six /24 subnets, in the order: public x2, private x2, isolated x2.
+        const subnetCidrs = cdk.Fn.cidr(envProps.vpcCidr, 6, "8");
 
-        for (const [index, subnet] of Vpc.publicSubnets.entries()) {
-            const zoneSuffix = envProps.availabilityZones[index].slice(-1);
-            const routeTable = subnet.node.findChild(
-                "RouteTable",
-            ) as ec2.CfnRouteTable;
+        const subnetGroups = [
+            { name: "PublicSubnet", short: "pubsub", isPublic: true },
+            { name: "PrivateSubnet", short: "prvsub", isPublic: false },
+            { name: "ProtectedSubnet", short: "protsub", isPublic: false },
+        ];
 
-            cdk.Tags.of(routeTable).add(
-                "Name",
-                `${commonProps.projectName}-${envProps.envName}-pubsub-route-table-az-${zoneSuffix}`,
-            );
-            cdk.Tags.of(routeTable).add("ProvisionedBy", "AWS");
-            cdk.Tags.of(routeTable).add("ProjectCode", "1234567890");
+        const publicSubnetIds: string[] = [];
+        const publicRouteTableIds: string[] = [];
+        const privateSubnetIds: string[] = [];
+        const privateRouteTableIds: string[] = [];
+        const isolatedSubnetIds: string[] = [];
+        const isolatedRouteTableIds: string[] = [];
+
+        const subnetIdsByGroup = [
+            publicSubnetIds,
+            privateSubnetIds,
+            isolatedSubnetIds,
+        ];
+
+        const routeTableIdsByGroup = [
+            publicRouteTableIds,
+            privateRouteTableIds,
+            isolatedRouteTableIds,
+        ];
+
+        for (const [groupIndex, group] of subnetGroups.entries()) {
+            for (const [azIndex, az] of envProps.availabilityZones.entries()) {
+                const zoneSuffix = az.slice(-1);
+
+                const subnetScope = new Construct(
+                    vpcScope,
+                    `${group.name}Subnet${azIndex + 1}`,
+                );
+
+                const subnet = new ec2.CfnSubnet(subnetScope, "Subnet", {
+                    vpcId: cfnVpc.ref,
+                    cidrBlock: cdk.Fn.select(
+                        groupIndex * 2 + azIndex,
+                        subnetCidrs,
+                    ),
+                    availabilityZone: az,
+                    mapPublicIpOnLaunch: group.isPublic,
+                });
+
+                tagAll(subnet, `${prefix}-${group.short}-az-${zoneSuffix}`);
+
+                const routeTable = new ec2.CfnRouteTable(
+                    subnetScope,
+                    "RouteTable",
+                    { vpcId: cfnVpc.ref },
+                );
+
+                tagAll(
+                    routeTable,
+                    `${prefix}-${group.short}-route-table-az-${zoneSuffix}`,
+                );
+
+                new ec2.CfnSubnetRouteTableAssociation(
+                    subnetScope,
+                    "RouteTableAssociation",
+                    {
+                        subnetId: subnet.ref,
+                        routeTableId: routeTable.ref,
+                    },
+                );
+
+                subnetIdsByGroup[groupIndex].push(subnet.ref);
+                routeTableIdsByGroup[groupIndex].push(routeTable.ref);
+            }
         }
 
-        for (const [index, subnet] of Vpc.privateSubnets.entries()) {
-            const zoneSuffix = envProps.availabilityZones[index].slice(-1);
-            const routeTable = subnet.node.findChild(
-                "RouteTable",
-            ) as ec2.CfnRouteTable;
-
-            cdk.Tags.of(routeTable).add(
-                "Name",
-                `${commonProps.projectName}-${envProps.envName}-prvsub-route-table-az-${zoneSuffix}`,
-            );
-            cdk.Tags.of(routeTable).add("ProvisionedBy", "AWS");
-            cdk.Tags.of(routeTable).add("ProjectCode", "1234567890");
-        }
-
-        for (const [index, subnet] of Vpc.isolatedSubnets.entries()) {
-            const zoneSuffix = envProps.availabilityZones[index].slice(-1);
-            const routeTable = subnet.node.findChild(
-                "RouteTable",
-            ) as ec2.CfnRouteTable;
-
-            cdk.Tags.of(routeTable).add(
-                "Name",
-                `${commonProps.projectName}-${envProps.envName}-protsub-route-table-az-${zoneSuffix}`,
-            );
-            cdk.Tags.of(routeTable).add("ProvisionedBy", "AWS");
-            cdk.Tags.of(routeTable).add("ProjectCode", "1234567890");
-        }
+        // L2 view of the VPC for the stacks that consume ec2.IVpc.
+        const Vpc = ec2.Vpc.fromVpcAttributes(this, "VpcImport", {
+            vpcId: cfnVpc.ref,
+            vpcCidrBlock: envProps.vpcCidr,
+            availabilityZones: envProps.availabilityZones,
+            publicSubnetIds,
+            publicSubnetRouteTableIds: publicRouteTableIds,
+            privateSubnetIds,
+            privateSubnetRouteTableIds: privateRouteTableIds,
+            isolatedSubnetIds,
+            isolatedSubnetRouteTableIds: isolatedRouteTableIds,
+        });
 
         // ------------------------------------------------------------
         // Internet Gateway Configuration
@@ -121,17 +153,17 @@ export class CfNetworkStack extends Construct {
             "InternetGateway",
             {},
         );
-        new ec2.CfnVPCGatewayAttachment(this, "VpcGatewayAttachment", {
-            vpcId: Vpc.vpcId,
-            internetGatewayId: internetGateway.ref,
-        });
 
-        cdk.Tags.of(internetGateway).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-igw`,
+        const igwAttachment = new ec2.CfnVPCGatewayAttachment(
+            this,
+            "VpcGatewayAttachment",
+            {
+                vpcId: cfnVpc.ref,
+                internetGatewayId: internetGateway.ref,
+            },
         );
-        cdk.Tags.of(internetGateway).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(internetGateway).add("ProjectCode", "1234567890");
+
+        tagAll(internetGateway, `${prefix}-igw`);
 
         // ------------------------------------------------------------
         // Virtual Private Gateway Configuration
@@ -145,27 +177,23 @@ export class CfNetworkStack extends Construct {
         );
 
         new ec2.CfnVPCGatewayAttachment(this, "VpcVpnGatewayAttachment", {
-            vpcId: Vpc.vpcId,
+            vpcId: cfnVpc.ref,
             vpnGatewayId: virtualPrivateGateway.ref,
         });
 
-        cdk.Tags.of(virtualPrivateGateway).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-vgw`,
-        );
-        cdk.Tags.of(virtualPrivateGateway).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(virtualPrivateGateway).add("ProjectCode", "1234567890");
+        tagAll(virtualPrivateGateway, `${prefix}-vgw`);
 
         // ------------------------------------------------------------
         // NAT Gateway Configuration
         // ------------------------------------------------------------
-        const natGateways = Vpc.publicSubnets.map((subnet, index) => {
+        const natGateways = publicSubnetIds.map((subnetId, index) => {
             const zoneSuffix = envProps.availabilityZones[index].slice(-1);
+
             const natGateway = new ec2.CfnNatGateway(
                 this,
                 `NatGatewayAZ${zoneSuffix}`,
                 {
-                    subnetId: subnet.subnetId,
+                    subnetId,
                     allocationId: new ec2.CfnEIP(
                         this,
                         `NatEIPAZ${zoneSuffix}`,
@@ -174,35 +202,36 @@ export class CfNetworkStack extends Construct {
                 },
             );
 
-            cdk.Tags.of(natGateway).add(
-                "Name",
-                `${commonProps.projectName}-${envProps.envName}-nat-gateway-az-${zoneSuffix}`,
-            );
-            cdk.Tags.of(natGateway).add("ProvisionedBy", "AWS");
-            cdk.Tags.of(natGateway).add("ProjectCode", "1234567890");
-
+            tagAll(natGateway, `${prefix}-nat-gateway-az-${zoneSuffix}`);
             return natGateway;
         });
 
         // ------------------------------------------------------------
         // Public Subnet Route Configuration
         // ------------------------------------------------------------
-        for (const [index, subnet] of Vpc.publicSubnets.entries()) {
+        for (const [index, routeTableId] of publicRouteTableIds.entries()) {
             const zoneSuffix = envProps.availabilityZones[index].slice(-1);
-            new ec2.CfnRoute(this, `PublicRouteAZ${zoneSuffix}`, {
-                routeTableId: subnet.routeTable.routeTableId,
+
+            const route = new ec2.CfnRoute(this, `PublicRouteAZ${zoneSuffix}`, {
+                routeTableId,
                 destinationCidrBlock: envProps.defaultGatewayCidr,
                 gatewayId: internetGateway.ref,
             });
+
+            route.addResourceDependency(
+                igwAttachment,
+                "The route needs the internet gateway to be attached first",
+            );
         }
 
         // ------------------------------------------------------------
         // Private Subnet Route Configuration
         // ------------------------------------------------------------
-        for (const [index, subnet] of Vpc.privateSubnets.entries()) {
+        for (const [index, routeTableId] of privateRouteTableIds.entries()) {
             const zoneSuffix = envProps.availabilityZones[index].slice(-1);
+
             new ec2.CfnRoute(this, `PrivateRouteAZ${zoneSuffix}`, {
-                routeTableId: subnet.routeTable.routeTableId,
+                routeTableId,
                 destinationCidrBlock: envProps.defaultGatewayCidr,
                 natGatewayId: natGateways[index].ref,
             });
@@ -228,7 +257,10 @@ export class CfNetworkStack extends Construct {
         cdk.Tags.of(s3VPCFlowLogsBucket).add("ProvisionedBy", "AWS");
         cdk.Tags.of(s3VPCFlowLogsBucket).add("ProjectCode", "1234567890");
 
-        Vpc.addFlowLog("FlowLogs", {
+        // L2 is kept for the flow log: it also grants the log delivery service
+        // access to the KMS-encrypted bucket.
+        const vpcFlowLog = new ec2.FlowLog(vpcScope, "FlowLogs", {
+            resourceType: ec2.FlowLogResourceType.fromVpc(Vpc),
             destination: ec2.FlowLogDestination.toS3(
                 s3VPCFlowLogsBucket,
                 undefined,
@@ -242,14 +274,7 @@ export class CfNetworkStack extends Construct {
                 ec2.FlowLogMaxAggregationInterval.TEN_MINUTES,
         });
 
-        const cfnVPVFlowLog = Vpc.node.findChild("FlowLogs") as ec2.CfnFlowLog;
-
-        cdk.Tags.of(cfnVPVFlowLog).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-vpc-flow-log`,
-        );
-        cdk.Tags.of(cfnVPVFlowLog).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(cfnVPVFlowLog).add("ProjectCode", "1234567890");
+        tagAll(vpcFlowLog, `${prefix}-vpc-flow-log`);
 
         this.Vpc = Vpc;
     }
