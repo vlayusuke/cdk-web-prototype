@@ -37,24 +37,64 @@ export class CfSecurityServiceStack extends Construct {
         // Amazon S3 for AWS WAFv2 Logs Configuration
         // ------------------------------------------------------------
         // WAF requires the S3 logging destination bucket name to start with 'aws-waf-logs-'.
-        const s3WAFv2LogsBucket = new s3.Bucket(this, "s3WAFv2LogsBucket", {
-            bucketName: `aws-waf-logs-${commonProps.projectName}-${envProps.envName}-s3-wafv2logs`,
-            versioned: true,
-            accessControl: s3.BucketAccessControl.PRIVATE,
-            encryptionKey: kmsProps.s3Key,
-            encryption: s3.BucketEncryption.KMS,
-            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-            removalPolicy: cdk.RemovalPolicy.RETAIN,
-            enforceSSL: true,
-            blockedEncryptionTypes: [s3.BlockedEncryptionType.SSE_C],
+        // Wrapper scope keeps the construct paths (and logical IDs) of the former L2 bucket.
+        const s3WAFv2LogsBucketScope = new Construct(this, "s3WAFv2LogsBucket");
+        const s3WAFv2LogsBucketName = `aws-waf-logs-${commonProps.projectName}-${envProps.envName}-s3-wafv2logs`;
+
+        const s3WAFv2LogsBucket = new s3.CfnBucket(
+            s3WAFv2LogsBucketScope,
+            "Resource",
+            {
+                bucketName: s3WAFv2LogsBucketName,
+                accessControl: "Private",
+                versioningConfiguration: { status: "Enabled" },
+                bucketEncryption: {
+                    serverSideEncryptionConfiguration: [
+                        {
+                            serverSideEncryptionByDefault: {
+                                sseAlgorithm: "aws:kms",
+                                kmsMasterKeyId: kmsProps.s3Key.keyArn,
+                            },
+                            blockedEncryptionTypes: {
+                                encryptionType: ["SSE-C"],
+                            },
+                        },
+                    ],
+                },
+                publicAccessBlockConfiguration: {
+                    blockPublicAcls: true,
+                    blockPublicPolicy: true,
+                    ignorePublicAcls: true,
+                    restrictPublicBuckets: true,
+                },
+            },
+        );
+
+        s3WAFv2LogsBucket.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
+
+        // enforceSSL equivalent: deny any request that does not use TLS.
+        new s3.CfnBucketPolicy(s3WAFv2LogsBucketScope, "Policy", {
+            bucket: s3WAFv2LogsBucket.ref,
+            policyDocument: {
+                Version: "2012-10-17",
+                Statement: [
+                    {
+                        Effect: "Deny",
+                        Principal: { AWS: "*" },
+                        Action: "s3:*",
+                        Resource: [
+                            s3WAFv2LogsBucket.attrArn,
+                            `${s3WAFv2LogsBucket.attrArn}/*`,
+                        ],
+                        Condition: { Bool: { "aws:SecureTransport": "false" } },
+                    },
+                ],
+            },
         });
 
-        cdk.Tags.of(s3WAFv2LogsBucket).add(
-            "Name",
-            `aws-waf-logs-${commonProps.projectName}-${envProps.envName}-s3-wafv2logs`,
-        );
-        cdk.Tags.of(s3WAFv2LogsBucket).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(s3WAFv2LogsBucket).add("ProjectCode", "1234567890");
+        cdk.Tags.of(s3WAFv2LogsBucketScope).add("Name", s3WAFv2LogsBucketName);
+        cdk.Tags.of(s3WAFv2LogsBucketScope).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(s3WAFv2LogsBucketScope).add("ProjectCode", "1234567890");
 
         // Allow WAF log delivery to use the customer-managed KMS key encrypting the bucket.
         kmsProps.s3Key.addToResourcePolicy(
@@ -205,7 +245,7 @@ export class CfSecurityServiceStack extends Construct {
             "wafv2LoggingConfiguration",
             {
                 resourceArn: this.wafv2WebACL.attrArn,
-                logDestinationConfigs: [s3WAFv2LogsBucket.bucketArn],
+                logDestinationConfigs: [s3WAFv2LogsBucket.attrArn],
             },
         );
     }
