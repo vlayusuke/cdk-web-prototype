@@ -40,7 +40,7 @@ export interface DatabaseProps {
 // [07] - Compute WebAP Stack
 // ------------------------------------------------------------
 export class CfComputeWebAPStack extends Construct {
-    public readonly ecsCluster: ecs.Cluster;
+    public readonly ecsCluster: ecs.CfnCluster;
 
     constructor(
         scope: Construct,
@@ -54,205 +54,184 @@ export class CfComputeWebAPStack extends Construct {
     ) {
         super(scope, id);
 
+        const prefix = `${commonProps.projectName}-${envProps.envName}`;
+        const stack = cdk.Stack.of(this);
+
+        // L1 resources live under a wrapper scope with the id "Resource" so that
+        // construct paths (and logical IDs) match the former L2 constructs.
+        const wrap = (wrapperId: string, name: string): Construct => {
+            const wrapper = new Construct(this, wrapperId);
+            cdk.Tags.of(wrapper).add("Name", name);
+            cdk.Tags.of(wrapper).add("ProvisionedBy", "AWS");
+            cdk.Tags.of(wrapper).add("ProjectCode", "1234567890");
+            return wrapper;
+        };
+
         // ------------------------------------------------------------
         // AWS IAM EC2 Instance Profile for Bastion Configuration
         // ------------------------------------------------------------
-        const ec2IamRoleForBastion = new iam.Role(
-            this,
-            "ec2IamRoleForBastion",
+        const ec2IamRoleForBastion = new iam.CfnRole(
+            wrap("ec2IamRoleForBastion", `${prefix}-iam-role-for-bastion`),
+            "Resource",
             {
                 roleName: "ec2IamRoleForBastion",
                 description: "IAM EC2 instance profile for Bastion",
-                assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
-            },
-        );
-
-        cdk.Tags.of(ec2IamRoleForBastion).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-role-for-bastion`,
-        );
-        cdk.Tags.of(ec2IamRoleForBastion).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ec2IamRoleForBastion).add("ProjectCode", "1234567890");
-
-        const ec2IamPolicyForBastion = new iam.Policy(
-            this,
-            "ec2IamPolicyForBastion",
-            {
-                statements: [
-                    new iam.PolicyStatement({
-                        sid: "SSMAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: ["ssm:StartSession", "ssm:SendCommand"],
-                        resources: [
-                            `arn:aws:ssm:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:document/AWS-StartSession`,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "S3Access",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "s3:ListBucket",
-                            "s3:GetObject",
-                            "s3:PutObject",
-                            "s3:DeleteObject",
-                        ],
-                        resources: [
-                            s3Props.s3BucketEc2Logs.bucketArn,
-                            `${s3Props.s3BucketEc2Logs.bucketArn}/*`,
-                        ],
-                    }),
-                    new iam.PolicyStatement({
-                        sid: "AuroraAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "rds:DescribeDBClusters",
-                            "rds:DescribeDBInstances",
-                            "rds:Connect",
-                        ],
-                        resources: [
-                            databaseProps.auroraClusterArn,
-                            databaseProps.auroraWriterInstanceArn,
-                            databaseProps.auroraReaderInstanceArn,
-                        ],
-                    }),
+                assumeRolePolicyDocument: {
+                    Version: "2012-10-17",
+                    Statement: [
+                        {
+                            Effect: "Allow",
+                            Principal: { Service: "ec2.amazonaws.com" },
+                            Action: "sts:AssumeRole",
+                        },
+                    ],
+                },
+                managedPolicyArns: [
+                    `arn:${stack.partition}:iam::aws:policy/AmazonSSMManagedInstanceCore`,
                 ],
             },
         );
 
-        cdk.Tags.of(ec2IamPolicyForBastion).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-policy-for-bastion`,
-        );
-        cdk.Tags.of(ec2IamPolicyForBastion).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ec2IamPolicyForBastion).add("ProjectCode", "1234567890");
-
-        ec2IamPolicyForBastion.attachToRole(ec2IamRoleForBastion);
-
-        ec2IamRoleForBastion.addManagedPolicy(
-            iam.ManagedPolicy.fromAwsManagedPolicyName(
-                "AmazonSSMManagedInstanceCore",
-            ),
-        );
-
-        const ec2IamInstanceProfileForBastion = new iam.InstanceProfile(
-            this,
-            "ec2IamInstanceProfileForBastion",
+        new iam.CfnPolicy(
+            wrap("ec2IamPolicyForBastion", `${prefix}-iam-policy-for-bastion`),
+            "Resource",
             {
-                instanceProfileName: "ec2IamInstanceProfileForBastion",
-                role: ec2IamRoleForBastion,
+                policyName: `${prefix}-iam-policy-for-bastion`,
+                roles: [ec2IamRoleForBastion.ref],
+                policyDocument: {
+                    Version: "2012-10-17",
+                    Statement: [
+                        {
+                            Sid: "SSMAccess",
+                            Effect: "Allow",
+                            Action: ["ssm:StartSession", "ssm:SendCommand"],
+                            Resource: [
+                                `arn:aws:ssm:${stack.region}:${stack.account}:document/AWS-StartSession`,
+                            ],
+                        },
+                        {
+                            Sid: "S3Access",
+                            Effect: "Allow",
+                            Action: [
+                                "s3:ListBucket",
+                                "s3:GetObject",
+                                "s3:PutObject",
+                                "s3:DeleteObject",
+                            ],
+                            Resource: [
+                                s3Props.s3BucketEc2Logs.bucketArn,
+                                `${s3Props.s3BucketEc2Logs.bucketArn}/*`,
+                            ],
+                        },
+                        {
+                            Sid: "AuroraAccess",
+                            Effect: "Allow",
+                            Action: [
+                                "rds:DescribeDBClusters",
+                                "rds:DescribeDBInstances",
+                                "rds:Connect",
+                            ],
+                            Resource: [
+                                databaseProps.auroraClusterArn,
+                                databaseProps.auroraWriterInstanceArn,
+                                databaseProps.auroraReaderInstanceArn,
+                            ],
+                        },
+                    ],
+                },
             },
         );
 
-        cdk.Tags.of(ec2IamInstanceProfileForBastion).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-iam-instance-profile-for-bastion`,
-        );
-        cdk.Tags.of(ec2IamInstanceProfileForBastion).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(ec2IamInstanceProfileForBastion).add(
-            "ProjectCode",
-            "1234567890",
+        const ec2IamInstanceProfileForBastion = new iam.CfnInstanceProfile(
+            wrap(
+                "ec2IamInstanceProfileForBastion",
+                `${prefix}-iam-instance-profile-for-bastion`,
+            ),
+            "Resource",
+            {
+                instanceProfileName: "ec2IamInstanceProfileForBastion",
+                roles: [ec2IamRoleForBastion.ref],
+            },
         );
 
         // ------------------------------------------------------------
         // Amazon ECS Cluster Configuration
         // ------------------------------------------------------------
-        this.ecsCluster = new ecs.Cluster(this, "ecsCluster", {
-            clusterName: `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
-            containerInsightsV2: ecs.ContainerInsights.ENABLED,
-            // Registers FARGATE and FARGATE_SPOT as capacity providers on the cluster.
-            enableFargateCapacityProviders: true,
+        const ecsClusterScope = wrap("ecsCluster", `${prefix}-ecs-cluster`);
+        this.ecsCluster = new ecs.CfnCluster(ecsClusterScope, "Resource", {
+            clusterName: `${prefix}-ecs-cluster`,
+            clusterSettings: [{ name: "containerInsights", value: "enabled" }],
         });
 
-        this.ecsCluster.addDefaultCapacityProviderStrategy([
-            { capacityProvider: "FARGATE", base: 1, weight: 1 },
-            { capacityProvider: "FARGATE_SPOT", base: 0, weight: 1 },
-        ]);
-
-        cdk.Tags.of(this.ecsCluster).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-ecs-cluster`,
-        );
-        cdk.Tags.of(this.ecsCluster).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.ecsCluster).add("ProjectCode", "1234567890");
-
-        // ------------------------------------------------------------
-        // Amazon EC2 Bastion Key Pair Configuration
-        // ------------------------------------------------------------
-        const bastionKeyPair = new ec2.KeyPair(this, "bastionKeyPair", {
-            keyPairName: `${commonProps.projectName}-${envProps.envName}-bastion-key-pair`,
-            type: ec2.KeyPairType.ED25519,
-            format: ec2.KeyPairFormat.PEM,
-        });
-
-        cdk.Tags.of(bastionKeyPair).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-bastion-key-pair`,
-        );
-        cdk.Tags.of(bastionKeyPair).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(bastionKeyPair).add("ProjectCode", "1234567890");
-
-        // ------------------------------------------------------------
-        // Amazon EC2 Bastion Configuration
-        // ------------------------------------------------------------
-        const ec2InstanceBastion = new ec2.Instance(
-            this,
-            "ec2InstanceBastion",
+        new ecs.CfnClusterCapacityProviderAssociations(
+            ecsClusterScope,
+            "CapacityProviderAssociations",
             {
-                instanceName: `${commonProps.projectName}-${envProps.envName}-ec2-instance-bastion`,
-                instanceType: new ec2.InstanceType("t4g.small"),
-                machineImage: ec2.MachineImage.latestAmazonLinux2023({
-                    cpuType: ec2.AmazonLinuxCpuType.ARM_64,
-                }),
-                vpc: ec2.Vpc.fromVpcAttributes(this, "vpc", {
-                    vpcId: networkingProps.vpcId,
-                    availabilityZones: [networkingProps.availabilityZones[0]],
-                    publicSubnetIds: [networkingProps.publicSubnetIds[0]],
-                    publicSubnetRouteTableIds: [
-                        networkingProps.publicSubnetRouteTableIds[0],
-                    ],
-                }),
-                securityGroup: sgProps.bastionSecurityGroup,
-                instanceProfile: ec2IamInstanceProfileForBastion,
-                disableApiTermination: true,
-                detailedMonitoring: true,
-                allowAllIpv6Outbound: false,
-                // Instance tags are propagated to every EBS block device volume.
-                propagateTagsToVolumeOnCreation: true,
-                ssmSessionPermissions: true,
-                keyPair: bastionKeyPair,
-                creditSpecification: ec2.CpuCredits.STANDARD,
-                blockDevices: [
-                    {
-                        mappingEnabled: true,
-                        deviceName: "/dev/xvda",
-                        volume: ec2.BlockDeviceVolume.ebs(8, {
-                            volumeType: ec2.EbsDeviceVolumeType.GP3,
-                            encrypted: true,
-                            deleteOnTermination: false,
-                        }),
-                    },
-                    {
-                        mappingEnabled: true,
-                        deviceName: "/dev/xvdb",
-                        volume: ec2.BlockDeviceVolume.ebs(64, {
-                            volumeType: ec2.EbsDeviceVolumeType.GP3,
-                            encrypted: true,
-                            deleteOnTermination: true,
-                        }),
-                    },
+                cluster: this.ecsCluster.ref,
+                capacityProviders: ["FARGATE", "FARGATE_SPOT"],
+                defaultCapacityProviderStrategy: [
+                    { capacityProvider: "FARGATE", base: 1, weight: 1 },
+                    { capacityProvider: "FARGATE_SPOT", base: 0, weight: 1 },
                 ],
             },
         );
 
-        cdk.Tags.of(ec2InstanceBastion).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-ec2-instance-bastion`,
+        // ------------------------------------------------------------
+        // Amazon EC2 Bastion Key Pair Configuration
+        // ------------------------------------------------------------
+        const bastionKeyPair = new ec2.CfnKeyPair(
+            wrap("bastionKeyPair", `${prefix}-bastion-key-pair`),
+            "Resource",
+            {
+                keyName: `${prefix}-bastion-key-pair`,
+                keyType: "ed25519",
+                keyFormat: "pem",
+            },
         );
-        cdk.Tags.of(ec2InstanceBastion).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(ec2InstanceBastion).add("ProjectCode", "1234567890");
+
+        // ------------------------------------------------------------
+        // Amazon EC2 Bastion Configuration
+        // ------------------------------------------------------------
+        const ec2InstanceBastion = new ec2.CfnInstance(
+            wrap("ec2InstanceBastion", `${prefix}-ec2-instance-bastion`),
+            "Resource",
+            {
+                imageId:
+                    "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64}}",
+                instanceType: "t4g.small",
+                subnetId: networkingProps.publicSubnetIds[0],
+                securityGroupIds: [
+                    sgProps.bastionSecurityGroup.securityGroupId,
+                ],
+                iamInstanceProfile: ec2IamInstanceProfileForBastion.ref,
+                keyName: bastionKeyPair.ref,
+                disableApiTermination: true,
+                monitoring: true,
+                // Instance tags are propagated to every EBS block device volume.
+                propagateTagsToVolumeOnCreation: true,
+                creditSpecification: { cpuCredits: "standard" },
+                blockDeviceMappings: [
+                    {
+                        deviceName: "/dev/xvda",
+                        ebs: {
+                            volumeType: "gp3",
+                            volumeSize: 8,
+                            encrypted: true,
+                            deleteOnTermination: false,
+                        },
+                    },
+                    {
+                        deviceName: "/dev/xvdb",
+                        ebs: {
+                            volumeType: "gp3",
+                            volumeSize: 64,
+                            encrypted: true,
+                            deleteOnTermination: true,
+                        },
+                    },
+                ],
+            },
+        );
 
         // ------------------------------------------------------------
         // EIP for Amazon EC2 Bastion Configuration
@@ -261,16 +240,13 @@ export class CfComputeWebAPStack extends Construct {
             domain: "vpc",
         });
 
-        cdk.Tags.of(bastionEip).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-bastion-eip`,
-        );
+        cdk.Tags.of(bastionEip).add("Name", `${prefix}-bastion-eip`);
         cdk.Tags.of(bastionEip).add("ProvisionedBy", "AWS");
         cdk.Tags.of(bastionEip).add("ProjectCode", "1234567890");
 
         new ec2.CfnEIPAssociation(this, "bastionEipAssociation", {
             allocationId: bastionEip.attrAllocationId,
-            instanceId: ec2InstanceBastion.instanceId,
+            instanceId: ec2InstanceBastion.ref,
         });
     }
 }
