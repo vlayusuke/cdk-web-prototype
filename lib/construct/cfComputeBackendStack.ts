@@ -21,7 +21,7 @@ export interface NetworkingProps {
 }
 
 export interface SgProps {
-    batchSecurityGroup: ec2.SecurityGroup;
+    batchSecurityGroup: ec2.ISecurityGroup;
 }
 
 export interface DatabaseProps {
