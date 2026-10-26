@@ -25,11 +25,11 @@ export interface NetworkProps {
 }
 
 export interface SgProps {
-    vpcEndPointS3SecurityGroup: ec2.SecurityGroup;
-    vpcEndPointECRSecurityGroup: ec2.SecurityGroup;
-    vpcEndPointSSMSecurityGroup: ec2.SecurityGroup;
-    vpcEndPointKMSSecurityGroup: ec2.SecurityGroup;
-    vpcEndPointCloudWatchLogsSecurityGroup: ec2.SecurityGroup;
+    vpcEndPointS3SecurityGroup: ec2.ISecurityGroup;
+    vpcEndPointECRSecurityGroup: ec2.ISecurityGroup;
+    vpcEndPointSSMSecurityGroup: ec2.ISecurityGroup;
+    vpcEndPointKMSSecurityGroup: ec2.ISecurityGroup;
+    vpcEndPointCloudWatchLogsSecurityGroup: ec2.ISecurityGroup;
 }
 
 export interface KmsProps {
