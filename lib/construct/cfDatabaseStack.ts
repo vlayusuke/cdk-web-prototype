@@ -30,8 +30,8 @@ export interface NetworkingProps {
 }
 
 export interface SgProps {
-    auroraSecurityGroup: ec2.SecurityGroup;
-    elasticacheSecurityGroup: ec2.SecurityGroup;
+    auroraSecurityGroup: ec2.ISecurityGroup;
+    elasticacheSecurityGroup: ec2.ISecurityGroup;
 }
 
 // ------------------------------------------------------------
