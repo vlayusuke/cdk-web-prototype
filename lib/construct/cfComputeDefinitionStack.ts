@@ -66,7 +66,7 @@ export interface NetworkingProps {
 }
 
 export interface SgProps {
-    ecsSecurityGroup: ec2.SecurityGroup;
+    ecsSecurityGroup: ec2.ISecurityGroup;
 }
 
 export interface EcrProps {
