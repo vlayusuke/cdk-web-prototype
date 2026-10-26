@@ -23,7 +23,7 @@ export interface NetworkingProps {
 }
 
 export interface SgProps {
-    bastionSecurityGroup: ec2.SecurityGroup;
+    bastionSecurityGroup: ec2.ISecurityGroup;
 }
 
 export interface S3Props {
