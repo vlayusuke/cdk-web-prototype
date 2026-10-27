@@ -15,12 +15,14 @@ cdk init --language typescript
 コマンドを実行してプロジェクトの構築を行なっています。また、
 
 ```bash
+npx jest
+
 npx tsc --noEmit
 
-cdk synth
+npx cdk synth
 ```
 
-コマンドを実行して、 `.ts` ファイルの型チェックと、AWS CloudFormationスタックテンプレートの出力確認が正常に実行されることを確認しています。
+コマンドを実行して、 `.ts` ファイルの型チェックと単体テスト、及びAWS CloudFormationスタックテンプレートの出力確認まで、正常に実行されることを確認しています。
 
 環境固有値は、ルート直下の `cdk.context.json` の `prd` 、 `stg` 及び `dev` contextに設定してください。このファイルは `.gitignore` 対象です。初回checkout後、[`cdk.context.example.json`](./cdk.context.example.json) を参考に両方の環境を設定してください。共通パラメータと環境別の既定値は `config/commonParameter.ts`、`config/prdParameter.ts`、`config/stgParameter.ts`、`config/devParameter.ts` にあります。
 
@@ -109,17 +111,17 @@ cdk context --clear
 
 | Framework   | Version    |
 | :---------- | ---------: |
-| AWS CDK     |  v2.1139.0 |
-| Node.js     |   v24.20.0 |
-| npm         |    v12.0.2 |
-| Boto3       |   v1.43.97 |
+| AWS CDK     | v2.1139.0  |
+| Node.js     |  v24.20.0  |
+| npm         |   v12.0.2  |
+| Boto3       |  v1.43.97  |
 
 ### 開発言語
 
 | Language    | Version    |
 | :---------- | ---------: |
-| TypeScript  |     v7.0.2 |
-| Python      |    v3.14.8 |
+| TypeScript  |    v7.0.2  |
+| Python      |   v3.14.8  |
 
 ## リリース履歴
 
