@@ -22,18 +22,18 @@ export interface NetworkProps {
 // ------------------------------------------------------------
 export class CfSgFrameStack extends Construct {
     public readonly vpc: ec2.IVpc;
-    public readonly albSecurityGroupFrame: ec2.SecurityGroup;
-    public readonly batchSecurityGroupFrame: ec2.SecurityGroup;
-    public readonly bastionSecurityGroupFrame: ec2.SecurityGroup;
-    public readonly ecsSecurityGroupFrame: ec2.SecurityGroup;
-    public readonly elasticacheSecurityGroupFrame: ec2.SecurityGroup;
-    public readonly auroraSecurityGroupFrame: ec2.SecurityGroup;
-    public readonly lambdaSecurityGroupFrame: ec2.SecurityGroup;
-    public readonly vpcEndPointS3SecurityGroupFrame: ec2.SecurityGroup;
-    public readonly vpcEndPointECRSecurityGroupFrame: ec2.SecurityGroup;
-    public readonly vpcEndPointSSMSecurityGroupFrame: ec2.SecurityGroup;
-    public readonly vpcEndPointKMSSecurityGroupFrame: ec2.SecurityGroup;
-    public readonly vpcEndPointCloudWatchLogsSecurityGroupFrame: ec2.SecurityGroup;
+    public readonly albSecurityGroupFrame: ec2.ISecurityGroup;
+    public readonly bastionSecurityGroupFrame: ec2.ISecurityGroup;
+    public readonly batchSecurityGroupFrame: ec2.ISecurityGroup;
+    public readonly ecsSecurityGroupFrame: ec2.ISecurityGroup;
+    public readonly auroraSecurityGroupFrame: ec2.ISecurityGroup;
+    public readonly elasticacheSecurityGroupFrame: ec2.ISecurityGroup;
+    public readonly lambdaSecurityGroupFrame: ec2.ISecurityGroup;
+    public readonly vpcEndPointS3SecurityGroupFrame: ec2.ISecurityGroup;
+    public readonly vpcEndPointECRSecurityGroupFrame: ec2.ISecurityGroup;
+    public readonly vpcEndPointSSMSecurityGroupFrame: ec2.ISecurityGroup;
+    public readonly vpcEndPointKMSSecurityGroupFrame: ec2.ISecurityGroup;
+    public readonly vpcEndPointCloudWatchLogsSecurityGroupFrame: ec2.ISecurityGroup;
 
     constructor(
         scope: Construct,
@@ -46,311 +46,117 @@ export class CfSgFrameStack extends Construct {
 
         this.vpc = networkProps.vpc;
 
-        // ------------------------------------------------------------
-        // Security group for ALB Configuration (Frame Only)
-        // ------------------------------------------------------------
-        this.albSecurityGroupFrame = new ec2.SecurityGroup(
-            this,
-            "AlbSecurityGroupFrame",
-            {
-                vpc: this.vpc,
-                description: `Security group for ALB - ${commonProps.projectName}-${envProps.envName}`,
-                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-alb`,
-                allowAllOutbound: false,
-            },
-        );
+        // Frame only: ingress/egress rules are added by CfSgRuleStack.
+        // The L2 default for allowAllOutbound=false is reproduced explicitly.
+        const createSecurityGroup = (
+            logicalId: string,
+            description: string,
+            suffix: string,
+        ): ec2.ISecurityGroup => {
+            const name = `${commonProps.projectName}-${envProps.envName}-sg-${suffix}`;
 
-        cdk.Tags.of(this.albSecurityGroupFrame).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-sg-alb`,
-        );
-        cdk.Tags.of(this.albSecurityGroupFrame).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.albSecurityGroupFrame).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // Security group for Amazon EC2 Bastion (Frame Only)
-        // ------------------------------------------------------------
-        this.bastionSecurityGroupFrame = new ec2.SecurityGroup(
-            this,
-            "BastionSecurityGroupFrame",
-            {
-                vpc: this.vpc,
-                description: `Security group for Amazon EC2 Bastion - ${commonProps.projectName}-${envProps.envName}`,
-                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-bastion`,
-                allowAllOutbound: false,
-            },
-        );
-
-        cdk.Tags.of(this.bastionSecurityGroupFrame).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-sg-bastion`,
-        );
-        cdk.Tags.of(this.bastionSecurityGroupFrame).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.bastionSecurityGroupFrame).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // Security group for Amazon EC2 Batch (Frame Only)
-        // ------------------------------------------------------------
-        this.batchSecurityGroupFrame = new ec2.SecurityGroup(
-            this,
-            "BatchSecurityGroupFrame",
-            {
-                vpc: this.vpc,
-                description: `Security group for Amazon EC2 Batch - ${commonProps.projectName}-${envProps.envName}`,
-                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-batch`,
-                allowAllOutbound: false,
-            },
-        );
-
-        cdk.Tags.of(this.batchSecurityGroupFrame).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-sg-batch`,
-        );
-        cdk.Tags.of(this.batchSecurityGroupFrame).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.batchSecurityGroupFrame).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // Security group for Amazon ECS (Frame Only)
-        // ------------------------------------------------------------
-        this.ecsSecurityGroupFrame = new ec2.SecurityGroup(
-            this,
-            "EcsSecurityGroupFrame",
-            {
-                vpc: this.vpc,
-                description: `Security group for Amazon ECS - ${commonProps.projectName}-${envProps.envName}`,
-                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-ecs`,
-                allowAllOutbound: false,
-            },
-        );
-
-        cdk.Tags.of(this.ecsSecurityGroupFrame).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-sg-ecs`,
-        );
-        cdk.Tags.of(this.ecsSecurityGroupFrame).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.ecsSecurityGroupFrame).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // Security group for Amazon Aurora (Frame Only)
-        // ------------------------------------------------------------
-        this.auroraSecurityGroupFrame = new ec2.SecurityGroup(
-            this,
-            "AuroraSecurityGroupFrame",
-            {
-                vpc: this.vpc,
-                description: `Security group for Amazon Aurora - ${commonProps.projectName}-${envProps.envName}`,
-                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-aurora`,
-                allowAllOutbound: false,
-            },
-        );
-
-        cdk.Tags.of(this.auroraSecurityGroupFrame).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-sg-aurora`,
-        );
-        cdk.Tags.of(this.auroraSecurityGroupFrame).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.auroraSecurityGroupFrame).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // Security group for Amazon ElastiCache (Frame Only)
-        // ------------------------------------------------------------
-        this.elasticacheSecurityGroupFrame = new ec2.SecurityGroup(
-            this,
-            "ElasticacheSecurityGroupFrame",
-            {
-                vpc: this.vpc,
-                description: `Security group for Amazon ElastiCache - ${commonProps.projectName}-${envProps.envName}`,
-                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-elasticache`,
-                allowAllOutbound: false,
-            },
-        );
-
-        cdk.Tags.of(this.elasticacheSecurityGroupFrame).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-sg-elasticache`,
-        );
-        cdk.Tags.of(this.elasticacheSecurityGroupFrame).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(this.elasticacheSecurityGroupFrame).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // Security group for AWS Lambda (Frame Only)
-        // ------------------------------------------------------------
-        this.lambdaSecurityGroupFrame = new ec2.SecurityGroup(
-            this,
-            "LambdaSecurityGroupFrame",
-            {
-                vpc: this.vpc,
-                description: `Security group for AWS Lambda - ${commonProps.projectName}-${envProps.envName}`,
-                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-lambda`,
-                allowAllOutbound: false,
-            },
-        );
-
-        cdk.Tags.of(this.lambdaSecurityGroupFrame).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-sg-lambda`,
-        );
-        cdk.Tags.of(this.lambdaSecurityGroupFrame).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.lambdaSecurityGroupFrame).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // Security group for VPC Endpoint of Amazon S3 Interface (Frame Only)
-        // ------------------------------------------------------------
-        this.vpcEndPointS3SecurityGroupFrame = new ec2.SecurityGroup(
-            this,
-            "vpcEndPointS3SecurityGroupFrame",
-            {
-                vpc: this.vpc,
-                description: "Security group for Amazon S3",
-                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-s3`,
-                allowAllOutbound: false,
-            },
-        );
-
-        cdk.Tags.of(this.vpcEndPointS3SecurityGroupFrame).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-s3`,
-        );
-        cdk.Tags.of(this.vpcEndPointS3SecurityGroupFrame).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(this.vpcEndPointS3SecurityGroupFrame).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // Security group for VPC Endpoint of Amazon ECR Interface (Frame Only)
-        // ------------------------------------------------------------
-        this.vpcEndPointECRSecurityGroupFrame = new ec2.SecurityGroup(
-            this,
-            "vpcEndPointECRSecurityGroupFrame",
-            {
-                vpc: this.vpc,
-                description: "Security group for Amazon ECR",
-                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-ecr`,
-                allowAllOutbound: false,
-            },
-        );
-
-        cdk.Tags.of(this.vpcEndPointECRSecurityGroupFrame).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-ecr`,
-        );
-        cdk.Tags.of(this.vpcEndPointECRSecurityGroupFrame).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(this.vpcEndPointECRSecurityGroupFrame).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // Security group for VPC Endpoint of AWS Systems Manager Interface (Frame Only)
-        // ------------------------------------------------------------
-        this.vpcEndPointSSMSecurityGroupFrame = new ec2.SecurityGroup(
-            this,
-            "vpcEndPointSSMSecurityGroupFrame",
-            {
-                vpc: this.vpc,
-                description: "Security group for AWS Systems Manager",
-                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-ssm`,
-                allowAllOutbound: false,
-            },
-        );
-
-        cdk.Tags.of(this.vpcEndPointSSMSecurityGroupFrame).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-ssm`,
-        );
-        cdk.Tags.of(this.vpcEndPointSSMSecurityGroupFrame).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(this.vpcEndPointSSMSecurityGroupFrame).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // Security group for VPC Endpoint of AWS KMS Interface (Frame Only)
-        // ------------------------------------------------------------
-        this.vpcEndPointKMSSecurityGroupFrame = new ec2.SecurityGroup(
-            this,
-            "vpcEndPointKMSSecurityGroupFrame",
-            {
-                vpc: this.vpc,
-                description: "Security group for AWS KMS",
-                securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-kms`,
-                allowAllOutbound: false,
-            },
-        );
-
-        cdk.Tags.of(this.vpcEndPointKMSSecurityGroupFrame).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-kms`,
-        );
-        cdk.Tags.of(this.vpcEndPointKMSSecurityGroupFrame).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(this.vpcEndPointKMSSecurityGroupFrame).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
-        // ------------------------------------------------------------
-        // Security group for VPC Endpoint of Amazon CloudWatch Logs Interface (Frame Only)
-        // ------------------------------------------------------------
-        this.vpcEndPointCloudWatchLogsSecurityGroupFrame =
-            new ec2.SecurityGroup(
-                this,
-                "vpcEndPointCloudWatchLogsSecurityGroupFrame",
+            const wrapper = new Construct(this, logicalId);
+            const securityGroup = new ec2.CfnSecurityGroup(
+                wrapper,
+                "Resource",
                 {
-                    vpc: this.vpc,
-                    description: "Security group for Amazon CloudWatch Logs",
-                    securityGroupName: `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-cloudwatch-logs`,
-                    allowAllOutbound: false,
+                    vpcId: this.vpc.vpcId,
+                    groupDescription: description,
+                    groupName: name,
+                    securityGroupEgress: [
+                        {
+                            cidrIp: "255.255.255.255/32",
+                            description: "Disallow all traffic",
+                            ipProtocol: "icmp",
+                            fromPort: 252,
+                            toPort: 86,
+                        },
+                    ],
                 },
             );
 
-        cdk.Tags.of(this.vpcEndPointCloudWatchLogsSecurityGroupFrame).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-sg-vpc-endpoint-cloudwatch-logs`,
+            cdk.Tags.of(wrapper).add("Name", name);
+            cdk.Tags.of(wrapper).add("ProvisionedBy", "AWS");
+            cdk.Tags.of(wrapper).add("ProjectCode", "1234567890");
+
+            return ec2.SecurityGroup.fromSecurityGroupId(
+                this,
+                `${logicalId}Imported`,
+                securityGroup.attrGroupId,
+                { allowAllOutbound: false },
+            );
+        };
+
+        this.albSecurityGroupFrame = createSecurityGroup(
+            "AlbSecurityGroupFrame",
+            `Security group for ALB - ${commonProps.projectName}-${envProps.envName}`,
+            "alb",
         );
-        cdk.Tags.of(this.vpcEndPointCloudWatchLogsSecurityGroupFrame).add(
-            "ProvisionedBy",
-            "AWS",
+
+        this.bastionSecurityGroupFrame = createSecurityGroup(
+            "BastionSecurityGroupFrame",
+            `Security group for Amazon EC2 Bastion - ${commonProps.projectName}-${envProps.envName}`,
+            "bastion",
         );
-        cdk.Tags.of(this.vpcEndPointCloudWatchLogsSecurityGroupFrame).add(
-            "ProjectCode",
-            "1234567890",
+
+        this.batchSecurityGroupFrame = createSecurityGroup(
+            "BatchSecurityGroupFrame",
+            `Security group for Amazon EC2 Batch - ${commonProps.projectName}-${envProps.envName}`,
+            "batch",
+        );
+
+        this.ecsSecurityGroupFrame = createSecurityGroup(
+            "EcsSecurityGroupFrame",
+            `Security group for Amazon ECS - ${commonProps.projectName}-${envProps.envName}`,
+            "ecs",
+        );
+
+        this.auroraSecurityGroupFrame = createSecurityGroup(
+            "AuroraSecurityGroupFrame",
+            `Security group for Amazon Aurora - ${commonProps.projectName}-${envProps.envName}`,
+            "aurora",
+        );
+
+        this.elasticacheSecurityGroupFrame = createSecurityGroup(
+            "ElasticacheSecurityGroupFrame",
+            `Security group for Amazon ElastiCache - ${commonProps.projectName}-${envProps.envName}`,
+            "elasticache",
+        );
+
+        this.lambdaSecurityGroupFrame = createSecurityGroup(
+            "LambdaSecurityGroupFrame",
+            `Security group for AWS Lambda - ${commonProps.projectName}-${envProps.envName}`,
+            "lambda",
+        );
+
+        this.vpcEndPointS3SecurityGroupFrame = createSecurityGroup(
+            "vpcEndPointS3SecurityGroupFrame",
+            "Security group for Amazon S3",
+            "vpc-endpoint-s3",
+        );
+
+        this.vpcEndPointECRSecurityGroupFrame = createSecurityGroup(
+            "vpcEndPointECRSecurityGroupFrame",
+            "Security group for Amazon ECR",
+            "vpc-endpoint-ecr",
+        );
+
+        this.vpcEndPointSSMSecurityGroupFrame = createSecurityGroup(
+            "vpcEndPointSSMSecurityGroupFrame",
+            "Security group for AWS Systems Manager",
+            "vpc-endpoint-ssm",
+        );
+
+        this.vpcEndPointKMSSecurityGroupFrame = createSecurityGroup(
+            "vpcEndPointKMSSecurityGroupFrame",
+            "Security group for AWS KMS",
+            "vpc-endpoint-kms",
+        );
+
+        this.vpcEndPointCloudWatchLogsSecurityGroupFrame = createSecurityGroup(
+            "vpcEndPointCloudWatchLogsSecurityGroupFrame",
+            "Security group for Amazon CloudWatch Logs",
+            "vpc-endpoint-cloudwatch-logs",
         );
     }
 }
