@@ -13,36 +13,36 @@ export interface EnvProps {
 }
 
 export interface SgProps {
-    albSecurityGroupFrame: ec2.SecurityGroup;
-    batchSecurityGroupFrame: ec2.SecurityGroup;
-    bastionSecurityGroupFrame: ec2.SecurityGroup;
-    ecsSecurityGroupFrame: ec2.SecurityGroup;
-    elasticacheSecurityGroupFrame: ec2.SecurityGroup;
-    auroraSecurityGroupFrame: ec2.SecurityGroup;
-    lambdaSecurityGroupFrame: ec2.SecurityGroup;
-    vpcEndPointS3SecurityGroupFrame: ec2.SecurityGroup;
-    vpcEndPointECRSecurityGroupFrame: ec2.SecurityGroup;
-    vpcEndPointSSMSecurityGroupFrame: ec2.SecurityGroup;
-    vpcEndPointKMSSecurityGroupFrame: ec2.SecurityGroup;
-    vpcEndPointCloudWatchLogsSecurityGroupFrame: ec2.SecurityGroup;
+    albSecurityGroupFrame: ec2.ISecurityGroup;
+    batchSecurityGroupFrame: ec2.ISecurityGroup;
+    bastionSecurityGroupFrame: ec2.ISecurityGroup;
+    ecsSecurityGroupFrame: ec2.ISecurityGroup;
+    elasticacheSecurityGroupFrame: ec2.ISecurityGroup;
+    auroraSecurityGroupFrame: ec2.ISecurityGroup;
+    lambdaSecurityGroupFrame: ec2.ISecurityGroup;
+    vpcEndPointS3SecurityGroupFrame: ec2.ISecurityGroup;
+    vpcEndPointECRSecurityGroupFrame: ec2.ISecurityGroup;
+    vpcEndPointSSMSecurityGroupFrame: ec2.ISecurityGroup;
+    vpcEndPointKMSSecurityGroupFrame: ec2.ISecurityGroup;
+    vpcEndPointCloudWatchLogsSecurityGroupFrame: ec2.ISecurityGroup;
 }
 
 // ------------------------------------------------------------
 // [09] - Security group Rule Stack
 // ------------------------------------------------------------
 export class CfSgRuleStack extends Construct {
-    public readonly albSecurityGroup: ec2.SecurityGroup;
-    public readonly batchSecurityGroup: ec2.SecurityGroup;
-    public readonly bastionSecurityGroup: ec2.SecurityGroup;
-    public readonly ecsSecurityGroup: ec2.SecurityGroup;
-    public readonly elasticacheSecurityGroup: ec2.SecurityGroup;
-    public readonly auroraSecurityGroup: ec2.SecurityGroup;
-    public readonly lambdaSecurityGroup: ec2.SecurityGroup;
-    public readonly vpcEndPointS3SecurityGroup: ec2.SecurityGroup;
-    public readonly vpcEndPointECRSecurityGroup: ec2.SecurityGroup;
-    public readonly vpcEndPointSSMSecurityGroup: ec2.SecurityGroup;
-    public readonly vpcEndPointKMSSecurityGroup: ec2.SecurityGroup;
-    public readonly vpcEndPointCloudWatchLogsSecurityGroup: ec2.SecurityGroup;
+    public readonly albSecurityGroup: ec2.ISecurityGroup;
+    public readonly batchSecurityGroup: ec2.ISecurityGroup;
+    public readonly bastionSecurityGroup: ec2.ISecurityGroup;
+    public readonly ecsSecurityGroup: ec2.ISecurityGroup;
+    public readonly elasticacheSecurityGroup: ec2.ISecurityGroup;
+    public readonly auroraSecurityGroup: ec2.ISecurityGroup;
+    public readonly lambdaSecurityGroup: ec2.ISecurityGroup;
+    public readonly vpcEndPointS3SecurityGroup: ec2.ISecurityGroup;
+    public readonly vpcEndPointECRSecurityGroup: ec2.ISecurityGroup;
+    public readonly vpcEndPointSSMSecurityGroup: ec2.ISecurityGroup;
+    public readonly vpcEndPointKMSSecurityGroup: ec2.ISecurityGroup;
+    public readonly vpcEndPointCloudWatchLogsSecurityGroup: ec2.ISecurityGroup;
 
     constructor(scope: Construct, id: string, sgProps: SgProps) {
         super(scope, id);
