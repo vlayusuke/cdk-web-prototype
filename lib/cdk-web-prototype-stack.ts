@@ -5,6 +5,7 @@ import type { DevParameter } from "../config/devParameter";
 import type { PrdParameter } from "../config/prdParameter";
 import type { StgParameter } from "../config/stgParameter";
 import { CfCICDStack } from "./construct/cfCICDStack";
+import { CfCloudFrontCertificateStack } from "./construct/cfCloudFrontCertificateStack";
 import { CfComputeBackendStack } from "./construct/cfComputeBackendStack";
 import { CfComputeDefinitionStack } from "./construct/cfComputeDefinitionStack";
 import { CfComputeServerlessStack } from "./construct/cfComputeServerlessStack";
@@ -55,13 +56,14 @@ export interface CfCdkWebPrototypeStackProps extends cdk.StackProps {
  *   7. [07] CfComputeWebAPStack
  *   8. [08] CfComputeBackendStack
  *   9. [09] CfSgRuleStack
- *  10. [10] CfDNSAndCDNStack
- *  11. [11] CfComputeDefinitionStack
- *  12. [12] CfNotificationStack
- *  13. [13] CfMonitoringStack
- *  14. [14] CfLoggingStack
- *  15. [15] CfComputeServerlessStack
- *  16. [16] CfCICDStack
+ *  10. [10] CfCloudFrontCertificateStack
+ *  11. [11] CfDNSAndCDNStack
+ *  12. [12] CfComputeDefinitionStack
+ *  13. [13] CfNotificationStack
+ *  14. [14] CfMonitoringStack
+ *  15. [15] CfLoggingStack
+ *  16. [16] CfComputeServerlessStack
+ *  17. [17] CfCICDStack
  */
 export class CfCdkWebPrototypeStack extends cdk.Stack {
     constructor(
@@ -72,16 +74,19 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         super(scope, id, props);
 
         const deploymentParameter = props.deploymentParameter;
+
         const commonProps = {
             ...commonParameter,
             envName: deploymentParameter.envName,
         };
+
         const envProps = {
             envName: deploymentParameter.envName,
             vpcCidr: deploymentParameter.vpcCidr,
             defaultGatewayCidr: deploymentParameter.defaultGatewayCidr,
             slackHookUrl: deploymentParameter.slackHookUrl,
         };
+
         if (commonProps.availabilityZones.length < 2) {
             throw new Error("At least two availability zones are required.");
         }
@@ -145,6 +150,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             commonProps,
             envProps,
         );
+
         const databaseProps = {
             auroraClusterArn: databaseStack.auroraCluster.attrDbClusterArn,
             auroraWriterInstanceArn:
@@ -296,11 +302,32 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         });
 
         // ------------------------------------------------------------
-        // [10] - CfDNSAndCDNStack
+        // [10] - CfCloudFrontCertificateStack
+        // ------------------------------------------------------------
+        const cloudFrontCertificateStack = new CfCloudFrontCertificateStack(
+            this.node.scope as Construct,
+            `${id}-CloudFrontCertificate`,
+            {
+                env: { account: props.env?.account, region: "us-east-1" },
+                crossRegionReferences: true,
+                commonProps,
+            },
+        );
+
+        this.addStackDependency(cloudFrontCertificateStack);
+
+        // ------------------------------------------------------------
+        // [11] - CfDNSAndCDNStack
         // ------------------------------------------------------------
         const dnsAndCDNStack = new CfDNSAndCDNStack(
             this,
             "CfDNSAndCDNStack",
+            {
+                hostedZoneId:
+                    cloudFrontCertificateStack.route53PublicHostedZone.ref,
+                cloudFrontCertificateArn:
+                    cloudFrontCertificateStack.acmCertificateCloudFront.ref,
+            },
             {
                 vpc: networkStack.Vpc,
                 subnets: networkStack.Vpc.publicSubnets,
@@ -320,7 +347,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [11] - CfComputeDefinitionStack
+        // [12] - CfComputeDefinitionStack
         // ------------------------------------------------------------
         const computeDefinitionStack = new CfComputeDefinitionStack(
             this,
@@ -339,6 +366,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             },
             {
                 targetGroup: dnsAndCDNStack.albExternalTargetGroup,
+                listenerRule: dnsAndCDNStack.albExternalListenerRule,
             },
             {
                 ecrRepositoryWebBaseImage:
@@ -363,7 +391,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [12] - CfNotificationStack
+        // [13] - CfNotificationStack
         // ------------------------------------------------------------
         const notificationStack = new CfNotificationStack(
             this,
@@ -381,11 +409,8 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             envProps,
         );
 
-        // Services use FARGATE_SPOT, so the cluster capacity providers must exist first.
-        computeDefinitionStack.node.addDependency(computeWebAPStack);
-
         // ------------------------------------------------------------
-        // [13] - CfMonitoringStack
+        // [14] - CfMonitoringStack
         // ------------------------------------------------------------
         new CfMonitoringStack(
             this,
@@ -400,7 +425,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [14] - CfLoggingStack
+        // [15] - CfLoggingStack
         // ------------------------------------------------------------
         const loggingStack = new CfLoggingStack(
             this,
@@ -411,7 +436,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [15] - CfComputeBackendStack
+        // [16] - CfComputeBackendStack
         // ------------------------------------------------------------
         const computeServerlessStack = new CfComputeServerlessStack(
             this,
@@ -430,15 +455,17 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
             commonProps,
             envProps,
         );
+
         loggingStack.addCloudWatchLogsAlertSubscription(
             computeServerlessStack.lambdaCloudWatchLogsAlert,
         );
+
         notificationStack.addEventNotificationSubscription(
             computeServerlessStack.lambdaCloudWatchMetricsAlert,
         );
 
         // ------------------------------------------------------------
-        // [16] - CfCICDStack
+        // [17] - CfCICDStack
         // ------------------------------------------------------------
         new CfCICDStack(this, "CfCICDStack", commonProps, envProps, {
             codeCommitKey: securityConfigStack.codeCommitKey,
