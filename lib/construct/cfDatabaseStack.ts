@@ -34,9 +34,9 @@ export interface SgProps {
     elasticacheSecurityGroup: ec2.ISecurityGroup;
 }
 
-// ------------------------------------------------------------
+// ************************************************************
 // [04] - Database Configuration Stack
-// ------------------------------------------------------------
+// ************************************************************
 export class CfDatabaseStack extends Construct {
     public readonly auroraCluster: rds.CfnDBCluster;
     public readonly auroraWriterInstance: rds.CfnDBInstance;
@@ -70,25 +70,32 @@ export class CfDatabaseStack extends Construct {
         cdk.Tags.of(iamAuroraRole).add("ProvisionedBy", "AWS");
         cdk.Tags.of(iamAuroraRole).add("ProjectCode", "1234567890");
 
-        const iamAuroraPolicy = new iam.Policy(this, "iamAuroraPolicy", {
-            statements: [
-                new iam.PolicyStatement({
-                    sid: "AuroraRDSAccess",
-                    effect: iam.Effect.ALLOW,
-                    actions: ["rds-db:connect", "rds-data:ExecuteStatement"],
-                    resources: [
-                        `arn:aws:rds-db:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:dbuser:*/*`,
-                    ],
-                }),
-            ],
+        const iamAuroraPolicyScope = new Construct(this, "iamAuroraPolicy");
+
+        new iam.CfnManagedPolicy(iamAuroraPolicyScope, "Resource", {
+            managedPolicyName: `${commonProps.projectName}-${envProps.envName}-iam-aurora-policy`,
+            roles: [iamAuroraRole.roleName],
+            policyDocument: {
+                Version: "2012-10-17",
+                Statement: [
+                    {
+                        Sid: "AuroraRDSAccess",
+                        Effect: "Allow",
+                        Action: ["rds-db:connect", "rds-data:ExecuteStatement"],
+                        Resource: [
+                            `arn:aws:rds-db:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:dbuser:*/*`,
+                        ],
+                    },
+                ],
+            },
         });
 
-        cdk.Tags.of(iamAuroraPolicy).add(
+        cdk.Tags.of(iamAuroraPolicyScope).add(
             "Name",
             `${commonProps.projectName}-${envProps.envName}-iam-aurora-policy`,
         );
-        cdk.Tags.of(iamAuroraPolicy).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(iamAuroraPolicy).add("ProjectCode", "1234567890");
+        cdk.Tags.of(iamAuroraPolicyScope).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(iamAuroraPolicyScope).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // AWS IAM for Amazon Aurora Performance Insights Configuration
@@ -113,44 +120,49 @@ export class CfDatabaseStack extends Construct {
             "1234567890",
         );
 
-        const iamAuroraPeformanceInsightPolicy = new iam.Policy(
+        const iamAuroraPeformanceInsightPolicyScope = new Construct(
             this,
             "iamAuroraPeformanceInsightPolicy",
+        );
+
+        new iam.CfnManagedPolicy(
+            iamAuroraPeformanceInsightPolicyScope,
+            "Resource",
             {
-                statements: [
-                    new iam.PolicyStatement({
-                        sid: "AuroraPerformanceInsightAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            "rds:DescribeDBClusters",
-                            "rds:DescribeDBInstances",
-                            "rds:DescribeDBPerformanceInsights",
-                            "rds:GetDBPerformanceInsights",
-                        ],
-                        resources: [
-                            `arn:aws:rds:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:db:*`,
-                        ],
-                    }),
-                ],
+                managedPolicyName: `${commonProps.projectName}-${envProps.envName}-iam-aurora-performance-insight-policy`,
+                roles: [iamAuroraPeformanceInsightRole.roleName],
+                policyDocument: {
+                    Version: "2012-10-17",
+                    Statement: [
+                        {
+                            Sid: "AuroraPerformanceInsightAccess",
+                            Effect: "Allow",
+                            Action: [
+                                "rds:DescribeDBClusters",
+                                "rds:DescribeDBInstances",
+                                "rds:DescribeDBPerformanceInsights",
+                                "rds:GetDBPerformanceInsights",
+                            ],
+                            Resource: [
+                                `arn:aws:rds:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:db:*`,
+                            ],
+                        },
+                    ],
+                },
             },
         );
 
-        cdk.Tags.of(iamAuroraPeformanceInsightPolicy).add(
+        cdk.Tags.of(iamAuroraPeformanceInsightPolicyScope).add(
             "Name",
             `${commonProps.projectName}-${envProps.envName}-iam-aurora-performance-insight-policy`,
         );
-        cdk.Tags.of(iamAuroraPeformanceInsightPolicy).add(
+        cdk.Tags.of(iamAuroraPeformanceInsightPolicyScope).add(
             "ProvisionedBy",
             "AWS",
         );
-        cdk.Tags.of(iamAuroraPeformanceInsightPolicy).add(
+        cdk.Tags.of(iamAuroraPeformanceInsightPolicyScope).add(
             "ProjectCode",
             "1234567890",
-        );
-
-        iamAuroraPolicy.attachToRole(iamAuroraRole);
-        iamAuroraPeformanceInsightPolicy.attachToRole(
-            iamAuroraPeformanceInsightRole,
         );
 
         // ------------------------------------------------------------
@@ -169,39 +181,43 @@ export class CfDatabaseStack extends Construct {
         cdk.Tags.of(elasticacheIamRole).add("ProvisionedBy", "AWS");
         cdk.Tags.of(elasticacheIamRole).add("ProjectCode", "1234567890");
 
-        const elasticacheIamPolicy = new iam.Policy(
+        const elasticacheIamPolicyScope = new Construct(
             this,
             "elasticacheIamPolicy",
-            {
-                statements: [
-                    new iam.PolicyStatement({
-                        sid: "ElasticacheAccess",
-                        effect: iam.Effect.ALLOW,
-                        actions: [
+        );
+
+        new iam.CfnManagedPolicy(elasticacheIamPolicyScope, "Resource", {
+            managedPolicyName: `${commonProps.projectName}-${envProps.envName}-iam-elasticache-policy`,
+            roles: [elasticacheIamRole.roleName],
+            policyDocument: {
+                Version: "2012-10-17",
+                Statement: [
+                    {
+                        Sid: "ElasticacheAccess",
+                        Effect: "Allow",
+                        Action: [
                             "elasticache:DescribeCacheClusters",
                             "elasticache:DescribeCacheSubnetGroups",
                             "elasticache:DescribeReplicationGroups",
                             "elasticache:DescribeUsers",
                         ],
-                        resources: [
+                        Resource: [
                             `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:cluster:*`,
                             `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:subnet-group:*`,
                             `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:replicationgroup:*`,
                             `arn:aws:elasticache:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:user:*`,
                         ],
-                    }),
+                    },
                 ],
             },
-        );
+        });
 
-        cdk.Tags.of(elasticacheIamPolicy).add(
+        cdk.Tags.of(elasticacheIamPolicyScope).add(
             "Name",
             `${commonProps.projectName}-${envProps.envName}-iam-elasticache-policy`,
         );
-        cdk.Tags.of(elasticacheIamPolicy).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(elasticacheIamPolicy).add("ProjectCode", "1234567890");
-
-        elasticacheIamPolicy.attachToRole(elasticacheIamRole);
+        cdk.Tags.of(elasticacheIamPolicyScope).add("ProvisionedBy", "AWS");
+        cdk.Tags.of(elasticacheIamPolicyScope).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Amazon Aurora Subnet Group Configuration
@@ -293,7 +309,7 @@ export class CfDatabaseStack extends Construct {
         // Amazon Aurora Instance Configuration
         // ------------------------------------------------------------
 
-        // Writer Instance Configuration
+        //**  Writer Instance Configuration
         const auroraWriterInstance = new rds.CfnDBInstance(
             this,
             "auroraWriterInstance",
@@ -315,7 +331,7 @@ export class CfDatabaseStack extends Construct {
             },
         );
 
-        // Reader Instance Configuration
+        //** Reader Instance Configuration
         const auroraReaderInstance = new rds.CfnDBInstance(
             this,
             "auroraReaderInstance",
