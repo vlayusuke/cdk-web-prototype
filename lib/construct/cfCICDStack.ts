@@ -18,9 +18,9 @@ export interface KmsProps {
     codeCommitKey: kms.IKey;
 }
 
-// ------------------------------------------------------------
-// [16] - CICD Stack
-// ------------------------------------------------------------
+// ************************************************************
+// [17] - CICD Resource Stack
+// ************************************************************
 export class CfCICDStack extends Construct {
     constructor(
         scope: Construct,
