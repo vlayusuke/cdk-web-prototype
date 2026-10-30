@@ -27,9 +27,9 @@ export interface SgProps {
     vpcEndPointCloudWatchLogsSecurityGroupFrame: ec2.ISecurityGroup;
 }
 
-// ------------------------------------------------------------
+// ************************************************************
 // [09] - Security group Rule Stack
-// ------------------------------------------------------------
+// ************************************************************
 export class CfSgRuleStack extends Construct {
     public readonly albSecurityGroup: ec2.ISecurityGroup;
     public readonly batchSecurityGroup: ec2.ISecurityGroup;
@@ -47,7 +47,9 @@ export class CfSgRuleStack extends Construct {
     constructor(scope: Construct, id: string, sgProps: SgProps) {
         super(scope, id);
 
+        // ------------------------------------------------------------
         // Assign security group frames to the actual security groups
+        // ------------------------------------------------------------
         this.albSecurityGroup = sgProps.albSecurityGroupFrame;
         this.batchSecurityGroup = sgProps.batchSecurityGroupFrame;
         this.bastionSecurityGroup = sgProps.bastionSecurityGroupFrame;
@@ -66,7 +68,9 @@ export class CfSgRuleStack extends Construct {
         this.vpcEndPointCloudWatchLogsSecurityGroup =
             sgProps.vpcEndPointCloudWatchLogsSecurityGroupFrame;
 
-        // Security group rules for ALB
+        // ------------------------------------------------------------
+        // Security group rules for Application Load Balancer (ALB)
+        // ------------------------------------------------------------
         this.albSecurityGroup.addIngressRule(
             ec2.Peer.anyIpv4(),
             ec2.Port.tcp(80),
@@ -83,7 +87,9 @@ export class CfSgRuleStack extends Construct {
             "Allow traffic to ECS",
         );
 
+        // ------------------------------------------------------------
         // Security group rules for ECS
+        // ------------------------------------------------------------
         this.ecsSecurityGroup.addIngressRule(
             this.albSecurityGroup,
             ec2.Port.tcp(80),
@@ -115,7 +121,9 @@ export class CfSgRuleStack extends Construct {
             "Allow access to CloudWatch Logs",
         );
 
-        // Security group rules for Aurora
+        // ------------------------------------------------------------
+        // Security group rules for Amazon Aurora
+        // ------------------------------------------------------------
         this.auroraSecurityGroup.addIngressRule(
             this.ecsSecurityGroup,
             ec2.Port.tcp(5432),
@@ -137,7 +145,9 @@ export class CfSgRuleStack extends Construct {
             "Allow PostgreSQL from Bastion",
         );
 
-        // Security group rules for ElastiCache
+        // ------------------------------------------------------------
+        // Security group rules for Amazon ElastiCache
+        // ------------------------------------------------------------
         this.elasticacheSecurityGroup.addIngressRule(
             this.ecsSecurityGroup,
             ec2.Port.tcp(6379),
@@ -154,7 +164,9 @@ export class CfSgRuleStack extends Construct {
             "Allow Redis from Bastion",
         );
 
-        // Security group rules for Bastion, Batch, and Lambda
+        // ------------------------------------------------------------
+        // Security group rules for Amazon EC2 for Bastion, Batch, and AWS Lambda
+        // ------------------------------------------------------------
         for (const sourceSecurityGroup of [
             this.bastionSecurityGroup,
             this.batchSecurityGroup,
@@ -187,7 +199,9 @@ export class CfSgRuleStack extends Construct {
             );
         }
 
-        // Security group rules for VPC Endpoints
+        // ------------------------------------------------------------
+        // Security group rules for Amazon VPC Endpoints
+        // ------------------------------------------------------------
         for (const endpointSecurityGroup of [
             this.vpcEndPointECRSecurityGroup,
             this.vpcEndPointSSMSecurityGroup,
