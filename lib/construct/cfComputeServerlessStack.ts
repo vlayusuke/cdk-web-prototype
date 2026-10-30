@@ -38,9 +38,9 @@ export interface DatabaseProps {
     elastiCacheReplicationGroupArn: string;
 }
 
-// ------------------------------------------------------------
-// [15] - Compute Serverless Stack
-// ------------------------------------------------------------
+// ************************************************************
+// [16] - Compute Serverless Stack
+// ************************************************************
 export class CfComputeServerlessStack extends Construct {
     public readonly lambdaCloudWatchLogsAlert: lambda.Function;
     public readonly lambdaCloudWatchMetricsAlert: lambda.Function;
@@ -59,8 +59,10 @@ export class CfComputeServerlessStack extends Construct {
         const stack = cdk.Stack.of(this);
         const prefix = `${commonProps.projectName}-${envProps.envName}`;
 
+        // ------------------------------------------------------------
         // L1 resources live under a wrapper scope with the id "Resource" so that
         // construct paths (and logical IDs) match the former L2 constructs.
+        // ------------------------------------------------------------
         const wrap = (wrapperId: string, name: string): Construct => {
             const wrapper = new Construct(this, wrapperId);
             cdk.Tags.of(wrapper).add("Name", name);
@@ -69,6 +71,9 @@ export class CfComputeServerlessStack extends Construct {
             return wrapper;
         };
 
+        // ------------------------------------------------------------
+        // Builds an IAM "Allow" policy statement (optionally with a condition).
+        // ------------------------------------------------------------
         const allow = (
             sid: string,
             actions: string[],
@@ -126,14 +131,14 @@ export class CfComputeServerlessStack extends Construct {
             "1234567890",
         );
 
-        new iam.CfnPolicy(
+        new iam.CfnManagedPolicy(
             wrap(
                 "iamLambdaCloudWatchLogsAlertPolicy",
                 `${prefix}-iam-lambda-policy`,
             ),
             "Resource",
             {
-                policyName: `${prefix}-LambdaPolicy`,
+                managedPolicyName: `${prefix}-LambdaPolicy`,
                 roles: [iamLambdaCloudWatchLogsAlertRole.roleName],
                 policyDocument: {
                     Version: "2012-10-17",
@@ -177,14 +182,14 @@ export class CfComputeServerlessStack extends Construct {
             "1234567890",
         );
 
-        new iam.CfnPolicy(
+        new iam.CfnManagedPolicy(
             wrap(
                 "lambdaCloudWatchMetricsAlertPolicy",
                 `${prefix}-lambda-cloudwatch-metrics-alert-policy`,
             ),
             "Resource",
             {
-                policyName: `${prefix}-lambda-cloudwatch-metrics-alert-policy`,
+                managedPolicyName: `${prefix}-lambda-cloudwatch-metrics-alert-policy`,
                 roles: [iamLambdaCloudWatchMetricsAlertRole.roleName],
                 policyDocument: {
                     Version: "2012-10-17",
@@ -228,14 +233,14 @@ export class CfComputeServerlessStack extends Construct {
             },
         );
 
-        new iam.CfnPolicy(
+        new iam.CfnManagedPolicy(
             wrap(
                 "lambdaRdsControlPolicy",
                 `${prefix}-lambda-rds-control-policy`,
             ),
             "Resource",
             {
-                policyName: `${prefix}-lambda-rds-control-policy`,
+                managedPolicyName: `${prefix}-lambda-rds-control-policy`,
                 roles: [iamLambdaRdsControlRole.ref],
                 policyDocument: {
                     Version: "2012-10-17",
