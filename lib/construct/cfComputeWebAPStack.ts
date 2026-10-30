@@ -36,9 +36,9 @@ export interface DatabaseProps {
     auroraReaderInstanceArn: string;
 }
 
-// ------------------------------------------------------------
+// ************************************************************
 // [07] - Compute WebAP Stack
-// ------------------------------------------------------------
+// ************************************************************
 export class CfComputeWebAPStack extends Construct {
     public readonly ecsCluster: ecs.CfnCluster;
 
@@ -57,8 +57,10 @@ export class CfComputeWebAPStack extends Construct {
         const prefix = `${commonProps.projectName}-${envProps.envName}`;
         const stack = cdk.Stack.of(this);
 
+        // ------------------------------------------------------------
         // L1 resources live under a wrapper scope with the id "Resource" so that
         // construct paths (and logical IDs) match the former L2 constructs.
+        // ------------------------------------------------------------
         const wrap = (wrapperId: string, name: string): Construct => {
             const wrapper = new Construct(this, wrapperId);
             cdk.Tags.of(wrapper).add("Name", name);
@@ -92,11 +94,11 @@ export class CfComputeWebAPStack extends Construct {
             },
         );
 
-        new iam.CfnPolicy(
+        new iam.CfnManagedPolicy(
             wrap("ec2IamPolicyForBastion", `${prefix}-iam-policy-for-bastion`),
             "Resource",
             {
-                policyName: `${prefix}-iam-policy-for-bastion`,
+                managedPolicyName: `${prefix}-iam-policy-for-bastion`,
                 roles: [ec2IamRoleForBastion.ref],
                 policyDocument: {
                     Version: "2012-10-17",
@@ -161,20 +163,12 @@ export class CfComputeWebAPStack extends Construct {
         this.ecsCluster = new ecs.CfnCluster(ecsClusterScope, "Resource", {
             clusterName: `${prefix}-ecs-cluster`,
             clusterSettings: [{ name: "containerInsights", value: "enabled" }],
+            capacityProviders: ["FARGATE", "FARGATE_SPOT"],
+            defaultCapacityProviderStrategy: [
+                { capacityProvider: "FARGATE", base: 1, weight: 1 },
+                { capacityProvider: "FARGATE_SPOT", base: 0, weight: 1 },
+            ],
         });
-
-        new ecs.CfnClusterCapacityProviderAssociations(
-            ecsClusterScope,
-            "CapacityProviderAssociations",
-            {
-                cluster: this.ecsCluster.ref,
-                capacityProviders: ["FARGATE", "FARGATE_SPOT"],
-                defaultCapacityProviderStrategy: [
-                    { capacityProvider: "FARGATE", base: 1, weight: 1 },
-                    { capacityProvider: "FARGATE_SPOT", base: 0, weight: 1 },
-                ],
-            },
-        );
 
         // ------------------------------------------------------------
         // Amazon EC2 Bastion Key Pair Configuration
