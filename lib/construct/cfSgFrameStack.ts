@@ -17,9 +17,9 @@ export interface NetworkProps {
     vpc: ec2.IVpc;
 }
 
-// ------------------------------------------------------------
+// ************************************************************
 // [03] - Security group Frame Stack
-// ------------------------------------------------------------
+// ************************************************************
 export class CfSgFrameStack extends Construct {
     public readonly vpc: ec2.IVpc;
     public readonly albSecurityGroupFrame: ec2.ISecurityGroup;
@@ -46,16 +46,17 @@ export class CfSgFrameStack extends Construct {
 
         this.vpc = networkProps.vpc;
 
-        // Frame only: ingress/egress rules are added by CfSgRuleStack.
-        // The L2 default for allowAllOutbound=false is reproduced explicitly.
+        // ------------------------------------------------------------
+        // Security Group Frame Creation
+        // ------------------------------------------------------------
         const createSecurityGroup = (
             logicalId: string,
             description: string,
             suffix: string,
         ): ec2.ISecurityGroup => {
             const name = `${commonProps.projectName}-${envProps.envName}-sg-${suffix}`;
-
             const wrapper = new Construct(this, logicalId);
+
             const securityGroup = new ec2.CfnSecurityGroup(
                 wrapper,
                 "Resource",
