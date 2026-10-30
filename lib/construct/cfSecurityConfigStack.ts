@@ -16,9 +16,9 @@ export interface EnvProps {
     defaultGatewayCidr: string;
 }
 
-// ------------------------------------------------------------
+// ************************************************************
 // [01] - Security Configuration Stack
-// ------------------------------------------------------------
+// ************************************************************
 export class CfSecurityConfigStack extends Construct {
     public readonly applicationKey: kms.IKey;
     public readonly bastionKey: kms.IKey;
@@ -55,9 +55,9 @@ export class CfSecurityConfigStack extends Construct {
             "kms:DescribeKey",
         ];
 
-        // Creates an L1 key under a wrapper scope with the id "Resource" so that
-        // logical IDs match the former L2 kms.Key. The L2 view (fromCfnKey) is
-        // returned because other stacks consume kms.IKey (grants, key policies).
+        // ------------------------------------------------------------
+        // Helper function to create KMS keys with a consistent policy and tags
+        // ------------------------------------------------------------
         const createKey = (
             keyId: string,
             nameSuffix: string,
