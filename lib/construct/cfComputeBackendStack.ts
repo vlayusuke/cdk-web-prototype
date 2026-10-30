@@ -31,9 +31,9 @@ export interface DatabaseProps {
     elastiCacheReplicationGroupArn: string;
 }
 
-// ------------------------------------------------------------
+// ************************************************************
 // [08] - Compute Backend Stack
-// ------------------------------------------------------------
+// ************************************************************
 export class CfComputeBackendStack extends Construct {
     constructor(
         scope: Construct,
@@ -46,15 +46,20 @@ export class CfComputeBackendStack extends Construct {
     ) {
         super(scope, id);
 
+        // ------------------------------------------------------------
+        // Applies the common Name / ProvisionedBy / ProjectCode tags to a construct.
+        // ------------------------------------------------------------
         const tagAll = (target: Construct, name: string) => {
             cdk.Tags.of(target).add("Name", name);
             cdk.Tags.of(target).add("ProvisionedBy", "AWS");
             cdk.Tags.of(target).add("ProjectCode", "1234567890");
         };
 
+        // ------------------------------------------------------------
+        // Prefix for resource names
+        // ------------------------------------------------------------
         const prefix = `${commonProps.projectName}-${envProps.envName}`;
 
-        // Wrapper scopes keep the construct paths (and logical IDs) identical to the former L2 constructs.
         // ------------------------------------------------------------
         // AWS IAM EC2 Instance Profile for Batch Configuration
         // ------------------------------------------------------------
@@ -67,7 +72,7 @@ export class CfComputeBackendStack extends Construct {
             ec2IamRoleForBatchScope,
             "Resource",
             {
-                roleName: "ec2IamRoleForBatch",
+                roleName: `${prefix}-iam-role-for-batch`,
                 description: "IAM EC2 instance profile for Batch",
                 assumeRolePolicyDocument: {
                     Version: "2012-10-17",
@@ -92,8 +97,8 @@ export class CfComputeBackendStack extends Construct {
             "ec2IamPolicyForBatch",
         );
 
-        new iam.CfnPolicy(ec2IamPolicyForBatchScope, "Resource", {
-            policyName: "ec2IamPolicyForBatch",
+        new iam.CfnManagedPolicy(ec2IamPolicyForBatchScope, "Resource", {
+            managedPolicyName: `${prefix}-iam-policy-for-batch`,
             roles: [ec2IamRoleForBatch.ref],
             policyDocument: {
                 Version: "2012-10-17",
@@ -131,7 +136,7 @@ export class CfComputeBackendStack extends Construct {
             ec2IamInstanceProfileScope,
             "Resource",
             {
-                instanceProfileName: "ec2IamInstanceProfileForBatch",
+                instanceProfileName: `${prefix}-iam-instance-profile-for-batch`,
                 roles: [ec2IamRoleForBatch.ref],
             },
         );
@@ -200,6 +205,7 @@ export class CfComputeBackendStack extends Construct {
             });
 
             tagAll(scope, `${prefix}-ec2-instance-batch-az-${azSuffix}`);
+
             return instance;
         };
 
