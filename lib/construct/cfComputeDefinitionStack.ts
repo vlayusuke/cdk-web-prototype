@@ -13,6 +13,10 @@ import {
 import type * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import { Construct } from "constructs";
 
+// ------------------------------------------------------------
+// Loads a container definition JSON from lib/json and substitutes the placeholders
+// with deployment-specific values. The JSON is already in CloudFormation format.
+// ------------------------------------------------------------
 const loadContainerDefinitions = (
     fileName: string,
     replacements: Record<string, string>,
@@ -81,7 +85,8 @@ export interface EcsProps {
 }
 
 export interface AlbProps {
-    targetGroup: elbv2.IApplicationTargetGroup;
+    targetGroup: elbv2.CfnTargetGroup;
+    listenerRule: elbv2.CfnListenerRule;
 }
 
 export interface DatabaseProps {
@@ -95,9 +100,9 @@ export interface S3Props {
     s3BucketEcsLogs: s3.IBucket;
 }
 
-// ------------------------------------------------------------
-// [11] - Compute Definition Stack
-// ------------------------------------------------------------
+// ************************************************************
+// [12] - Compute Definition Stack
+// ************************************************************
 export class CfComputeDefinitionStack extends Construct {
     public readonly ecsAppScalableTarget: applicationautoscaling.ScalableTarget;
     public readonly ssmParameterStoreAppKey: ssm.CfnParameter;
@@ -127,16 +132,23 @@ export class CfComputeDefinitionStack extends Construct {
         const prefix = `${commonProps.projectName}-${envProps.envName}`;
         const arnPrefix = `arn:aws:ecs:${stack.region}:${stack.account}`;
 
+        // ------------------------------------------------------------
         // Each L1 resource lives under a wrapper scope with the id "Resource"
         // so that construct paths (and logical IDs) match the former L2 constructs.
+        // ------------------------------------------------------------
         const wrap = (wrapperId: string, name: string): Construct => {
             const wrapper = new Construct(this, wrapperId);
+
             cdk.Tags.of(wrapper).add("Name", name);
             cdk.Tags.of(wrapper).add("ProvisionedBy", "AWS");
             cdk.Tags.of(wrapper).add("ProjectCode", "1234567890");
+
             return wrapper;
         };
 
+        // ------------------------------------------------------------
+        // Builds an IAM "Allow" policy statement (optionally with a condition).
+        // ------------------------------------------------------------
         const allow = (
             sid: string,
             actions: string[],
@@ -251,24 +263,28 @@ export class CfComputeDefinitionStack extends Construct {
             },
         );
 
-        const iamEcsTaskExectionPolicyScope = wrap(
-            "iamEcsTaskExectionPolicy",
-            `${prefix}-iam-ecs-task-execution-policy`,
-        );
+        // ------------------------------------------------------------
+        // Customer managed policy attached from the role side (managedPolicyArns), so tasks
+        // see the policy without an explicit DependsOn. The role ARN is built from the role
+        // name because the policy refers to its own role (avoids a circular reference).
+        // ------------------------------------------------------------
+        const iamEcsTaskExecutionRoleArn = `arn:${stack.partition}:iam::${stack.account}:role/${prefix}-iam-ecs-task-execution-role`;
 
-        const iamEcsTaskExectionPolicy = new iam.CfnPolicy(
-            iamEcsTaskExectionPolicyScope,
+        const iamEcsTaskExecutionManagedPolicy = new iam.CfnManagedPolicy(
+            wrap(
+                "iamEcsTaskExectionPolicy",
+                `${prefix}-iam-ecs-task-execution-policy`,
+            ),
             "Resource",
             {
-                policyName: `${prefix}-iam-ecs-task-execution-policy`,
-                roles: [iamEcsTaskExecutionRole.ref],
+                managedPolicyName: `${prefix}-iam-ecs-task-execution-policy`,
                 policyDocument: {
                     Version: "2012-10-17",
                     Statement: [
                         allow(
                             "PassRole",
                             ["iam:PassRole"],
-                            [iamEcsTaskExecutionRole.attrArn],
+                            [iamEcsTaskExecutionRoleArn],
                         ),
                         allow(
                             "GetKeyAndSecrets",
@@ -292,6 +308,11 @@ export class CfComputeDefinitionStack extends Construct {
                 },
             },
         );
+
+        iamEcsTaskExecutionRole.managedPolicyArns = [
+            ...(iamEcsTaskExecutionRole.managedPolicyArns ?? []),
+            iamEcsTaskExecutionManagedPolicy.ref,
+        ];
 
         // ------------------------------------------------------------
         // AWS IAM for Amazon ECS Task Configuration
@@ -328,27 +349,20 @@ export class CfComputeDefinitionStack extends Construct {
 
         const logGroupArn = `arn:aws:logs:${stack.region}:${stack.account}:log-group:*`;
 
-        const iamEcsTaskPolicyScope = wrap(
-            "iamEcsTaskPolicy",
-            `${prefix}-iam-ecs-task-policy`,
-        );
+        const iamEcsTaskRoleArn = `arn:${stack.partition}:iam::${stack.account}:role/${prefix}-iam-ecs-task-role`;
 
-        const iamEcsTaskPolicy = new iam.CfnPolicy(
-            iamEcsTaskPolicyScope,
+        const iamEcsTaskManagedPolicy = new iam.CfnManagedPolicy(
+            wrap("iamEcsTaskPolicy", `${prefix}-iam-ecs-task-policy`),
             "Resource",
             {
-                policyName: `${prefix}-iam-ecs-task-policy`,
-                roles: [iamEcsTaskRole.ref],
+                managedPolicyName: `${prefix}-iam-ecs-task-policy`,
                 policyDocument: {
                     Version: "2012-10-17",
                     Statement: [
                         allow(
                             "PassRole",
                             ["iam:PassRole"],
-                            [
-                                iamEcsTaskRole.attrArn,
-                                iamEcsTaskExecutionRole.attrArn,
-                            ],
+                            [iamEcsTaskRoleArn, iamEcsTaskExecutionRoleArn],
                         ),
                         allow(
                             "ECSAccess",
@@ -440,6 +454,8 @@ export class CfComputeDefinitionStack extends Construct {
             },
         );
 
+        iamEcsTaskRole.managedPolicyArns = [iamEcsTaskManagedPolicy.ref];
+
         // ------------------------------------------------------------
         // AWS IAM for GitHub Actions Deployment Configuration
         // ------------------------------------------------------------
@@ -493,8 +509,8 @@ export class CfComputeDefinitionStack extends Construct {
             `${prefix}-iam-github-actions-policy`,
         );
 
-        new iam.CfnPolicy(iamGithubActionsPolicyScope, "Resource", {
-            policyName: `${prefix}-iam-github-actions-policy`,
+        new iam.CfnManagedPolicy(iamGithubActionsPolicyScope, "Resource", {
+            managedPolicyName: `${prefix}-iam-github-actions-policy`,
             roles: [iamGithubActionsRole.ref],
             policyDocument: {
                 Version: "2012-10-17",
@@ -690,16 +706,9 @@ export class CfComputeDefinitionStack extends Construct {
                 },
             });
 
-            // The task roles must have their policies attached before tasks start.
-            service.node.addDependency(
-                iamEcsTaskExectionPolicy,
-                iamEcsTaskPolicy,
-            );
-
             return { service, serviceScope };
         };
 
-        // Register the first essential container (and its first port) with the ALB target group.
         const albContainer =
             appContainers.find((container) => container.essential) ??
             appContainers[0];
@@ -730,15 +739,13 @@ export class CfComputeDefinitionStack extends Construct {
                         {
                             containerName: albContainer.name,
                             containerPort: albContainerPort,
-                            targetGroupArn: albProps.targetGroup.targetGroupArn,
+                            targetGroupArn: albProps.targetGroup.ref,
                         },
                     ],
                 },
             );
 
-        ecsAppService.node.addDependency(
-            albProps.targetGroup.loadBalancerAttached,
-        );
+        ecsAppService.node.addDependency(albProps.listenerRule);
 
         const fargateOnly = [
             { capacityProvider: "FARGATE", base: 1, weight: 1 },
