@@ -2,11 +2,10 @@ import * as cdk from "aws-cdk-lib";
 import {
     aws_certificatemanager as acm,
     aws_cloudfront as cloudfront,
-    aws_ec2 as ec2,
+    type aws_ec2 as ec2,
     aws_elasticloadbalancingv2 as elbv2,
-    aws_cloudfront_origins as origins,
+    aws_iam as iam,
     aws_route53 as route53,
-    aws_route53_targets as route53_targets,
 } from "aws-cdk-lib";
 import type * as s3 from "aws-cdk-lib/aws-s3";
 import type * as wafv2 from "aws-cdk-lib/aws-wafv2";
@@ -38,28 +37,33 @@ export interface WafProps {
     wafv2WebACL: wafv2.IWebACLRef;
 }
 
+export interface DnsProps {
+    hostedZoneId: string;
+    cloudFrontCertificateArn: string;
+}
+
 export interface StorageProps {
     assetsBucket: s3.IBucket;
     uploadsBucket: s3.IBucket;
 }
 
-// ------------------------------------------------------------
-// [10] - DNS And CDN Stack
-// ------------------------------------------------------------
+// ************************************************************
+// [11] - DNS And CDN Stack
+// ************************************************************
 export class CfDNSAndCDNStack extends Construct {
-    public readonly route53PublicHostedZone: route53.PublicHostedZone;
-    public readonly route53ARecord: route53.ARecord;
-    public readonly route53AAAARecord: route53.AaaaRecord;
-    public readonly acmCertificateALB: acm.Certificate;
-    public readonly acmCertificateCloudFront: acm.Certificate;
-    public readonly albExternal: elbv2.ApplicationLoadBalancer;
-    public readonly albExternalListener: elbv2.ApplicationListener;
-    public readonly albExternalTargetGroup: elbv2.ApplicationTargetGroup;
-    public readonly cloudFrontDistribution: cloudfront.Distribution;
+    public readonly route53ARecord: route53.CfnRecordSet;
+    public readonly route53AAAARecord: route53.CfnRecordSet;
+    public readonly acmCertificateALB: acm.CfnCertificate;
+    public readonly albExternal: elbv2.CfnLoadBalancer;
+    public readonly albExternalListener: elbv2.CfnListener;
+    public readonly albExternalTargetGroup: elbv2.CfnTargetGroup;
+    public readonly albExternalListenerRule: elbv2.CfnListenerRule;
+    public readonly cloudFrontDistribution: cloudfront.CfnDistribution;
 
     constructor(
         scope: Construct,
         id: string,
+        dnsProps: DnsProps,
         networkProps: NetworkProps,
         sgProps: SgProps,
         storageProps: StorageProps,
@@ -69,440 +73,469 @@ export class CfDNSAndCDNStack extends Construct {
     ) {
         super(scope, id);
 
-        // ------------------------------------------------------------
-        // Amazon Route 53 Public Hosted Zone Configuration
-        // ------------------------------------------------------------
-        this.route53PublicHostedZone = new route53.PublicHostedZone(
-            this,
-            "route53PublicHostedZone",
-            {
-                zoneName: `${commonProps.envName}.${commonProps.nakedDomainName}`,
-                comment: `Public Hosted Zone for ${commonProps.projectName} - ${envProps.envName} environment`,
-            },
-        );
+        const prefix = `${commonProps.projectName}-${envProps.envName}`;
+        const domainName = `${envProps.envName}.${commonProps.nakedDomainName}`;
 
-        cdk.Tags.of(this.route53PublicHostedZone).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-r53-pub-host-zone`,
-        );
-        cdk.Tags.of(this.route53PublicHostedZone).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.route53PublicHostedZone).add(
-            "ProjectCode",
-            "1234567890",
-        );
+        // ------------------------------------------------------------
+        // Applies the common Name / ProvisionedBy / ProjectCode tags to a construct.
+        // ------------------------------------------------------------
+        const addCommonTags = (target: Construct, name: string) => {
+            cdk.Tags.of(target).add("Name", name);
+            cdk.Tags.of(target).add("ProvisionedBy", "AWS");
+            cdk.Tags.of(target).add("ProjectCode", "1234567890");
+        };
 
         // ------------------------------------------------------------
         // AWS Certificate Manager for ALB Configuration
         // ------------------------------------------------------------
-        this.acmCertificateALB = new acm.Certificate(
-            this,
-            "acmCertificateALB",
+        const acmCertificateALBScope = new Construct(this, "acmCertificateALB");
+
+        this.acmCertificateALB = new acm.CfnCertificate(
+            acmCertificateALBScope,
+            "Resource",
             {
-                domainName: `${envProps.envName}.${commonProps.nakedDomainName}`,
-                validation: acm.CertificateValidation.fromDns(
-                    this.route53PublicHostedZone,
-                ),
+                domainName,
+                validationMethod: "DNS",
+                domainValidationOptions: [
+                    {
+                        domainName,
+                        hostedZoneId: dnsProps.hostedZoneId,
+                    },
+                ],
             },
         );
 
-        cdk.Tags.of(this.acmCertificateALB).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-acm-certificate`,
-        );
-        cdk.Tags.of(this.acmCertificateALB).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.acmCertificateALB).add("ProjectCode", "1234567890");
-
-        // ------------------------------------------------------------
-        // AWS Certificate Manager for Amazon CloudFront Configuration
-        // ------------------------------------------------------------
-        this.acmCertificateCloudFront = new acm.Certificate(
-            this,
-            "acmCertificateCloudFront",
-            {
-                domainName: `${envProps.envName}.${commonProps.nakedDomainName}`,
-                validation: acm.CertificateValidation.fromDns(
-                    this.route53PublicHostedZone,
-                ),
-            },
-        );
-
-        cdk.Tags.of(this.acmCertificateCloudFront).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-acm-certificate-cloudfront`,
-        );
-        cdk.Tags.of(this.acmCertificateCloudFront).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.acmCertificateCloudFront).add(
-            "ProjectCode",
-            "1234567890",
-        );
+        addCommonTags(acmCertificateALBScope, `${prefix}-acm-certificate`);
 
         // ------------------------------------------------------------
         // Application Load Balancer Configuration
         // ------------------------------------------------------------
-        this.albExternal = new elbv2.ApplicationLoadBalancer(
-            this,
-            "albExternal",
+        const albExternalScope = new Construct(this, "albExternal");
+
+        this.albExternal = new elbv2.CfnLoadBalancer(
+            albExternalScope,
+            "Resource",
             {
-                vpc: networkProps.vpc,
-                vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
-                securityGroup: sgProps.albSecurityGroup,
-                internetFacing: true,
-                http2Enabled: true,
-                crossZoneEnabled: true,
-                deletionProtection: false,
+                type: "application",
+                scheme: "internet-facing",
+                subnets: networkProps.subnets.map((subnet) => subnet.subnetId),
+                securityGroups: [sgProps.albSecurityGroup.securityGroupId],
+                loadBalancerAttributes: [
+                    {
+                        key: "deletion_protection.enabled",
+                        value: "false",
+                    },
+                    {
+                        key: "load_balancing.cross_zone.enabled",
+                        value: "true",
+                    },
+                    { key: "routing.http2.enabled", value: "true" },
+                ],
             },
         );
 
-        cdk.Tags.of(this.albExternal).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-alb-external`,
-        );
-        cdk.Tags.of(this.albExternal).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.albExternal).add("ProjectCode", "1234567890");
-
-        // ------------------------------------------------------------
-        // Amazon Route 53 A Record Configuration
-        // ------------------------------------------------------------
-        this.route53ARecord = new route53.ARecord(this, "route53ARecord", {
-            zone: this.route53PublicHostedZone,
-            recordName: `${envProps.envName}.${commonProps.nakedDomainName}`,
-            target: route53.RecordTarget.fromAlias(
-                new route53_targets.LoadBalancerTarget(this.albExternal),
-            ),
-        });
-
-        cdk.Tags.of(this.route53ARecord).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-r53-a-record`,
-        );
-        cdk.Tags.of(this.route53ARecord).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.route53ARecord).add("ProjectCode", "1234567890");
-
-        // ------------------------------------------------------------
-        // Amazon Route 53 AAAA Record Configuration
-        // ------------------------------------------------------------
-        this.route53AAAARecord = new route53.AaaaRecord(
-            this,
-            "route53AAAARecord",
-            {
-                zone: this.route53PublicHostedZone,
-                recordName: `${envProps.envName}.${commonProps.nakedDomainName}`,
-                target: route53.RecordTarget.fromAlias(
-                    new route53_targets.LoadBalancerTarget(this.albExternal),
-                ),
-            },
-        );
-
-        cdk.Tags.of(this.route53AAAARecord).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-r53-aaaa-record`,
-        );
-        cdk.Tags.of(this.route53AAAARecord).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.route53AAAARecord).add("ProjectCode", "1234567890");
+        addCommonTags(albExternalScope, `${prefix}-alb-external`);
 
         // ------------------------------------------------------------
         // Application Load Balancer Listener Configuration
         // ------------------------------------------------------------
-        this.albExternalListener = this.albExternal.addListener(
+        const albExternalListenerScope = new Construct(
+            albExternalScope,
             "albExternalListener",
+        );
+
+        this.albExternalListener = new elbv2.CfnListener(
+            albExternalListenerScope,
+            "Resource",
             {
+                loadBalancerArn: this.albExternal.ref,
                 port: 443,
-                protocol: elbv2.ApplicationProtocol.HTTPS,
-                sslPolicy: elbv2.SslPolicy.TLS13_RES,
-                certificates: [this.acmCertificateALB],
-                defaultAction: elbv2.ListenerAction.fixedResponse(404, {
-                    contentType: "text/html",
-                    messageBody:
-                        "<html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><hr><address>Apache/2.2.31</address></body></html>",
-                }),
+                protocol: "HTTPS",
+                sslPolicy: "ELBSecurityPolicy-TLS13-1-2-Res-2021-06",
+                alpnPolicy: ["HTTP2Preferred"],
+                certificates: [{ certificateArn: this.acmCertificateALB.ref }],
+                defaultActions: [
+                    {
+                        type: "fixed-response",
+                        fixedResponseConfig: {
+                            statusCode: "404",
+                            contentType: "text/html",
+                            messageBody:
+                                "<html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><hr><address>Apache/2.2.31</address></body></html>",
+                        },
+                    },
+                ],
             },
         );
 
-        const cfnAlbExternalListener = this.albExternalListener.node
-            .defaultChild as elbv2.CfnListener;
-        cfnAlbExternalListener.alpnPolicy = ["HTTP2Preferred"];
-
-        cdk.Tags.of(this.albExternalListener).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-alb-external-listener`,
+        addCommonTags(
+            albExternalListenerScope,
+            `${prefix}-alb-external-listener`,
         );
-        cdk.Tags.of(this.albExternalListener).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.albExternalListener).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Application Load Balancer Target Rule Configuration
         // ------------------------------------------------------------
-        this.albExternalTargetGroup = new elbv2.ApplicationTargetGroup(
+        const albExternalTargetGroupScope = new Construct(
             this,
             "albExternalTargetGroup",
+        );
+
+        this.albExternalTargetGroup = new elbv2.CfnTargetGroup(
+            albExternalTargetGroupScope,
+            "Resource",
             {
-                targetType: elbv2.TargetType.IP,
-                vpc: networkProps.vpc,
+                targetType: "ip",
+                vpcId: networkProps.vpc.vpcId,
                 port: 80,
-                protocol: elbv2.ApplicationProtocol.HTTP,
-                loadBalancingAlgorithmType:
-                    elbv2.TargetGroupLoadBalancingAlgorithmType.ROUND_ROBIN,
-                crossZoneEnabled: true,
-                deregistrationDelay: cdk.Duration.seconds(115),
-                stickinessCookieDuration: cdk.Duration.seconds(86400),
-                healthCheck: {
-                    healthyThresholdCount: 3,
-                    unhealthyThresholdCount: 3,
-                    path: "/",
-                    interval: cdk.Duration.seconds(30),
-                    timeout: cdk.Duration.seconds(6),
-                },
+                protocol: "HTTP",
+                healthCheckPath: "/",
+                healthCheckIntervalSeconds: 30,
+                healthCheckTimeoutSeconds: 6,
+                healthyThresholdCount: 3,
+                unhealthyThresholdCount: 3,
+                targetGroupAttributes: [
+                    {
+                        key: "deregistration_delay.timeout_seconds",
+                        value: "115",
+                    },
+                    {
+                        key: "load_balancing.cross_zone.enabled",
+                        value: "true",
+                    },
+                    { key: "stickiness.enabled", value: "true" },
+                    { key: "stickiness.type", value: "lb_cookie" },
+                    {
+                        key: "stickiness.lb_cookie.duration_seconds",
+                        value: "86400",
+                    },
+                    {
+                        key: "load_balancing.algorithm.type",
+                        value: "round_robin",
+                    },
+                ],
             },
         );
 
-        cdk.Tags.of(this.albExternalTargetGroup).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-alb-external-target-group`,
-        );
-        cdk.Tags.of(this.albExternalTargetGroup).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.albExternalTargetGroup).add(
-            "ProjectCode",
-            "1234567890",
+        addCommonTags(
+            albExternalTargetGroupScope,
+            `${prefix}-alb-external-target-group`,
         );
 
         // ------------------------------------------------------------
         // Application Load Balancer Listener Rule Configuration
         // ------------------------------------------------------------
-        const albExternalListenerRule = new elbv2.ApplicationListenerRule(
+        const albExternalListenerRuleScope = new Construct(
             this,
             "albExternalListenerRule",
+        );
+
+        this.albExternalListenerRule = new elbv2.CfnListenerRule(
+            albExternalListenerRuleScope,
+            "Resource",
             {
-                listener: this.albExternalListener,
+                listenerArn: this.albExternalListener.ref,
                 priority: 1,
                 conditions: [
-                    elbv2.ListenerCondition.hostHeaders([
-                        `${envProps.envName}.${commonProps.nakedDomainName}`,
-                    ]),
+                    {
+                        field: "host-header",
+                        hostHeaderConfig: { values: [domainName] },
+                    },
                 ],
-                action: elbv2.ListenerAction.forward([
-                    this.albExternalTargetGroup,
-                ]),
+                actions: [
+                    {
+                        type: "forward",
+                        targetGroupArn: this.albExternalTargetGroup.ref,
+                    },
+                ],
             },
         );
 
-        cdk.Tags.of(albExternalListenerRule).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-alb-external-listener-rule`,
+        addCommonTags(
+            albExternalListenerRuleScope,
+            `${prefix}-alb-external-listener-rule`,
         );
-        cdk.Tags.of(albExternalListenerRule).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(albExternalListenerRule).add("ProjectCode", "1234567890");
 
-        const albExternalListenerRuleRedirect =
-            new elbv2.ApplicationListenerRule(
-                this,
-                "albExternalListenerRuleRedirect",
-                {
-                    listener: this.albExternalListener,
-                    priority: 2,
-                    conditions: [
-                        elbv2.ListenerCondition.hostHeaders([
-                            `www.${envProps.envName}.${commonProps.nakedDomainName}`,
-                        ]),
-                    ],
-                    action: elbv2.ListenerAction.redirect({
-                        protocol: "HTTPS",
-                        port: "443",
-                        host: `${envProps.envName}.${commonProps.nakedDomainName}`,
-                        query: "",
-                        permanent: true,
-                    }),
-                },
-            );
+        const albExternalListenerRuleRedirectScope = new Construct(
+            this,
+            "albExternalListenerRuleRedirect",
+        );
 
-        cdk.Tags.of(albExternalListenerRuleRedirect).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-alb-external-listener-rule-redirect`,
+        new elbv2.CfnListenerRule(
+            albExternalListenerRuleRedirectScope,
+            "Resource",
+            {
+                listenerArn: this.albExternalListener.ref,
+                priority: 2,
+                conditions: [
+                    {
+                        field: "host-header",
+                        hostHeaderConfig: { values: [`www.${domainName}`] },
+                    },
+                ],
+                actions: [
+                    {
+                        type: "redirect",
+                        redirectConfig: {
+                            protocol: "HTTPS",
+                            port: "443",
+                            host: domainName,
+                            query: "",
+                            statusCode: "HTTP_301",
+                        },
+                    },
+                ],
+            },
         );
-        cdk.Tags.of(albExternalListenerRuleRedirect).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(albExternalListenerRuleRedirect).add(
-            "ProjectCode",
-            "1234567890",
+
+        addCommonTags(
+            albExternalListenerRuleRedirectScope,
+            `${prefix}-alb-external-listener-rule-redirect`,
         );
 
         // ------------------------------------------------------------
         // Amazon CloudFront Response Headers Policy Configuration
         // ------------------------------------------------------------
         const cloudFrontResponseHeadersPolicy =
-            new cloudfront.ResponseHeadersPolicy(
-                this,
-                "cloudFrontResponseHeadersPolicy",
+            new cloudfront.CfnResponseHeadersPolicy(
+                new Construct(this, "cloudFrontResponseHeadersPolicy"),
+                "Resource",
                 {
-                    responseHeadersPolicyName: `${commonProps.projectName}-${envProps.envName}-cft-response-header-policy`,
-                    comment: `Amazon CloudFront Response Headers Policy for ${commonProps.projectName}-${envProps.envName}`,
-                    securityHeadersBehavior: {
-                        contentTypeOptions: { override: true },
-                        frameOptions: {
-                            frameOption:
-                                cloudfront.HeadersFrameOption.SAMEORIGIN,
-                            override: true,
-                        },
-                        xssProtection: {
-                            protection: true,
-                            override: true,
+                    responseHeadersPolicyConfig: {
+                        name: `${prefix}-cft-response-header-policy`,
+                        comment: `Amazon CloudFront Response Headers Policy for ${prefix}`,
+                        securityHeadersConfig: {
+                            contentTypeOptions: { override: true },
+                            frameOptions: {
+                                frameOption: "SAMEORIGIN",
+                                override: true,
+                            },
+                            xssProtection: {
+                                protection: true,
+                                override: true,
+                            },
                         },
                     },
                 },
             );
 
-        cdk.Tags.of(cloudFrontResponseHeadersPolicy).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-cft-response-header-policy`,
-        );
-        cdk.Tags.of(cloudFrontResponseHeadersPolicy).add(
-            "ProvisionedBy",
-            "AWS",
-        );
-        cdk.Tags.of(cloudFrontResponseHeadersPolicy).add(
-            "ProjectCode",
-            "1234567890",
-        );
-
         // ------------------------------------------------------------
         // Amazon CloudFront Cache Policy Configuration
         // ------------------------------------------------------------
-        const cloudFrontCachePolicy = new cloudfront.CachePolicy(
-            this,
-            "cloudFrontCachePolicy",
+        const cloudFrontCachePolicy = new cloudfront.CfnCachePolicy(
+            new Construct(this, "cloudFrontCachePolicy"),
+            "Resource",
             {
-                cachePolicyName: `${commonProps.projectName}-${envProps.envName}-cft-cache-policy`,
-                comment: `Amazon CloudFront Cache Policy for ${commonProps.projectName}-${envProps.envName}`,
-                defaultTtl: cdk.Duration.seconds(86400),
-                maxTtl: cdk.Duration.seconds(259200),
-                minTtl: cdk.Duration.seconds(0),
-                cookieBehavior: cloudfront.CacheCookieBehavior.all(),
-                headerBehavior: cloudfront.CacheHeaderBehavior.none(),
-                queryStringBehavior: cloudfront.CacheQueryStringBehavior.all(),
-                enableAcceptEncodingBrotli: true,
-                enableAcceptEncodingGzip: true,
+                cachePolicyConfig: {
+                    name: `${prefix}-cft-cache-policy`,
+                    comment: `Amazon CloudFront Cache Policy for ${prefix}`,
+                    defaultTtl: 86400,
+                    maxTtl: 259200,
+                    minTtl: 0,
+                    parametersInCacheKeyAndForwardedToOrigin: {
+                        cookiesConfig: { cookieBehavior: "all" },
+                        headersConfig: { headerBehavior: "none" },
+                        queryStringsConfig: { queryStringBehavior: "all" },
+                        enableAcceptEncodingBrotli: true,
+                        enableAcceptEncodingGzip: true,
+                    },
+                },
             },
         );
-
-        cdk.Tags.of(cloudFrontCachePolicy).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-cft-cache-policy`,
-        );
-        cdk.Tags.of(cloudFrontCachePolicy).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(cloudFrontCachePolicy).add("ProjectCode", "1234567890");
 
         // ------------------------------------------------------------
         // Origin Access Control Configuration
         // ------------------------------------------------------------
-        const assetsOriginAccessControl = new cloudfront.S3OriginAccessControl(
-            this,
-            "assetsOriginAccessControl",
+        const assetsOriginAccessControl = new cloudfront.CfnOriginAccessControl(
+            new Construct(this, "assetsOriginAccessControl"),
+            "Resource",
             {
-                originAccessControlName: `${commonProps.projectName}-${envProps.envName}-cft-oac-assets`,
-                description: `Origin Access Control for ${commonProps.projectName}-${envProps.envName} assets`,
-                signing: cloudfront.Signing.SIGV4_ALWAYS,
+                originAccessControlConfig: {
+                    name: `${prefix}-cft-oac-assets`,
+                    description: `Origin Access Control for ${prefix} assets`,
+                    originAccessControlOriginType: "s3",
+                    signingBehavior: "always",
+                    signingProtocol: "sigv4",
+                },
             },
-        );
-
-        cdk.Annotations.of(cdk.Stack.of(this)).acknowledgeWarning(
-            "@aws-cdk/aws-cloudfront-origins:wildcardKeyPolicyForOac",
-            "Keep the account-scoped CloudFront KMS grant to avoid a distribution-ID dependency cycle and a follow-up deployment.",
         );
 
         // ------------------------------------------------------------
         // Amazon CloudFront Distribution Configuration
         // ------------------------------------------------------------
-        this.cloudFrontDistribution = new cloudfront.Distribution(
+        const originAlb = "alb-external";
+        const originAssets = "s3-assets";
+        const originUploads = "s3-uploads";
+        const assetsDomainName = `${storageProps.assetsBucket.bucketName}.s3.${cdk.Aws.REGION}.${cdk.Aws.URL_SUFFIX}`;
+
+        const s3BehaviorBase = {
+            allowedMethods: ["GET", "HEAD"],
+            cachedMethods: ["GET", "HEAD"],
+            cachePolicyId: cloudFrontCachePolicy.ref,
+            responseHeadersPolicyId: cloudFrontResponseHeadersPolicy.ref,
+            compress: true,
+            smoothStreaming: false,
+            viewerProtocolPolicy: "redirect-to-https",
+        };
+
+        const cloudFrontDistributionScope = new Construct(
             this,
             "cloudFrontDistribution",
+        );
+
+        this.cloudFrontDistribution = new cloudfront.CfnDistribution(
+            cloudFrontDistributionScope,
+            "Resource",
             {
-                domainNames: [
-                    `${envProps.envName}.${commonProps.nakedDomainName}`,
-                ],
-                comment: `CloudFront distribution for ${envProps.envName}.${commonProps.nakedDomainName}`,
-                certificate: this.acmCertificateCloudFront,
-                enabled: true,
-                enableIpv6: true,
-                httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
-                webAclId: wafProps.wafv2WebACL.webAclRef.webAclId,
-                geoRestriction: cloudfront.GeoRestriction.allowlist("JP"),
-                additionalBehaviors: {
-                    "/public/*": {
-                        origin: origins.S3BucketOrigin.withOriginAccessControl(
-                            storageProps.assetsBucket,
-                            {
-                                originPath: "/assets",
-                                originAccessControl: assetsOriginAccessControl,
-                            },
-                        ),
-                        allowedMethods:
-                            cloudfront.AllowedMethods.ALLOW_GET_HEAD,
-                        cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD,
-                        cachePolicy: cloudFrontCachePolicy,
-                        responseHeadersPolicy: cloudFrontResponseHeadersPolicy,
-                        compress: true,
-                        smoothStreaming: false,
-                        viewerProtocolPolicy:
-                            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-                    },
-
-                    "/uploads/*": {
-                        origin: origins.S3BucketOrigin.withOriginAccessControl(
-                            storageProps.assetsBucket,
-                            {
-                                originPath: "/pictures",
-                                originAccessControl: assetsOriginAccessControl,
-                            },
-                        ),
-                        allowedMethods:
-                            cloudfront.AllowedMethods.ALLOW_GET_HEAD,
-                        cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD,
-                        cachePolicy: cloudFrontCachePolicy,
-                        responseHeadersPolicy: cloudFrontResponseHeadersPolicy,
-                        compress: true,
-                        smoothStreaming: false,
-                        viewerProtocolPolicy:
-                            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-                    },
-                },
-
-                defaultBehavior: {
-                    origin: new origins.HttpOrigin(
-                        this.albExternal.loadBalancerDnsName,
-                        {
-                            httpPort: 80,
-                            httpsPort: 443,
-                            keepaliveTimeout: cdk.Duration.seconds(5),
-                            protocolPolicy:
-                                cloudfront.OriginProtocolPolicy.HTTPS_ONLY,
-                            readTimeout: cdk.Duration.seconds(60),
-                            originSslProtocols: [
-                                cloudfront.OriginSslPolicy.TLS_V1_2,
-                            ],
+                distributionConfig: {
+                    enabled: true,
+                    aliases: [domainName],
+                    comment: `CloudFront distribution for ${domainName}`,
+                    ipv6Enabled: true,
+                    httpVersion: "http2and3",
+                    webAclId: wafProps.wafv2WebACL.webAclRef.webAclId,
+                    restrictions: {
+                        geoRestriction: {
+                            restrictionType: "whitelist",
+                            locations: ["JP"],
                         },
-                    ),
-                    allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
-                    cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD,
-                    cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
-                    originRequestPolicy:
-                        cloudfront.OriginRequestPolicy.ALL_VIEWER,
-                    responseHeadersPolicy: cloudFrontResponseHeadersPolicy,
-                    compress: false,
-                    viewerProtocolPolicy:
-                        cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    },
+                    viewerCertificate: {
+                        acmCertificateArn: dnsProps.cloudFrontCertificateArn,
+                        minimumProtocolVersion: "TLSv1.2_2021",
+                        sslSupportMethod: "sni-only",
+                    },
+                    origins: [
+                        {
+                            id: originAlb,
+                            domainName: this.albExternal.attrDnsName,
+                            customOriginConfig: {
+                                httpPort: 80,
+                                httpsPort: 443,
+                                originKeepaliveTimeout: 5,
+                                originProtocolPolicy: "https-only",
+                                originReadTimeout: 60,
+                                originSslProtocols: ["TLSv1.2"],
+                            },
+                        },
+                        {
+                            id: originAssets,
+                            domainName: assetsDomainName,
+                            originPath: "/assets",
+                            originAccessControlId:
+                                assetsOriginAccessControl.attrId,
+                            s3OriginConfig: { originAccessIdentity: "" },
+                        },
+                        {
+                            id: originUploads,
+                            domainName: assetsDomainName,
+                            originPath: "/pictures",
+                            originAccessControlId:
+                                assetsOriginAccessControl.attrId,
+                            s3OriginConfig: { originAccessIdentity: "" },
+                        },
+                    ],
+                    cacheBehaviors: [
+                        {
+                            ...s3BehaviorBase,
+                            pathPattern: "/public/*",
+                            targetOriginId: originAssets,
+                        },
+                        {
+                            ...s3BehaviorBase,
+                            pathPattern: "/uploads/*",
+                            targetOriginId: originUploads,
+                        },
+                    ],
+                    defaultCacheBehavior: {
+                        targetOriginId: originAlb,
+                        allowedMethods: [
+                            "GET",
+                            "HEAD",
+                            "OPTIONS",
+                            "PUT",
+                            "PATCH",
+                            "POST",
+                            "DELETE",
+                        ],
+                        cachedMethods: ["GET", "HEAD"],
+                        cachePolicyId:
+                            cloudfront.CachePolicy.CACHING_DISABLED
+                                .cachePolicyId,
+                        originRequestPolicyId:
+                            cloudfront.OriginRequestPolicy.ALL_VIEWER
+                                .originRequestPolicyId,
+                        responseHeadersPolicyId:
+                            cloudFrontResponseHeadersPolicy.ref,
+                        compress: false,
+                        viewerProtocolPolicy: "redirect-to-https",
+                    },
                 },
             },
         );
 
-        cdk.Tags.of(this.cloudFrontDistribution).add(
-            "Name",
-            `${commonProps.projectName}-${envProps.envName}-cloudfront-distribution`,
+        addCommonTags(
+            cloudFrontDistributionScope,
+            `${prefix}-cloudfront-distribution`,
         );
-        cdk.Tags.of(this.cloudFrontDistribution).add("ProvisionedBy", "AWS");
-        cdk.Tags.of(this.cloudFrontDistribution).add(
-            "ProjectCode",
-            "1234567890",
+
+        // ------------------------------------------------------------
+        // Amazon Route 53 A / AAAA Record Configuration (alias to CloudFront)
+        // ------------------------------------------------------------
+        const createAliasRecord = (
+            logicalId: string,
+            type: "A" | "AAAA",
+        ): route53.CfnRecordSet =>
+            new route53.CfnRecordSet(
+                new Construct(this, logicalId),
+                "Resource",
+                {
+                    hostedZoneId: dnsProps.hostedZoneId,
+                    name: `${domainName}.`,
+                    type,
+                    aliasTarget: {
+                        dnsName: this.cloudFrontDistribution.attrDomainName,
+                        // Fixed hosted zone ID shared by all CloudFront distributions.
+                        hostedZoneId: "Z2FDTNDATAQYW2",
+                    },
+                },
+            );
+
+        this.route53ARecord = createAliasRecord("route53ARecord", "A");
+        this.route53AAAARecord = createAliasRecord("route53AAAARecord", "AAAA");
+
+        // ------------------------------------------------------------
+        // Allow the distribution (OAC) to read the assets bucket
+        // ------------------------------------------------------------
+        storageProps.assetsBucket.addToResourcePolicy(
+            new iam.PolicyStatement({
+                actions: ["s3:GetObject"],
+                principals: [
+                    new iam.ServicePrincipal("cloudfront.amazonaws.com"),
+                ],
+                resources: [storageProps.assetsBucket.arnForObjects("*")],
+                conditions: {
+                    StringEquals: {
+                        "AWS:SourceArn": `arn:${cdk.Aws.PARTITION}:cloudfront::${cdk.Aws.ACCOUNT_ID}:distribution/${this.cloudFrontDistribution.ref}`,
+                    },
+                },
+            }),
+        );
+
+        // Account-scoped grant avoids a distribution-ID dependency cycle.
+        storageProps.assetsBucket.encryptionKey?.addToResourcePolicy(
+            new iam.PolicyStatement({
+                actions: ["kms:Decrypt"],
+                principals: [
+                    new iam.ServicePrincipal("cloudfront.amazonaws.com"),
+                ],
+                resources: ["*"],
+                conditions: {
+                    ArnLike: {
+                        "AWS:SourceArn": `arn:${cdk.Aws.PARTITION}:cloudfront::${cdk.Aws.ACCOUNT_ID}:distribution/*`,
+                    },
+                },
+            }),
         );
     }
 }
