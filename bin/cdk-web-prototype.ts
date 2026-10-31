@@ -19,6 +19,7 @@ for (const deploymentParameter of [prdParameter, stgParameter, devParameter]) {
                 account: deploymentParameter.env?.account,
                 region: deploymentParameter.env?.region,
             },
+            crossRegionReferences: true,
             deploymentParameter,
 
             /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
