@@ -19,9 +19,9 @@ export interface KmsProps {
     s3Key: kms.IKey;
 }
 
-// ------------------------------------------------------------
+// ************************************************************
 // [02] - Network Configuration Stack
-// ------------------------------------------------------------
+// ************************************************************
 export class CfNetworkStack extends Construct {
     public readonly Vpc: ec2.IVpc;
 
@@ -36,6 +36,9 @@ export class CfNetworkStack extends Construct {
 
         const prefix = `${commonProps.projectName}-${envProps.envName}`;
 
+        // ------------------------------------------------------------
+        // Applies the common Name / ProvisionedBy / ProjectCode tags to a construct.
+        // ------------------------------------------------------------
         const tagAll = (target: Construct, name: string) => {
             cdk.Tags.of(target).add("Name", name);
             cdk.Tags.of(target).add("ProvisionedBy", "AWS");
@@ -44,8 +47,6 @@ export class CfNetworkStack extends Construct {
 
         // ------------------------------------------------------------
         // Amazon VPC Configuration
-        // L1 resources live under the "Vpc" wrapper scope using the same ids as
-        // the former L2 ec2.Vpc, so that logical IDs are preserved.
         // ------------------------------------------------------------
         const vpcScope = new Construct(this, "Vpc");
 
@@ -58,6 +59,9 @@ export class CfNetworkStack extends Construct {
 
         tagAll(cfnVpc, `${prefix}-vpc`);
 
+        // ------------------------------------------------------------
+        // Amazon VPC Subnets Configuration
+        // ------------------------------------------------------------
         // Six /24 subnets, in the order: public x2, private x2, isolated x2.
         const subnetCidrs = cdk.Fn.cidr(envProps.vpcCidr, 6, "8");
 
@@ -132,7 +136,6 @@ export class CfNetworkStack extends Construct {
             }
         }
 
-        // L2 view of the VPC for the stacks that consume ec2.IVpc.
         const Vpc = ec2.Vpc.fromVpcAttributes(this, "VpcImport", {
             vpcId: cfnVpc.ref,
             vpcCidrBlock: envProps.vpcCidr,
@@ -257,8 +260,9 @@ export class CfNetworkStack extends Construct {
         cdk.Tags.of(s3VPCFlowLogsBucket).add("ProvisionedBy", "AWS");
         cdk.Tags.of(s3VPCFlowLogsBucket).add("ProjectCode", "1234567890");
 
-        // L2 is kept for the flow log: it also grants the log delivery service
-        // access to the KMS-encrypted bucket.
+        // ------------------------------------------------------------
+        // Amazon VPC Flow Logs Configuration
+        // ------------------------------------------------------------1
         const vpcFlowLog = new ec2.FlowLog(vpcScope, "FlowLogs", {
             resourceType: ec2.FlowLogResourceType.fromVpc(Vpc),
             destination: ec2.FlowLogDestination.toS3(
