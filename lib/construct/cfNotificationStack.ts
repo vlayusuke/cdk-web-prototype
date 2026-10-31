@@ -29,9 +29,9 @@ export interface KmsProps {
     snsKeyArn: kms.IKey;
 }
 
-// ------------------------------------------------------------
-// [12] - Notification Configuration Stack
-// ------------------------------------------------------------
+// ************************************************************
+// [14] - Notification Configuration Stack
+// ************************************************************
 export class CfNotificationStack extends Construct {
     public readonly snsTopicMetricsAlarm: sns.Topic;
     public readonly snsTopicLogsAlarm: sns.Topic;
