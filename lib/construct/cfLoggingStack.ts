@@ -1,5 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import {
+    aws_iam as iam,
     aws_logs as logs,
     aws_logs_destinations as logsDestinations,
 } from "aws-cdk-lib";
@@ -22,9 +23,9 @@ export interface EnvProps {
     defaultGatewayCidr: string;
 }
 
-// ------------------------------------------------------------
-// [14] - cfLoggingStack
-// ------------------------------------------------------------
+// ************************************************************
+// [16] - Amazon CloudWatch Logs Stack
+// ************************************************************
 export class CfLoggingStack extends Construct {
     public readonly logGroupNginxEcsApp: logs.CfnLogGroup;
     public readonly logGroupAppEcsApp: logs.CfnLogGroup;
@@ -535,7 +536,46 @@ export class CfLoggingStack extends Construct {
             "snsTopicArn",
             this.snsProps.snsTopicLogsAlarm.topicArn,
         );
-        this.snsProps.snsTopicLogsAlarm.grantPublish(lambdaFunction);
+
+        const topic = this.snsProps.snsTopicLogsAlarm;
+
+        const role = lambdaFunction.role;
+        if (!role) {
+            throw new Error(
+                "The alert Lambda function must have an execution role.",
+            );
+        }
+
+        const publishPolicyScope = new Construct(
+            this,
+            "LambdaCloudWatchLogsAlertPublishPolicy",
+        );
+
+        new iam.CfnManagedPolicy(publishPolicyScope, "Resource", {
+            roles: [role.roleName],
+            policyDocument: {
+                Version: "2012-10-17",
+                Statement: [
+                    {
+                        Effect: "Allow",
+                        Action: "sns:Publish",
+                        Resource: topic.topicArn,
+                    },
+                    ...(topic.masterKey
+                        ? [
+                              {
+                                  Effect: "Allow",
+                                  Action: [
+                                      "kms:Decrypt",
+                                      "kms:GenerateDataKey*",
+                                  ],
+                                  Resource: topic.masterKey.keyArn,
+                              },
+                          ]
+                        : []),
+                ],
+            },
+        });
 
         const destination = new logsDestinations.LambdaDestination(
             lambdaFunction,
