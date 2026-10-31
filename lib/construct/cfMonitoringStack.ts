@@ -27,9 +27,9 @@ export interface SnsProps {
     snsTopicMetricsAlarm: sns.Topic;
 }
 
-// ------------------------------------------------------------
-// [13] - cfMonitoringStack
-// ------------------------------------------------------------
+// ************************************************************
+// [15] - Amazon CloudWatch Metric Alarms Stack
+// ************************************************************
 export class CfMonitoringStack extends Construct {
     private readonly cpuUtilizationHighAlarmEcsApp: cloudwatch.CfnAlarm;
     private readonly cpuUtilizationLowAlarmEcsApp: cloudwatch.CfnAlarm;
