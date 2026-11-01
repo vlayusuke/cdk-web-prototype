@@ -32,7 +32,7 @@ export interface DatabaseProps {
 }
 
 // ************************************************************
-// [08] - Compute Backend Stack
+// [09] - Compute Backend Stack
 // ************************************************************
 export class CfComputeBackendStack extends Construct {
     constructor(
