@@ -9,7 +9,7 @@ import { CfComputeBackendStack } from "../lib/construct/cfComputeBackendStack";
 import { CfNetworkStack } from "../lib/construct/cfNetworkStack";
 import { CfSgFrameStack } from "../lib/construct/cfSgFrameStack";
 import { CfSgRuleStack } from "../lib/construct/cfSgRuleStack";
-import { CfStorageStack } from "../lib/construct/cfStorageStack";
+import { CfVPCEndpointStack } from "../lib/construct/cfVPCEndpointStack";
 
 test("Batch EBS volumes inherit the instance resource tags", () => {
     const app = new cdk.App();
@@ -168,9 +168,9 @@ test("Systems Manager endpoints share a least-privilege endpoint security group"
             securityGroups.vpcEndPointCloudWatchLogsSecurityGroupFrame,
     });
 
-    const storage = new CfStorageStack(
+    new CfVPCEndpointStack(
         stack,
-        "Storage",
+        "VPCEndpoints",
         {
             vpcId: vpc.vpcId,
             privateSubnetIds: vpc.isolatedSubnets.map(
@@ -182,8 +182,6 @@ test("Systems Manager endpoints share a least-privilege endpoint security group"
         },
         {
             applicationKey: new kms.Key(stack, "ApplicationKey"),
-            ecrKey: new kms.Key(stack, "EcrKey"),
-            s3Key: new kms.Key(stack, "S3Key"),
         },
         {
             vpcEndPointS3SecurityGroup:
@@ -197,16 +195,8 @@ test("Systems Manager endpoints share a least-privilege endpoint security group"
             vpcEndPointCloudWatchLogsSecurityGroup:
                 securityGroups.vpcEndPointCloudWatchLogsSecurityGroupFrame,
         },
-        {
-            projectName: "test",
-            dashboardName: "test",
-            nakedDomainName: "example.com",
-        },
-        {
-            envName: "unit",
-            vpcCidr: "10.80.0.0/16",
-            defaultGatewayCidr: "0.0.0.0/0",
-        },
+        { projectName: "test" },
+        { envName: "unit" },
     );
 
     const template = Template.fromStack(stack);
@@ -222,25 +212,23 @@ test("Systems Manager endpoints share a least-privilege endpoint security group"
         expect(endpoint.Properties.PolicyDocument.Statement).toBeDefined();
     }
 
-    const s3Endpoint =
-        endpointResources[stack.getLogicalId(storage.vpcEndpointS3)];
-    expect(s3Endpoint.Properties.RouteTableIds).toHaveLength(2);
-    expect(s3Endpoint.Properties.PolicyDocument.Statement).toBeDefined();
-
     const sharedSecurityGroupId = stack.resolve(
         securityGroups.vpcEndPointSSMSecurityGroupFrame.securityGroupId,
     );
 
-    for (const endpoint of [
-        storage.vpcEndpointSSM,
-        storage.vpcEndpointSSMEC2,
-        storage.vpcEndpointSSMEC2Messages,
-    ]) {
-        expect(
-            endpointResources[stack.getLogicalId(endpoint)].Properties
-                .SecurityGroupIds,
-        ).toEqual([sharedSecurityGroupId]);
-    }
+    const s3Endpoints = Object.values(endpointResources).filter(
+        (endpoint) => endpoint.Properties.VpcEndpointType === "Gateway",
+    );
+    expect(s3Endpoints).toHaveLength(1);
+    expect(s3Endpoints[0]?.Properties.RouteTableIds).toHaveLength(2);
+    expect(s3Endpoints[0]?.Properties.PolicyDocument.Statement).toBeDefined();
+
+    const ssmEndpoints = interfaceEndpoints.filter(
+        (endpoint) =>
+            JSON.stringify(endpoint.Properties.SecurityGroupIds) ===
+            JSON.stringify([sharedSecurityGroupId]),
+    );
+    expect(ssmEndpoints).toHaveLength(3);
 
     const ssmIngressRules = Object.values(
         template.findResources("AWS::EC2::SecurityGroupIngress"),
