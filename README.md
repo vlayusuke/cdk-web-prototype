@@ -78,17 +78,19 @@ cdk context --clear
 3. cfSgFrameStack.ts
 4. cfDatabaseStack.ts
 5. cfSecurityServiceStack.ts
-6. cfStorageStack.ts
-7. cfComputeWebAPStack.ts
-8. cfComputeBackendStack.ts
-9. cfSgRuleStack.ts
-10. cfDNSAndCDNStack.ts
-11. cfComputeDefinitionStack.ts
-12. cfNotificationStack.ts
-13. cfMonitoringStack.ts
-14. cfComputeServerlessStack.ts
-15. cfLoggingStack.ts
-16. cfCICDStack.ts
+6. cfVPCEndpointStack.ts
+7. cfStorageStack.ts
+8. cfComputeWebAPStack.ts
+9. cfComputeBackendStack.ts
+10. cfCloudFrontCertificateStack.ts
+11. cfSgRuleStack.ts
+12. cfDNSAndCDNStack.ts
+13. cfComputeDefinitionStack.ts
+14. cfNotificationStack.ts
+15. cfMonitoringStack.ts
+16. cfComputeServerlessStack.ts
+17. cfLoggingStack.ts
+18. cfCICDStack.ts
 
 ### `/lib/json`
 
