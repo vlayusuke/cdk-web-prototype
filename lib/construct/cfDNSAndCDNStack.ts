@@ -48,7 +48,7 @@ export interface StorageProps {
 }
 
 // ************************************************************
-// [11] - DNS And CDN Stack
+// [12] - DNS And CDN Stack
 // ************************************************************
 export class CfDNSAndCDNStack extends Construct {
     public readonly route53ARecord: route53.CfnRecordSet;
