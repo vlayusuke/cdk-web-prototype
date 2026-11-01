@@ -28,7 +28,7 @@ export interface SgProps {
 }
 
 // ************************************************************
-// [09] - Security group Rule Stack
+// [11] - Security group Rule Stack
 // ************************************************************
 export class CfSgRuleStack extends Construct {
     public readonly albSecurityGroup: ec2.ISecurityGroup;
