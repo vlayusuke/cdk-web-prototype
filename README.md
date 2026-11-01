@@ -113,17 +113,18 @@ cdk context --clear
 
 | Framework   | Version    |
 | :---------- | ---------: |
-| AWS CDK     | v2.1139.0  |
-| Node.js     |  v24.20.0  |
-| npm         |   v12.0.2  |
-| Boto3       |  v1.43.97  |
+| AWS CDK     |  v2.275.0  |
+| AWS CDK CLI | v2.1147.0  |
+| Node.js     |  v24.22.2  |
+| npm         |   v12.2.1  |
+| Boto3       | v1.43.123  |
 
 ### 開発言語
 
 | Language    | Version    |
 | :---------- | ---------: |
 | TypeScript  |    v7.0.2  |
-| Python      |   v3.14.8  |
+| Python      |   v3.15.2  |
 
 ## リリース履歴
 
