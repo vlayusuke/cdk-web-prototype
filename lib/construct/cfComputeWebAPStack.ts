@@ -37,7 +37,7 @@ export interface DatabaseProps {
 }
 
 // ************************************************************
-// [07] - Compute WebAP Stack
+// [08] - Compute WebAP Stack
 // ************************************************************
 export class CfComputeWebAPStack extends Construct {
     public readonly ecsCluster: ecs.CfnCluster;
