@@ -1,6 +1,5 @@
-import type { aws_kms as kms } from "aws-cdk-lib";
 import * as cdk from "aws-cdk-lib";
-import { aws_codecommit as codecommit } from "aws-cdk-lib";
+import { aws_codecommit as codecommit, type aws_kms as kms } from "aws-cdk-lib";
 import { Construct } from "constructs";
 
 export interface CommonProps {
@@ -19,7 +18,7 @@ export interface KmsProps {
 }
 
 // ************************************************************
-// [17] - CICD Resource Stack
+// [18] - CICD Resource Stack
 // ************************************************************
 export class CfCICDStack extends Construct {
     constructor(

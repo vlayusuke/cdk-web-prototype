@@ -101,7 +101,7 @@ export interface S3Props {
 }
 
 // ************************************************************
-// [12] - Compute Definition Stack
+// [13] - Compute Definition Stack
 // ************************************************************
 export class CfComputeDefinitionStack extends Construct {
     public readonly ecsAppScalableTarget: applicationautoscaling.ScalableTarget;
