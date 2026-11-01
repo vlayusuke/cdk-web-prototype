@@ -21,6 +21,7 @@ import { CfSecurityServiceStack } from "./construct/cfSecurityServiceStack";
 import { CfSgFrameStack } from "./construct/cfSgFrameStack";
 import { CfSgRuleStack } from "./construct/cfSgRuleStack";
 import { CfStorageStack } from "./construct/cfStorageStack";
+import { CfVPCEndpointStack } from "./construct/cfVPCEndpointStack";
 
 export interface CommonProps {
     projectName: string;
@@ -52,18 +53,19 @@ export interface CfCdkWebPrototypeStackProps extends cdk.StackProps {
  *   3. [03] CfSgFrameStack
  *   4. [04] CfDatabaseStack
  *   5. [05] CfSecurityServiceStack
- *   6. [06] CfStorageStack
- *   7. [07] CfComputeWebAPStack
- *   8. [08] CfComputeBackendStack
- *   9. [09] CfSgRuleStack
- *  10. [10] CfCloudFrontCertificateStack
- *  11. [11] CfDNSAndCDNStack
- *  12. [12] CfComputeDefinitionStack
- *  13. [13] CfNotificationStack
- *  14. [14] CfMonitoringStack
- *  15. [15] CfLoggingStack
- *  16. [16] CfComputeServerlessStack
- *  17. [17] CfCICDStack
+ *   6. [06] CfVPCEndpointStack
+ *   7. [07] CfStorageStack
+ *   8. [08] CfComputeWebAPStack
+ *   9. [09] CfComputeBackendStack
+ *  10. [10] CfSgRuleStack
+ *  11. [11] CfCloudFrontCertificateStack
+ *  12. [12] CfDNSAndCDNStack
+ *  13. [13] CfComputeDefinitionStack
+ *  14. [14] CfNotificationStack
+ *  15. [15] CfMonitoringStack
+ *  16. [16] CfLoggingStack
+ *  17. [17] CfComputeServerlessStack
+ *  18. [18] CfCICDStack
  */
 export class CfCdkWebPrototypeStack extends cdk.Stack {
     constructor(
@@ -178,11 +180,11 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [06] - CfStorageStack
+        // [06] - CfVPCEndpointStack
         // ------------------------------------------------------------
-        const storageStack = new CfStorageStack(
+        new CfVPCEndpointStack(
             this,
-            "CfStorageStack",
+            "CfVPCEndpointStack",
             {
                 vpcId: networkStack.Vpc.vpcId,
                 privateSubnetIds: networkStack.Vpc.privateSubnets.map(
@@ -192,11 +194,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
                     (subnet) => subnet.routeTable.routeTableId,
                 ),
             },
-            {
-                applicationKey: securityConfigStack.applicationKey,
-                ecrKey: securityConfigStack.ecrKey,
-                s3Key: securityConfigStack.s3Key,
-            },
+            { applicationKey: securityConfigStack.applicationKey },
             {
                 vpcEndPointS3SecurityGroup:
                     sgFrameStack.vpcEndPointS3SecurityGroupFrame,
@@ -209,12 +207,26 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
                 vpcEndPointCloudWatchLogsSecurityGroup:
                     sgFrameStack.vpcEndPointCloudWatchLogsSecurityGroupFrame,
             },
+            { projectName: commonProps.projectName },
+            { envName: envProps.envName },
+        );
+
+        // ------------------------------------------------------------
+        // [07] - CfStorageStack
+        // ------------------------------------------------------------
+        const storageStack = new CfStorageStack(
+            this,
+            "CfStorageStack",
+            {
+                ecrKey: securityConfigStack.ecrKey,
+                s3Key: securityConfigStack.s3Key,
+            },
             commonProps,
             envProps,
         );
 
         // ------------------------------------------------------------
-        // [07] - CfComputeWebAPStack
+        // [08] - CfComputeWebAPStack
         // ------------------------------------------------------------
         const computeWebAPStack = new CfComputeWebAPStack(
             this,
@@ -250,7 +262,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [08] - CfComputeBackendStack
+        // [09] - CfComputeBackendStack
         // ------------------------------------------------------------
         new CfComputeBackendStack(
             this,
@@ -278,7 +290,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [09] - CfSgRuleStack
+        // [10] - CfSgRuleStack
         // ------------------------------------------------------------
         new CfSgRuleStack(this, "CfSgRuleStack", {
             albSecurityGroupFrame: sgFrameStack.albSecurityGroupFrame,
@@ -302,7 +314,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         });
 
         // ------------------------------------------------------------
-        // [10] - CfCloudFrontCertificateStack
+        // [11] - CfCloudFrontCertificateStack
         // ------------------------------------------------------------
         const cloudFrontCertificateStack = new CfCloudFrontCertificateStack(
             this.node.scope as Construct,
@@ -317,7 +329,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         this.addStackDependency(cloudFrontCertificateStack);
 
         // ------------------------------------------------------------
-        // [11] - CfDNSAndCDNStack
+        // [12] - CfDNSAndCDNStack
         // ------------------------------------------------------------
         const dnsAndCDNStack = new CfDNSAndCDNStack(
             this,
@@ -347,7 +359,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [12] - CfComputeDefinitionStack
+        // [13] - CfComputeDefinitionStack
         // ------------------------------------------------------------
         const computeDefinitionStack = new CfComputeDefinitionStack(
             this,
@@ -391,7 +403,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [13] - CfNotificationStack
+        // [14] - CfNotificationStack
         // ------------------------------------------------------------
         const notificationStack = new CfNotificationStack(
             this,
@@ -410,7 +422,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [14] - CfMonitoringStack
+        // [15] - CfMonitoringStack
         // ------------------------------------------------------------
         new CfMonitoringStack(
             this,
@@ -425,7 +437,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [15] - CfLoggingStack
+        // [16] - CfLoggingStack
         // ------------------------------------------------------------
         const loggingStack = new CfLoggingStack(
             this,
@@ -436,7 +448,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [16] - CfComputeBackendStack
+        // [17] - CfComputeServerlessStack
         // ------------------------------------------------------------
         const computeServerlessStack = new CfComputeServerlessStack(
             this,
@@ -465,7 +477,7 @@ export class CfCdkWebPrototypeStack extends cdk.Stack {
         );
 
         // ------------------------------------------------------------
-        // [17] - CfCICDStack
+        // [19] - CfCICDStack
         // ------------------------------------------------------------
         new CfCICDStack(this, "CfCICDStack", commonProps, envProps, {
             codeCommitKey: securityConfigStack.codeCommitKey,
