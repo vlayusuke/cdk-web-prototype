@@ -24,7 +24,7 @@ export interface EnvProps {
 }
 
 // ************************************************************
-// [16] - Amazon CloudWatch Logs Stack
+// [17] - Amazon CloudWatch Logs Stack
 // ************************************************************
 export class CfLoggingStack extends Construct {
     public readonly logGroupNginxEcsApp: logs.CfnLogGroup;
